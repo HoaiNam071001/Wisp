@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<title>Lịch sử</title>
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'unsafe-inline'; script-src 'unsafe-inline'">
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; background: #1e1f22; color: #ddd; font: 14px system-ui, sans-serif; }
+  header { position: sticky; top: 0; z-index: 1; background: #1e1f22; border-bottom: 1px solid #2f3136; }
+  .head { max-width: 860px; margin: 0 auto; padding: 18px 20px 14px; display: flex; gap: 12px; align-items: center; }
+  h1 { margin: 0; font-size: 20px; font-weight: 600; color: #eee; margin-right: auto; }
+  input { width: 320px; max-width: 45vw; height: 32px; border: 1px solid #44474f; border-radius: 6px; background: #2b2d31;
+          color: #eee; padding: 0 10px; font-size: 14px; outline: none; }
+  input:focus { border-color: #e8562a; }
+  button { height: 32px; border: 0; border-radius: 6px; background: #3a3d44; color: #eee; font-size: 13px; cursor: pointer; padding: 0 12px; }
+  button:hover { background: #4a4e57; }
+  main { max-width: 860px; margin: 0 auto; padding: 8px 20px 40px; }
+  h2 { font-size: 13px; font-weight: 600; color: #999; margin: 22px 0 6px; padding-left: 10px; }
+  .row { display: flex; align-items: center; gap: 12px; height: 38px; padding: 0 6px 0 10px; border-radius: 6px; }
+  .row:hover { background: #2b2d31; }
+  .time { flex: none; width: 44px; color: #888; font-size: 12px; font-variant-numeric: tabular-nums; }
+  a { flex: 0 1 auto; min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; color: #e6e6e6;
+      text-decoration: none; cursor: pointer; }
+  a:hover { text-decoration: underline; }
+  .host { flex: 1 1 0; min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; color: #888; font-size: 12px; }
+  .del { flex: none; width: 28px; height: 28px; padding: 0; background: transparent; color: #888; font-size: 16px; visibility: hidden; }
+  .row:hover .del { visibility: visible; }
+  .del:hover { color: #fff; }
+  .empty { text-align: center; color: #888; margin-top: 60px; }
+  #more { display: block; margin: 20px auto 0; }
+</style>
+</head>
+<body>
+<header>
+  <div class="head">
+    <h1>Lịch sử</h1>
+    <input id="q" type="search" placeholder="Tìm trong lịch sử" spellcheck="false" autofocus>
+    <button id="clear">Xoá lịch sử…</button>
+  </div>
+</header>
+<main id="list"></main>
+<script>
+  const $ = (id) => document.getElementById(id);
+  const PAGE = 300;
+  let all = [];
+  let limit = PAGE;
+
+  function dayLabel(ts) {
+    const d = new Date(ts); d.setHours(0, 0, 0, 0);
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    const diff = Math.round((today - d) / 86400000);
+    const full = d.toLocaleDateString('vi-VN', { weekday: 'long', day: 'numeric', month: 'numeric', year: 'numeric' });
+    return diff === 0 ? 'Hôm nay — ' + full : diff === 1 ? 'Hôm qua — ' + full : full;
+  }
+  function hostOf(u) { try { const x = new URL(u); return x.protocol === 'file:' ? 'file' : x.host; } catch { return ''; } }
+
+  function render() {
+    const q = $('q').value.trim().toLowerCase();
+    const items = q ? all.filter(h => (h.title || '').toLowerCase().includes(q) || h.url.toLowerCase().includes(q)) : all;
+    const box = $('list');
+    box.textContent = '';
+    if (!items.length) {
+      const p = document.createElement('p'); p.className = 'empty';
+      p.textContent = q ? 'Không tìm thấy trang nào.' : 'Chưa có lịch sử.';
+      box.appendChild(p);
+      return;
+    }
+    let lastDay = '';
+    for (const h of items.slice(0, limit)) {
+      const day = dayLabel(h.time);
+      if (day !== lastDay) {
+        const h2 = document.createElement('h2'); h2.textContent = day; box.appendChild(h2);
+        lastDay = day;
+      }
+      const row = document.createElement('div'); row.className = 'row';
+      const time = document.createElement('span'); time.className = 'time';
+      time.textContent = new Date(h.time).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+      const a = document.createElement('a');
+      a.textContent = h.title || h.url;
+      a.title = h.url;
+      // Bấm: mở ở tab này. Cmd+bấm hoặc chuột giữa: mở tab mới
+      a.onclick = (e) => { e.preventDefault(); wispHistory.open(h.url, e.metaKey || e.ctrlKey); };
+      a.onauxclick = (e) => { if (e.button === 1) { e.preventDefault(); wispHistory.open(h.url, true); } };
+      const host = document.createElement('span'); host.className = 'host'; host.textContent = hostOf(h.url);
+      const del = document.createElement('button'); del.className = 'del'; del.textContent = '×'; del.title = 'Xoá khỏi lịch sử';
+      del.onclick = () => wispHistory.remove([h.id]);
+      row.append(time, a, host, del);
+      box.appendChild(row);
+    }
+    if (items.length > limit) {
+      const more = document.createElement('button'); more.id = 'more';
+      more.textContent = `Hiện thêm (${items.length - limit} trang nữa)`;
+      more.onclick = () => { limit += PAGE; render(); };
+      box.appendChild(more);
+    }
+  }
+
+  async function load() { all = await wispHistory.list(); render(); }
+
+  $('q').oninput = () => { limit = PAGE; render(); };
+  $('clear').onclick = () => wispHistory.clear();
+  wispHistory.onChange(load);
+  load();
+</script>
+</body>
+</html>

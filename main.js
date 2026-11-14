@@ -15,7 +15,7 @@ const DEFAULT_URL = 'https://bangbang.cmn.vn/';
 const DEFAULT_ALLOW = ['cmn.vn', 'cf4vn.bar'];
 // =================================================================================
 
-const TOOLBAR_HEIGHT = 44;
+const TOOLBAR_HEIGHT = 80; // thanh tab (36) + thanh địa chỉ (44)
 const PLUGIN_NAME = 'PepperFlashPlayer.plugin';
 
 // ---------- thư mục dữ liệu: ~/Library/Application Support/Wisp ----------
@@ -181,9 +181,13 @@ protocol.registerSchemesAsPrivileged([
 ]);
 
 const PLAYER_PATH = '/__flash_player__.html';
+// Trang Lịch sử nội bộ; thanh địa chỉ hiện "wisp://history"
+const HISTORY_URL = pathToFileURL(path.join(__dirname, 'history.html')).href;
+function isHistoryUrl(u) { return String(u || '').split(/[?#]/)[0] === HISTORY_URL; }
 
 // Địa chỉ hiển thị trên thanh địa chỉ: bỏ lớp player.html / ruffle://file
 function displayUrl(u) {
+  if (isHistoryUrl(u)) return 'wisp://history';
   const m = String(u || '').match(/(?:player\.html|__flash_player__\.html)\?src=([^&#]+)/);
   if (m) u = decodeURIComponent(m[1]);
   if (u.startsWith('ruffle://file/')) u = 'file://' + u.slice('ruffle://file'.length);
@@ -193,6 +197,7 @@ function displayUrl(u) {
 function normalizeUrl(input) {
   let u = String(input || '').trim();
   if (!u) return null;
+  if (/^wisp:\/*history\/?$/i.test(u)) return HISTORY_URL;
   if (u.startsWith('~/')) u = path.join(app.getPath('home'), u.slice(2));
   if (u.startsWith('/') && fs.existsSync(u)) u = pathToFileURL(u).href;
   else if (!/^[a-z]+:/i.test(u)) u = (/^(localhost|[\d.]+)(:\d+)?(\/|$)/.test(u) ? 'http://' : 'https://') + u;
@@ -206,16 +211,28 @@ function normalizeUrl(input) {
   return u;
 }
 
-// ---------- cửa sổ ----------
+// ---------- cửa sổ + tab ----------
+// Mỗi tab là một BrowserView; chỉ tab đang xem được gắn vào cửa sổ.
 let win = null;
-let page = null;
 let pendingFile = null;
 const seenSwfHosts = new Set(); // domain của các file .swf trang đã tải (gợi ý thêm vào allowlist)
+let tabs = [];                  // { id, view, title, favicon, htmlFull, hist }
+let activeId = null;
+let tabSeq = 0;
+const closedTabs = [];          // tab vừa đóng, để Shift+Cmd+T mở lại
+const CLOSED_MAX = 25;
 
-function wc() { return page && page.webContents; }
+function homeUrl() { return loadConfig().url || DEFAULT_URL; }
+function winOk() { return win && !win.isDestroyed(); }
+function tabOf(id) { return tabs.find(t => t.id === id) || null; }
+function activeTab() { return tabOf(activeId); }
+function wc() {
+  const t = activeTab();
+  return t && !t.view.webContents.isDestroyed() ? t.view.webContents : null;
+}
 
 function sendState() {
-  if (!win || win.isDestroyed() || !wc()) return;
+  if (!winOk() || !wc()) return;
   const w = wc();
   win.webContents.send('state', {
     url: displayUrl(w.getURL()),
@@ -228,56 +245,167 @@ function sendState() {
   });
 }
 
-function layout(full = false) {
-  if (!win || !page) return;
-  const [width, height] = win.getContentSize();
-  const top = full ? 0 : TOOLBAR_HEIGHT;
-  page.setBounds({ x: 0, y: top, width, height: height - top });
+function tabInfo(t) {
+  const w = t.view.webContents;
+  const url = w.isDestroyed() ? '' : displayUrl(w.getURL());
+  return { id: t.id, title: t.title || url || 'Tab mới', url, favicon: t.favicon || '',
+           loading: !w.isDestroyed() && w.isLoading(), history: isHistoryUrl(w.isDestroyed() ? '' : w.getURL()) };
 }
 
-function createWindow() {
-  const cfg = loadConfig();
-  const argUrl = process.argv.slice(1).find(a => /^https?:|\.swf$/i.test(a));
-  const startUrl = normalizeUrl(process.env.FLASH_URL || pendingFile || argUrl) || cfg.url || DEFAULT_URL;
-  pendingFile = null;
+// Gom nhiều thay đổi (đang tải, đổi tiêu đề…) rồi mới vẽ lại thanh tab + menu Tab
+let tabsTimer = null;
+function sendTabs() {
+  if (tabsTimer) return;
+  tabsTimer = setTimeout(() => {
+    tabsTimer = null;
+    if (!winOk()) return;
+    win.webContents.send('tabs', { tabs: tabs.map(tabInfo), active: activeId });
+    scheduleMenu();
+  }, 30);
+}
 
-  // Cửa sổ chính chứa thanh công cụ; trang web nằm trong BrowserView bên dưới
-  win = new BrowserWindow({
-    width: 1280, height: 820, title: 'Wisp', backgroundColor: '#2b2d31',
-    webPreferences: { preload: path.join(__dirname, 'toolbar-preload.js'), contextIsolation: true, nodeIntegration: false, worldSafeExecuteJavaScript: true },
-  });
-  win.loadFile(path.join(__dirname, 'toolbar.html'));
+function updateTitle() {
+  const t = activeTab();
+  if (winOk()) win.setTitle((t && t.title ? t.title + ' — ' : '') + 'Wisp');
+}
 
-  page = new BrowserView({
-    webPreferences: {
-      plugins: MODE === 'flash',
-      contextIsolation: true,
-      nodeIntegration: false,
-      worldSafeExecuteJavaScript: true,
-      // Chế độ Ruffle: preload chạy trong mọi frame (kể cả iframe) để chèn Ruffle
-      ...(MODE === 'ruffle' ? {
-        preload: path.join(__dirname, 'page-preload.js'),
-        nodeIntegrationInSubFrames: true,
-        additionalArguments: ['--flash-mode=ruffle'],
-      } : {}),
-    },
-  });
-  win.addBrowserView(page);
+function layout() {
+  const t = activeTab();
+  if (!winOk() || !t) return;
+  const [width, height] = win.getContentSize();
+  const top = t.htmlFull ? 0 : TOOLBAR_HEIGHT; // trình phát Flash bật toàn màn hình → ẩn thanh công cụ
+  t.view.setBounds({ x: 0, y: top, width, height: height - top });
+}
+
+function tabPrefs() {
+  return {
+    plugins: MODE === 'flash',
+    contextIsolation: true,
+    nodeIntegration: false,
+    worldSafeExecuteJavaScript: true,
+    // page-preload.js: chèn Ruffle (chế độ Ruffle) + cầu nối cho trang Lịch sử
+    preload: path.join(__dirname, 'page-preload.js'),
+    additionalArguments: ['--wisp-history=' + HISTORY_URL, ...(MODE === 'ruffle' ? ['--flash-mode=ruffle'] : [])],
+    // Chế độ Ruffle: preload chạy trong mọi frame (kể cả iframe) để chèn Ruffle
+    ...(MODE === 'ruffle' ? { nodeIntegrationInSubFrames: true } : {}),
+  };
+}
+
+function createTab(url, { activate = true, index = tabs.length } = {}) {
+  const view = new BrowserView({ webPreferences: tabPrefs() });
+  const t = { id: ++tabSeq, view, title: '', favicon: '', htmlFull: false, hist: null };
+  tabs.splice(Math.max(0, Math.min(index, tabs.length)), 0, t);
+  // Game ở tab khác vẫn chạy bình thường (không bị Chromium hãm timer khi tab ẩn)
+  view.webContents.setBackgroundThrottling(false);
+  wireTab(t);
+  view.webContents.loadURL(url).catch(() => {});
+  if (activate) activateTab(t.id); else sendTabs();
+  return t;
+}
+
+function activateTab(id) {
+  const t = tabOf(id);
+  if (!t || !winOk()) return;
+  const prev = activeTab();
+  if (prev !== t) {
+    if (prev) win.removeBrowserView(prev.view);
+    activeId = t.id;
+    win.addBrowserView(t.view);
+  }
   layout();
-  win.on('resize', () => layout(win.isFullScreen() && isHtmlFull));
+  t.view.webContents.focus();
+  updateTitle();
+  sendState();
+  sendTabs();
+}
 
-  const w = page.webContents;
+function closeTab(id) {
+  const i = tabs.findIndex(t => t.id === id);
+  if (i < 0) return;
+  const t = tabs[i];
+  const w = t.view.webContents;
+  if (!w.isDestroyed() && w.getURL()) {
+    closedTabs.push({ url: w.getURL(), index: i });
+    if (closedTabs.length > CLOSED_MAX) closedTabs.shift();
+  }
+  tabs.splice(i, 1);
+  if (activeId === id) {
+    activeId = null;
+    if (winOk()) win.removeBrowserView(t.view);
+  }
+  try { w.destroy(); } catch {}
+  // Đóng tab cuối cùng thì mở tab trang chủ thay vì tắt app (tránh lỡ tay thoát game)
+  if (!tabs.length) { createTab(homeUrl()); return; }
+  if (activeId === null) activateTab(tabs[Math.min(i, tabs.length - 1)].id);
+  else sendTabs();
+}
 
-  // Trình phát Flash bật toàn màn hình → ẩn thanh công cụ
-  let isHtmlFull = false;
-  w.on('enter-html-full-screen', () => { isHtmlFull = true; layout(true); });
-  w.on('leave-html-full-screen', () => { isHtmlFull = false; layout(false); });
+function reopenClosedTab() {
+  const c = closedTabs.pop();
+  if (c) createTab(c.url, { index: c.index });
+}
 
-  // Popup (window.open / target=_blank) mở ngay trong cửa sổ này
-  w.on('new-window', (e, url) => { e.preventDefault(); w.loadURL(url); });
+function cycleTab(step) {
+  if (tabs.length < 2) return;
+  const i = tabs.findIndex(t => t.id === activeId);
+  activateTab(tabs[(i + step + tabs.length) % tabs.length].id);
+}
 
-  ['did-navigate', 'did-navigate-in-page', 'did-start-loading', 'did-stop-loading'].forEach(ev => w.on(ev, sendState));
-  w.on('page-title-updated', (_e, t) => win.setTitle(t + ' — Wisp'));
+function newTab() {
+  createTab(homeUrl());
+  focusUrlBar();
+}
+
+function focusUrlBar() {
+  if (!winOk()) return;
+  win.webContents.focus();
+  win.webContents.executeJavaScript("document.getElementById('url').select()").catch(() => {});
+}
+
+function tabMenu(id) {
+  const t = tabOf(id);
+  if (!t) return;
+  const i = tabs.indexOf(t);
+  Menu.buildFromTemplate([
+    { label: 'Tải lại', click: () => t.view.webContents.reload() },
+    { label: 'Nhân bản tab', click: () => createTab(t.view.webContents.getURL(), { index: i + 1 }) },
+    { type: 'separator' },
+    { label: 'Đóng tab', click: () => closeTab(id) },
+    { label: 'Đóng các tab khác', enabled: tabs.length > 1, click: () => tabs.filter(x => x !== t).forEach(x => closeTab(x.id)) },
+    { label: 'Đóng các tab bên phải', enabled: i < tabs.length - 1, click: () => tabs.slice(i + 1).forEach(x => closeTab(x.id)) },
+    { type: 'separator' },
+    { label: 'Mở lại tab vừa đóng', enabled: closedTabs.length > 0, click: reopenClosedTab },
+  ]).popup({ window: win });
+}
+
+function wireTab(t) {
+  const w = t.view.webContents;
+  const isActive = () => activeId === t.id;
+
+  w.on('enter-html-full-screen', () => { t.htmlFull = true; if (isActive()) layout(); });
+  w.on('leave-html-full-screen', () => { t.htmlFull = false; if (isActive()) layout(); });
+
+  // Popup (window.open / target=_blank / Cmd+bấm link) → mở tab mới ngay bên phải
+  w.on('new-window', (e, url, _name, disposition) => {
+    e.preventDefault();
+    createTab(url, { index: tabs.indexOf(t) + 1, activate: disposition !== 'background-tab' });
+  });
+
+  ['did-navigate-in-page', 'did-start-loading', 'did-stop-loading'].forEach(ev => w.on(ev, () => { if (isActive()) sendState(); sendTabs(); }));
+  w.on('did-navigate', (_e, url) => {
+    t.favicon = '';
+    recordVisit(t, url);
+    if (isActive()) sendState();
+    sendTabs();
+  });
+  w.on('did-navigate-in-page', (_e, url, isMain) => { if (isMain) recordVisit(t, url); });
+  w.on('page-title-updated', (_e, title) => {
+    t.title = title;
+    if (t.hist && t.hist.url === displayUrl(w.getURL()) && t.hist.title !== title) { t.hist.title = title; historyChanged(); }
+    if (isActive()) updateTitle();
+    sendTabs();
+  });
+  w.on('page-favicon-updated', (_e, favicons) => { t.favicon = favicons[0] || ''; sendTabs(); });
   w.on('did-fail-load', (_e, code, desc, url, isMain) => {
     if (isMain && code !== -3) console.warn('Lỗi tải trang', code, desc, url);
   });
@@ -298,28 +426,143 @@ function createWindow() {
   w.on('render-process-gone', (_e, d) => addLog('error', 'event', `Tiến trình trang bị dừng: ${d.reason} (exit ${d.exitCode})`));
   w.on('unresponsive', () => addLog('warning', 'event', 'Trang bị treo (không phản hồi)'));
   w.on('responsive', () => addLog('info', 'event', 'Trang phản hồi lại'));
+}
 
-  win.on('closed', () => { win = null; page = null; });
+function createWindow() {
+  const argUrl = process.argv.slice(1).find(a => /^https?:|\.swf$/i.test(a));
+  const startUrl = normalizeUrl(process.env.FLASH_URL || pendingFile || argUrl) || homeUrl();
+  pendingFile = null;
+
+  // Cửa sổ chính chứa thanh tab + thanh công cụ; trang web nằm trong BrowserView bên dưới
+  win = new BrowserWindow({
+    width: 1280, height: 820, title: 'Wisp', backgroundColor: '#2b2d31',
+    webPreferences: { preload: path.join(__dirname, 'toolbar-preload.js'), contextIsolation: true, nodeIntegration: false, worldSafeExecuteJavaScript: true },
+  });
+  win.loadFile(path.join(__dirname, 'toolbar.html'));
+  win.on('resize', layout);
+  win.on('closed', () => { win = null; tabs = []; activeId = null; });
 
   buildMenu();
-  w.loadURL(startUrl);
+  createTab(startUrl);
 
   if (wantedMode === 'flash' && !FLASH_PATH) setTimeout(askForFlashPlugin, 800);
 }
+
+// ---------- lịch sử duyệt web (userData/history.json) ----------
+const HISTORY_MAX = 5000;
+let history = null;   // [{ id, url, title, time }], cũ → mới
+let histSeq = 0;
+let histSaveTimer = null;
+
+function historyPath() { return path.join(app.getPath('userData'), 'history.json'); }
+function loadHistory() {
+  if (history) return history;
+  try { history = JSON.parse(fs.readFileSync(historyPath(), 'utf8')); } catch {}
+  if (!Array.isArray(history)) history = [];
+  history = history.filter(h => h && typeof h.url === 'string' && typeof h.time === 'number');
+  for (const h of history) if (typeof h.id === 'number') histSeq = Math.max(histSeq, h.id);
+  for (const h of history) if (typeof h.id !== 'number') h.id = ++histSeq;
+  return history;
+}
+function saveHistoryNow() {
+  clearTimeout(histSaveTimer); histSaveTimer = null;
+  if (!history) return;
+  try { fs.writeFileSync(historyPath(), JSON.stringify(history)); } catch (e) { console.error('Không lưu được lịch sử:', e); }
+}
+function historyChanged() {
+  if (!histSaveTimer) histSaveTimer = setTimeout(saveHistoryNow, 1000);
+  for (const t of tabs) {
+    const w = t.view.webContents;
+    if (!w.isDestroyed() && isHistoryUrl(w.getURL())) w.send('history:changed');
+  }
+  scheduleMenu();
+}
+
+function recordVisit(t, rawUrl) {
+  const url = displayUrl(rawUrl);
+  if (!/^(https?|file):/i.test(url) || isHistoryUrl(rawUrl)) return;
+  const h = loadHistory();
+  const now = Date.now();
+  const last = h[h.length - 1];
+  // Tải lại / đổi #hash cùng một trang trong vòng 1 phút thì chỉ cập nhật giờ, không thêm dòng mới
+  if (last && last.url === url && now - last.time < 60000) {
+    last.time = now;
+    t.hist = last;
+  } else {
+    t.hist = { id: ++histSeq, url, title: '', time: now };
+    h.push(t.hist);
+    if (h.length > HISTORY_MAX) h.splice(0, h.length - HISTORY_MAX);
+  }
+  historyChanged();
+}
+
+async function clearHistoryDialog() {
+  const { response } = await dialog.showMessageBox(win, {
+    type: 'question', message: 'Xoá lịch sử duyệt web',
+    detail: 'Chỉ xoá danh sách trang đã xem. Cookie và đăng nhập vẫn giữ nguyên.',
+    buttons: ['Giờ vừa qua', 'Hôm nay', 'Toàn bộ', 'Huỷ'], defaultId: 0, cancelId: 3,
+  });
+  if (response === 3) return false;
+  const since = response === 0 ? Date.now() - 3600e3 : response === 1 ? new Date().setHours(0, 0, 0, 0) : 0;
+  history = loadHistory().filter(h => since && h.time < since);
+  for (const t of tabs) t.hist = null;
+  historyChanged();
+  return true;
+}
+
+function openHistory() {
+  const t = tabs.find(x => !x.view.webContents.isDestroyed() && isHistoryUrl(x.view.webContents.getURL()));
+  if (t) activateTab(t.id);
+  else createTab(HISTORY_URL, { index: tabs.indexOf(activeTab()) + 1 });
+}
+
+function openUrl(url) {
+  const u = normalizeUrl(url);
+  if (!u) return;
+  if (wc()) wc().loadURL(u).catch(() => {}); else createTab(u);
+}
+
+function fromHistoryPage(e) { try { return isHistoryUrl(e.sender.getURL()); } catch { return false; } }
+ipcMain.handle('history:list', (e) => fromHistoryPage(e) ? loadHistory().slice().reverse() : []);
+ipcMain.handle('history:open', (e, url, inNewTab) => {
+  if (!fromHistoryPage(e) || !/^(https?|file):/i.test(String(url))) return;
+  const u = normalizeUrl(url);
+  if (!u) return;
+  if (inNewTab) {
+    const t = tabs.find(x => x.view.webContents === e.sender);
+    createTab(u, { index: t ? tabs.indexOf(t) + 1 : tabs.length, activate: false });
+  } else e.sender.loadURL(u).catch(() => {});
+});
+ipcMain.handle('history:remove', (e, ids) => {
+  if (!fromHistoryPage(e) || !Array.isArray(ids)) return;
+  const del = new Set(ids);
+  history = loadHistory().filter(h => !del.has(h.id));
+  for (const t of tabs) if (t.hist && del.has(t.hist.id)) t.hist = null;
+  historyChanged();
+});
+ipcMain.handle('history:clear', (e) => fromHistoryPage(e) ? clearHistoryDialog() : false);
 
 // ---------- điều hướng từ thanh công cụ ----------
 ipcMain.on('nav', (_e, action, arg) => {
   const w = wc();
   if (!w) return;
-  if (action === 'go') { const u = normalizeUrl(arg); if (u) w.loadURL(u); }
+  if (action === 'go') { const u = normalizeUrl(arg); if (u) w.loadURL(u).catch(() => {}); }
   else if (action === 'back') { if (w.canGoBack()) w.goBack(); }
   else if (action === 'forward') { if (w.canGoForward()) w.goForward(); }
   else if (action === 'reload') { w.isLoading() ? w.stop() : w.reload(); }
-  else if (action === 'home') { w.loadURL(loadConfig().url || DEFAULT_URL); }
+  else if (action === 'home') { w.loadURL(homeUrl()).catch(() => {}); }
   else if (action === 'sethome') { saveConfig({ url: w.getURL() }); }
   else if (action === 'inspect') { openInspector(); }
+  else if (action === 'history') { openHistory(); }
 });
-ipcMain.on('ready', sendState);
+ipcMain.on('tab', (e, action, id) => {
+  if (!winOk() || e.sender !== win.webContents) return;
+  if (action === 'new') newTab();
+  else if (action === 'close') closeTab(id);
+  else if (action === 'switch') activateTab(id);
+  else if (action === 'menu') tabMenu(id);
+});
+ipcMain.on('ready', () => { sendState(); sendTabs(); });
 
 // ---------- Bảng kiểm tra: HTTP, socket TCP, console, thông tin Flash ----------
 // DevTools không thấy kết nối socket của Flash (chúng không đi qua tab Network),
@@ -704,12 +947,29 @@ async function choosePluginFile() {
 
 async function openSwfFile() {
   const r = await dialog.showOpenDialog(win, { properties: ['openFile'], filters: [{ name: 'Flash', extensions: ['swf'] }] });
-  if (!r.canceled && r.filePaths[0] && wc()) wc().loadURL(normalizeUrl(r.filePaths[0]));
+  if (!r.canceled && r.filePaths[0]) createTab(normalizeUrl(r.filePaths[0]), { index: tabs.indexOf(activeTab()) + 1 });
 }
+
+let menuTimer = null;
+function scheduleMenu() {
+  if (menuTimer) return;
+  menuTimer = setTimeout(() => { menuTimer = null; if (winOk()) buildMenu(); }, 300);
+}
+
+function shorten(s, n = 60) { s = String(s || ''); return s.length > n ? s.slice(0, n - 1) + '…' : s; }
 
 function buildMenu() {
   const w = () => wc();
   const cfg = loadConfig();
+  // 15 trang xem gần nhất (không lặp)
+  const recent = [];
+  const seen = new Set();
+  const hist = loadHistory();
+  for (let i = hist.length - 1; i >= 0 && recent.length < 15; i--) {
+    if (seen.has(hist[i].url)) continue;
+    seen.add(hist[i].url);
+    recent.push(hist[i]);
+  }
   const menu = Menu.buildFromTemplate([
     { label: app.name, submenu: [
       { role: 'about', label: 'Giới thiệu Wisp' },
@@ -720,7 +980,11 @@ function buildMenu() {
       { role: 'quit', label: 'Thoát Wisp' },
     ]},
     { label: 'Tệp', submenu: [
+      { label: 'Tab mới', accelerator: 'Cmd+T', click: newTab },
       { label: 'Mở file .swf…', accelerator: 'Cmd+O', click: openSwfFile },
+      { type: 'separator' },
+      { label: 'Đóng tab', accelerator: 'Cmd+W', click: () => activeTab() && closeTab(activeId) },
+      { label: 'Mở lại tab vừa đóng', accelerator: 'Shift+Cmd+T', click: reopenClosedTab },
     ]},
     { label: 'Sửa', submenu: [
       { role: 'undo', label: 'Hoàn tác' }, { role: 'redo', label: 'Làm lại' }, { type: 'separator' },
@@ -728,7 +992,7 @@ function buildMenu() {
       { role: 'selectAll', label: 'Chọn tất cả' },
     ]},
     { label: 'Trang', submenu: [
-      { label: 'Mở địa chỉ…', accelerator: 'Cmd+L', click: () => { win.webContents.focus(); win.webContents.executeJavaScript("document.getElementById('url').select()"); } },
+      { label: 'Mở địa chỉ…', accelerator: 'Cmd+L', click: focusUrlBar },
       { label: 'Quay lại', accelerator: 'Cmd+[', click: () => w() && w().canGoBack() && w().goBack() },
       { label: 'Tiến tới', accelerator: 'Cmd+]', click: () => w() && w().canGoForward() && w().goForward() },
       { label: 'Tải lại', accelerator: 'Cmd+R', click: () => w() && w().reload() },
@@ -752,6 +1016,23 @@ function buildMenu() {
       { label: 'Sửa danh sách domain cho phép…', click: editAllowList },
       { label: 'Ghi log allowlist (gỡ lỗi)', type: 'checkbox', checked: !!cfg.flashDebug, click: (item) => { saveConfig({ flashDebug: item.checked }); writeMmsCfg(); askRelaunch(item.checked ? 'Đã bật log allowlist.' : 'Đã tắt log allowlist.'); } },
       { label: 'Mở thư mục mms.cfg', click: () => shell.showItemInFolder(mmsCfgPath()) },
+    ]},
+    { label: 'Lịch sử', submenu: [
+      { label: 'Hiện toàn bộ lịch sử', accelerator: 'Cmd+Y', click: openHistory },
+      { label: 'Xoá lịch sử…', accelerator: 'Shift+Cmd+Backspace', click: clearHistoryDialog },
+      { type: 'separator' },
+      { label: 'Xem gần đây', enabled: false },
+      ...recent.map(h => ({ label: shorten(h.title || h.url), click: () => openUrl(h.url) })),
+    ]},
+    { label: 'Tab', submenu: [
+      { label: 'Tab tiếp theo', accelerator: 'Ctrl+Tab', click: () => cycleTab(1) },
+      { label: 'Tab trước', accelerator: 'Ctrl+Shift+Tab', click: () => cycleTab(-1) },
+      { type: 'separator' },
+      ...tabs.map((t, i) => ({
+        label: shorten(tabInfo(t).title, 50), type: 'radio', checked: t.id === activeId,
+        accelerator: i < 8 ? `Cmd+${i + 1}` : undefined, click: () => activateTab(t.id),
+      })),
+      ...(tabs.length > 8 ? [{ label: 'Tab cuối', accelerator: 'Cmd+9', click: () => activateTab(tabs[tabs.length - 1].id) }] : []),
     ]},
     { role: 'windowMenu', label: 'Cửa sổ' },
   ]);
@@ -800,8 +1081,9 @@ app.whenReady().then(() => {
 // Mở file .swf bằng cách kéo thả vào icon app trên Dock / "Open With"
 app.on('open-file', (e, file) => {
   e.preventDefault();
-  if (app.isReady() && wc()) wc().loadURL(normalizeUrl(file));
+  if (app.isReady() && winOk()) createTab(normalizeUrl(file), { index: tabs.indexOf(activeTab()) + 1 });
   else pendingFile = file;
 });
 
+app.on('before-quit', saveHistoryNow);
 app.on('window-all-closed', () => app.quit());

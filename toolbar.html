@@ -3,11 +3,38 @@
 <head>
 <meta charset="utf-8">
 <title>Wisp</title>
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'unsafe-inline'; script-src 'unsafe-inline'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; img-src http: https: data: file:">
 <style>
   * { box-sizing: border-box; }
-  body { margin: 0; height: 44px; display: flex; align-items: center; gap: 6px; padding: 0 8px;
-         background: #2b2d31; font: 14px system-ui, sans-serif; color: #eee; user-select: none; }
+  body { margin: 0; height: 80px; display: flex; flex-direction: column;
+         background: #2b2d31; font: 14px system-ui, sans-serif; color: #eee; user-select: none; overflow: hidden; }
+
+  /* ---- thanh tab ---- */
+  #tabbar { height: 36px; display: flex; align-items: flex-end; gap: 2px; padding: 6px 8px 0; background: #1e1f22; }
+  #tabs { display: flex; gap: 2px; min-width: 0; flex: 0 1 auto; overflow: hidden; }
+  .tab { position: relative; flex: 0 1 220px; min-width: 48px; height: 30px; display: flex; align-items: center; gap: 6px;
+         padding: 0 6px 0 10px; border-radius: 8px 8px 0 0; background: transparent; color: #aaa; cursor: default; }
+  .tab:hover { background: #26282c; color: #ddd; }
+  .tab.active { background: #2b2d31; color: #eee; }
+  .tab:not(.active):not(:hover) + .tab:not(.active):not(:hover)::before {
+    content: ''; position: absolute; left: -2px; top: 8px; bottom: 8px; width: 1px; background: #3a3d44; }
+  .fav { width: 16px; height: 16px; flex: none; display: grid; place-items: center; font-size: 12px; }
+  .fav img { width: 16px; height: 16px; }
+  .spin { width: 12px; height: 12px; border: 2px solid #555; border-top-color: #e8562a; border-radius: 50%;
+          animation: spin .8s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .title { flex: 1; min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-size: 13px; }
+  .x { flex: none; width: 20px; height: 20px; min-width: 0; padding: 0; border-radius: 5px; background: transparent;
+       color: #999; font-size: 14px; line-height: 20px; }
+  .x:hover { background: #4a4e57 !important; color: #fff; }
+  .tab.narrow .title { display: none; }
+  .tab.narrow:not(.active) .x { display: none; }
+  #newtab { flex: none; width: 28px; min-width: 0; height: 26px; margin: 0 0 2px 4px; padding: 0; background: transparent; font-size: 18px; color: #aaa; }
+  #newtab:hover { background: #3a3d44; color: #fff; }
+  #filler { flex: 1; height: 100%; }
+
+  /* ---- thanh địa chỉ ---- */
+  #bar { height: 44px; display: flex; align-items: center; gap: 6px; padding: 0 8px; }
   button { height: 30px; min-width: 32px; border: 0; border-radius: 6px; background: #3a3d44; color: #eee;
            font-size: 15px; cursor: pointer; padding: 0 8px; }
   button:hover:not(:disabled) { background: #4a4e57; }
@@ -23,23 +50,83 @@
 </style>
 </head>
 <body>
-  <button id="back" title="Quay lại">◀</button>
-  <button id="fwd" title="Tiến tới">▶</button>
-  <button id="reload" title="Tải lại (F5)">⟳</button>
-  <button id="home" title="Trang chủ">⌂</button>
-  <form id="f"><input id="url" spellcheck="false" placeholder="Nhập địa chỉ trang web hoặc file .swf rồi Enter"></form>
-  <button id="sethome" title="Đặt trang hiện tại làm trang chủ (lần sau mở app sẽ vào thẳng)">★ Đặt làm trang chủ</button>
-  <button id="inspect" title="Bảng kiểm tra: mạng, socket, console (Shift+Cmd+I)">🔍</button>
-  <span class="badge" id="badge">…</span>
+  <div id="tabbar">
+    <div id="tabs"></div>
+    <button id="newtab" title="Tab mới (Cmd+T)">+</button>
+    <div id="filler" title="Bấm đúp để mở tab mới"></div>
+  </div>
+  <div id="bar">
+    <button id="back" title="Quay lại">◀</button>
+    <button id="fwd" title="Tiến tới">▶</button>
+    <button id="reload" title="Tải lại (F5)">⟳</button>
+    <button id="home" title="Trang chủ">⌂</button>
+    <form id="f"><input id="url" spellcheck="false" placeholder="Nhập địa chỉ trang web hoặc file .swf rồi Enter"></form>
+    <button id="sethome" title="Đặt trang hiện tại làm trang chủ (lần sau mở app sẽ vào thẳng)">★ Đặt làm trang chủ</button>
+    <button id="history" title="Lịch sử (Cmd+Y)">🕘</button>
+    <button id="inspect" title="Bảng kiểm tra: mạng, socket, console (Shift+Cmd+I)">🔍</button>
+    <span class="badge" id="badge">…</span>
+  </div>
 <script>
   const $ = (id) => document.getElementById(id);
   $('back').onclick = () => nav.back();
   $('fwd').onclick = () => nav.forward();
   $('reload').onclick = () => nav.reload();
   $('home').onclick = () => nav.home();
+  $('history').onclick = () => nav.history();
   $('inspect').onclick = () => nav.inspect();
   $('sethome').onclick = () => { nav.setHome(); $('sethome').textContent = '✓ Đã lưu'; setTimeout(() => $('sethome').textContent = '★ Đặt làm trang chủ', 1500); };
   $('f').onsubmit = (e) => { e.preventDefault(); nav.go($('url').value); $('url').blur(); };
+  $('newtab').onclick = () => nav.newTab();
+  $('filler').ondblclick = () => nav.newTab();
+
+  // ---- vẽ thanh tab ----
+  function renderTabs({ tabs, active }) {
+    const box = $('tabs');
+    box.textContent = '';
+    for (const t of tabs) {
+      const el = document.createElement('div');
+      el.className = 'tab' + (t.id === active ? ' active' : '');
+      el.title = t.title + (t.url && t.url !== t.title ? '\n' + t.url : '');
+
+      const fav = document.createElement('span');
+      fav.className = 'fav';
+      if (t.loading) {
+        const s = document.createElement('span'); s.className = 'spin'; fav.appendChild(s);
+      } else if (t.history) {
+        fav.textContent = '🕘';
+      } else if (t.favicon) {
+        const img = document.createElement('img');
+        img.src = t.favicon;
+        img.onerror = () => { img.remove(); fav.textContent = '🌐'; };
+        fav.appendChild(img);
+      } else fav.textContent = '🌐';
+
+      const title = document.createElement('span');
+      title.className = 'title';
+      title.textContent = t.title;
+
+      const x = document.createElement('button');
+      x.className = 'x';
+      x.textContent = '×';
+      x.title = 'Đóng tab (Cmd+W)';
+      x.onmousedown = (e) => e.stopPropagation();
+      x.onclick = (e) => { e.stopPropagation(); nav.closeTab(t.id); };
+
+      el.append(fav, title, x);
+      el.onmousedown = (e) => { if (e.button === 0) nav.switchTab(t.id); };
+      el.onauxclick = (e) => { if (e.button === 1) nav.closeTab(t.id); }; // bấm chuột giữa → đóng
+      el.oncontextmenu = (e) => { e.preventDefault(); nav.tabMenu(t.id); };
+      box.appendChild(el);
+    }
+    fitTabs();
+  }
+  // Nhiều tab quá thì ẩn tiêu đề, chỉ còn icon
+  function fitTabs() {
+    for (const el of $('tabs').children) el.classList.toggle('narrow', el.getBoundingClientRect().width < 84);
+  }
+  window.addEventListener('resize', fitTabs);
+
+  nav.onTabs(renderTabs);
   nav.onState((s) => {
     if (document.activeElement !== $('url')) $('url').value = s.url;
     $('back').disabled = !s.canBack;

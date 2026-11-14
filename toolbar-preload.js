@@ -8,6 +8,12 @@ contextBridge.exposeInMainWorld('nav', {
   home: () => ipcRenderer.send('nav', 'home'),
   setHome: () => ipcRenderer.send('nav', 'sethome'),
   inspect: () => ipcRenderer.send('nav', 'inspect'),
+  history: () => ipcRenderer.send('nav', 'history'),
+  newTab: () => ipcRenderer.send('tab', 'new'),
+  closeTab: (id) => ipcRenderer.send('tab', 'close', id),
+  switchTab: (id) => ipcRenderer.send('tab', 'switch', id),
+  tabMenu: (id) => ipcRenderer.send('tab', 'menu', id),
   onState: (cb) => ipcRenderer.on('state', (_e, s) => cb(s)),
+  onTabs: (cb) => ipcRenderer.on('tabs', (_e, t) => cb(t)),
   ready: () => ipcRenderer.send('ready'),
 });
