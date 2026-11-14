@@ -96,6 +96,46 @@ Cấu hình bản cá nhân ở `electron-builder.personal.js` (lấy `build` tr
 App không có chữ ký: lần đầu mở thì chuột phải → **Open**, hoặc `xattr -cr "/Applications/Wisp.app"`.
 Không phát hành công khai bản `-personal.dmg` (có kèm plugin Flash); chỉ dùng cá nhân.
 
-## 6. Lưu ý bảo mật
+## 6. Cài lên máy khác
+
+Máy mới cần macOS chạy được app x64: máy Intel, hoặc máy chip M đã cài Rosetta (`softwareupdate --install-rosetta`).
+
+### Cách 1: bản cá nhân (có sẵn Flash)
+
+Trên máy build:
+
+1. `npm run dist:personal` → `dist/Wisp-<version>-personal.dmg`.
+2. Gửi file `.dmg` sang máy mới (AirDrop, USB, Drive…).
+
+Trên máy mới:
+
+1. Mở `.dmg`, kéo **Wisp** vào **Applications**.
+2. Bỏ chặn của Gatekeeper (app không có chữ ký Apple): `xattr -cr /Applications/Wisp.app`. Hoặc mở app một lần, bị chặn thì vào **System Settings → Privacy & Security** → **Open Anyway**.
+3. Mở Wisp: app tự chép plugin ra `~/Library/Application Support/Wisp/plugins/` và chạy Flash luôn.
+
+### Cách 2: bản phát hành + gửi plugin riêng
+
+Trên máy build:
+
+1. `npm run dist` → `dist/Wisp-<version>.dmg` (không kèm plugin).
+2. Nén plugin bằng `ditto` (giữ nguyên symlink + chữ ký; nén bằng Finder hay chép qua USB FAT có thể làm hỏng chữ ký, app sẽ từ chối):
+   ```bash
+   ditto -c -k --keepParent plugins/PepperFlashPlayer.plugin ~/Desktop/PepperFlash.zip
+   ```
+3. Gửi cả `.dmg` và `PepperFlash.zip` sang máy mới.
+
+Trên máy mới:
+
+1. Cài app như bước 1–2 của cách 1.
+2. Bấm đúp `PepperFlash.zip` để giải nén ra `PepperFlashPlayer.plugin`.
+3. Mở Wisp → hộp thoại báo chưa có Flash → **Chọn plugin…** → chọn file vừa giải nén → **Mở lại ngay**. (Sau này vẫn cài / thay được ở menu **Flash → Cài plugin Flash…**.)
+
+### Lưu ý
+
+- Đăng nhập (cookie) không đi theo: máy mới phải đăng nhập game lại.
+- Domain đã thêm vào allowlist nằm trong `~/Library/Application Support/Wisp/config.json`. Muốn mang sang thì chép file này vào đúng chỗ đó trên máy mới **trước** khi mở app lần đầu (`cmn.vn`, `cf4vn.bar` thì có sẵn).
+- Kiểm tra: menu **Flash → Kiểm tra Flash Player** phải báo "Flash Player đã nạp ✓", plugin nằm trong `Application Support/Wisp/plugins`.
+
+## 7. Lưu ý bảo mật
 
 Electron 11 (Chromium 87) và Flash 32 đều không còn được vá lỗi. Chỉ dùng app này để chơi game, không dùng để duyệt web chung, không đăng nhập tài khoản quan trọng.
