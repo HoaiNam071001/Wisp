@@ -1,0 +1,33 @@
+{
+  "name": "wisp",
+  "productName": "Wisp",
+  "version": "2.0.0",
+  "description": "Wisp — trình duyệt mở webgame Flash bằng Flash Player thật (Pepper Flash) trong Electron 11; dự phòng bằng Ruffle",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder --mac dmg --x64"
+  },
+  "dependencies": {
+    "@ruffle-rs/ruffle": "0.7.1"
+  },
+  "devDependencies": {
+    "electron": "11.5.0",
+    "electron-builder": "^24.13.3"
+  },
+  "build": {
+    "appId": "local.wisp",
+    "productName": "Wisp",
+    "mac": {
+      "category": "public.app-category.games",
+      "target": [{ "target": "dmg", "arch": ["x64"] }],
+      "identity": null
+    },
+    "files": ["main.js", "toolbar.html", "toolbar-preload.js", "inspect.html", "inspect-preload.js", "page-preload.js", "player.html", "package.json", "node_modules/**/*"],
+    "extraResources": [{ "from": "plugins", "to": "plugins", "filter": ["PepperFlashPlayer.plugin/**"] }],
+    "fileAssociations": [
+      { "ext": "swf", "name": "Flash Movie", "role": "Viewer" }
+    ],
+    "asarUnpack": ["node_modules/@ruffle-rs/ruffle/**"]
+  }
+}

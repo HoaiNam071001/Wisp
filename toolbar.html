@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<title>Wisp</title>
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'unsafe-inline'; script-src 'unsafe-inline'">
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; height: 44px; display: flex; align-items: center; gap: 6px; padding: 0 8px;
+         background: #2b2d31; font: 14px system-ui, sans-serif; color: #eee; user-select: none; }
+  button { height: 30px; min-width: 32px; border: 0; border-radius: 6px; background: #3a3d44; color: #eee;
+           font-size: 15px; cursor: pointer; padding: 0 8px; }
+  button:hover:not(:disabled) { background: #4a4e57; }
+  button:disabled { opacity: .35; cursor: default; }
+  form { flex: 1; display: flex; }
+  input { flex: 1; height: 30px; border: 1px solid #44474f; border-radius: 6px; background: #1e1f22; color: #eee;
+          padding: 0 10px; font-size: 14px; outline: none; }
+  input:focus { border-color: #e8562a; }
+  .badge { font-size: 11px; font-weight: 600; white-space: nowrap; padding: 3px 7px; border-radius: 5px;
+           background: #3a3d44; color: #aaa; }
+  .badge.flash { background: #1f4d2b; color: #7ee29a; }
+  .badge.ruffle { background: #4d3a1f; color: #f0b866; }
+</style>
+</head>
+<body>
+  <button id="back" title="Quay lại">◀</button>
+  <button id="fwd" title="Tiến tới">▶</button>
+  <button id="reload" title="Tải lại (F5)">⟳</button>
+  <button id="home" title="Trang chủ">⌂</button>
+  <form id="f"><input id="url" spellcheck="false" placeholder="Nhập địa chỉ trang web hoặc file .swf rồi Enter"></form>
+  <button id="sethome" title="Đặt trang hiện tại làm trang chủ (lần sau mở app sẽ vào thẳng)">★ Đặt làm trang chủ</button>
+  <button id="inspect" title="Bảng kiểm tra: mạng, socket, console (Shift+Cmd+I)">🔍</button>
+  <span class="badge" id="badge">…</span>
+<script>
+  const $ = (id) => document.getElementById(id);
+  $('back').onclick = () => nav.back();
+  $('fwd').onclick = () => nav.forward();
+  $('reload').onclick = () => nav.reload();
+  $('home').onclick = () => nav.home();
+  $('inspect').onclick = () => nav.inspect();
+  $('sethome').onclick = () => { nav.setHome(); $('sethome').textContent = '✓ Đã lưu'; setTimeout(() => $('sethome').textContent = '★ Đặt làm trang chủ', 1500); };
+  $('f').onsubmit = (e) => { e.preventDefault(); nav.go($('url').value); $('url').blur(); };
+  nav.onState((s) => {
+    if (document.activeElement !== $('url')) $('url').value = s.url;
+    $('back').disabled = !s.canBack;
+    $('fwd').disabled = !s.canForward;
+    $('reload').textContent = s.loading ? '✕' : '⟳';
+    const b = $('badge');
+    if (s.mode === 'flash') {
+      b.className = 'badge flash'; b.textContent = 'FLASH ' + (s.version || '');
+      b.title = 'Đang dùng Flash Player thật (Pepper Flash)';
+    } else {
+      b.className = 'badge ruffle'; b.textContent = 'RUFFLE';
+      b.title = s.wantedFlash ? 'Chưa có PepperFlashPlayer.plugin — đang chạy tạm bằng Ruffle' : 'Chế độ Ruffle (giả lập Flash)';
+    }
+  });
+  nav.ready();
+</script>
+</body>
+</html>
