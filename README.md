@@ -41,10 +41,15 @@ WISP_USER_DATA=/tmp/wisp-dev WISP_INSPECT=1 FLASH_URL=https://cf4vn.bar/ npm sta
 
 ## 2. Plugin Flash (bắt buộc cho chế độ Flash thật)
 
-App **không** kèm sẵn plugin. Đặt `PepperFlashPlayer.plugin` (PPAPI, x64, bản 32.0.0.x) vào một trong hai chỗ:
+Bản phát hành **không** kèm plugin của Adobe. Plugin (`PepperFlashPlayer.plugin`, PPAPI, x64, bản 32.0.0.x) được cài riêng vào
+`~/Library/Application Support/Wisp/plugins/`, nên cập nhật hay cài lại `Wisp.app` không làm mất plugin.
 
-- `plugins/PepperFlashPlayer.plugin` (trong thư mục này; sẽ được đóng gói vào app)
-- `/Library/Internet Plug-Ins/PepperFlashPlayer/PepperFlashPlayer.plugin` (chỗ bộ cài Adobe từng cài)
+Cách cài:
+
+- **Chọn file**: chưa có plugin thì app hỏi "Chọn plugin…" ngay khi mở (hoặc menu **Flash → Cài plugin Flash…**). App kiểm tra chữ ký (`codesign`, phải do *Adobe Inc. (JQ525L2MZD)* ký và có bản x86_64), chép vào thư mục trên rồi mở lại.
+- **Tự chép lần đầu**: bản build cá nhân (`npm run dist:personal`) hoặc chạy dev có `plugins/PepperFlashPlayer.plugin` → lần đầu chạy app tự chép plugin sang thư mục trên.
+
+App tìm plugin theo thứ tự: `userData/plugins/` → plugin kèm trong app / `plugins/` khi chạy dev → `/Library/Internet Plug-Ins/PepperFlashPlayer/` → `~/Library/Internet Plug-Ins/PepperFlashPlayer/`.
 
 Version được đọc tự động từ `Info.plist` / `manifest.json` của plugin. Chưa có plugin thì app báo lỗi và chạy tạm bằng Ruffle.
 ⚠️ Chỉ lấy plugin từ nguồn tin cậy. Flash không còn được vá lỗi và hay bị phát tán kèm mã độc.
@@ -82,11 +87,14 @@ Dữ liệu nằm ở `~/Library/Application Support/Wisp/`. Lần đầu chạy
 ## 5. Đóng gói `.dmg`
 
 ```bash
-npm run dist        # electron-builder --mac dmg --x64, kèm thư mục plugins/
+npm run dist            # bản phát hành: dist/Wisp-<version>.dmg, KHÔNG kèm plugin Flash
+npm run dist:personal   # bản cá nhân: dist/Wisp-<version>-personal.dmg, kèm plugins/PepperFlashPlayer.plugin
 ```
 
+Cấu hình bản cá nhân ở `electron-builder.personal.js` (lấy `build` trong `package.json`, thêm plugin).
+
 App không có chữ ký: lần đầu mở thì chuột phải → **Open**, hoặc `xattr -cr "/Applications/Wisp.app"`.
-Không phát hành công khai bản `.dmg` có kèm plugin Flash; chỉ dùng cá nhân.
+Không phát hành công khai bản `-personal.dmg` (có kèm plugin Flash); chỉ dùng cá nhân.
 
 ## 6. Lưu ý bảo mật
 

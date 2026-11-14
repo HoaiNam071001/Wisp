@@ -36,12 +36,12 @@ Việc tiếp:
 
 Không dùng `electron-updater`: trên macOS nó chỉ tự cài khi app có chữ ký Apple (app đang `identity: null`). Tự viết bộ cập nhật dựa trên **GitHub Releases** của repo public `HoaiNam071001/Wisp` (gọi API không cần token).
 
-### 3.1 Tách plugin Flash khỏi app (làm trước)
+### 3.1 Tách plugin Flash khỏi app (✅)
 Lý do: bản phát hành công khai không được kèm plugin của Adobe, và cập nhật thay cả `Wisp.app` thì plugin không được mất.
-- ⬜ Thêm vị trí tìm plugin `~/Library/Application Support/Wisp/plugins/PepperFlashPlayer.plugin` (đứng đầu danh sách trong `findFlashPlugin`).
-- ⬜ Lần đầu chạy: nếu plugin đang nằm trong app (`resources/plugins`) mà chưa có ở `userData/plugins` → chép ra.
-- ⬜ Chưa có plugin ở đâu cả → hộp thoại "Chọn PepperFlashPlayer.plugin…" (chép vào `userData/plugins`), thay cho thông báo hiện tại.
-- ⬜ Bỏ `extraResources` plugin khỏi `package.json` cho bản phát hành (giữ một script build riêng có kèm plugin nếu cần dùng cá nhân).
+- ✅ Vị trí tìm plugin `~/Library/Application Support/Wisp/plugins/PepperFlashPlayer.plugin` đứng đầu danh sách trong `findFlashPlugin`.
+- ✅ Lần đầu chạy: plugin đang nằm trong app (`resources/plugins`, hoặc `plugins/` khi dev) mà chưa có ở `userData/plugins` → chép ra bằng `ditto`.
+- ✅ Chưa có plugin → hộp thoại "Chọn plugin…" (cũng có ở menu Flash → Cài / Thay plugin Flash…). Kiểm tra `codesign --verify --deep --strict`, Team ID Adobe `JQ525L2MZD`, có x86_64; chép vào `userData/plugins` rồi mời mở lại app.
+- ✅ Bỏ `extraResources` khỏi `package.json`; bản cá nhân kèm plugin: `npm run dist:personal` (`electron-builder.personal.js`, ra `Wisp-<version>-personal.dmg`).
 
 ### 3.2 Phát hành
 - ⬜ `npm run release`: tăng version (`npm version patch|minor`), `electron-builder --mac zip dmg --x64`, tính `sha256` của file zip, `gh release create vX.Y.Z` đính kèm `Wisp-X.Y.Z-mac.zip`, `.sha256`, `.dmg`, ghi chú phát hành lấy từ commit.

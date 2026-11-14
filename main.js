@@ -5,7 +5,7 @@ const { app, BrowserWindow, BrowserView, protocol, session, ipcMain, Menu, dialo
 const path = require('path');
 const fs = require('fs');
 const net = require('net');
-const { execFile } = require('child_process');
+const { execFile, execFileSync, spawnSync } = require('child_process');
 const { pathToFileURL } = require('url');
 
 // ====== ĐỔI ĐỊA CHỈ TRANG MẶC ĐỊNH Ở ĐÂY (hoặc bấm "★ Đặt làm trang chủ") ======
@@ -63,13 +63,54 @@ function allowDomains() {
 }
 
 // ---------- tìm plugin Flash ----------
+// Plugin nằm ngoài app, ở userData/plugins, để cập nhật (thay cả Wisp.app) không làm mất plugin
+// và bản phát hành công khai không phải kèm phần mềm của Adobe.
+const ADOBE_TEAM_ID = 'JQ525L2MZD'; // "Developer ID Application: Adobe Inc."
+function userPluginPath() { return path.join(app.getPath('userData'), 'plugins', PLUGIN_NAME); }
+// Plugin đóng gói sẵn trong app (bản build cá nhân: npm run dist:personal) hoặc thư mục plugins/ khi chạy dev
+function bundledPluginPath() {
+  return app.isPackaged ? path.join(process.resourcesPath, 'plugins', PLUGIN_NAME) : path.join(__dirname, 'plugins', PLUGIN_NAME);
+}
+
 function findFlashPlugin() {
   const candidates = [
-    app.isPackaged ? path.join(process.resourcesPath, 'plugins', PLUGIN_NAME) : path.join(__dirname, 'plugins', PLUGIN_NAME),
+    userPluginPath(),
+    bundledPluginPath(),
     path.join('/Library/Internet Plug-Ins/PepperFlashPlayer', PLUGIN_NAME),
     path.join(app.getPath('home'), 'Library/Internet Plug-Ins/PepperFlashPlayer', PLUGIN_NAME),
   ];
   return candidates.find(p => fs.existsSync(p)) || null;
+}
+
+// Kiểm tra plugin là bản thật của Adobe: chữ ký hợp lệ + đúng Team ID của Adobe + có bản x86_64
+function verifyFlashPlugin(p) {
+  if (path.basename(p) !== PLUGIN_NAME) return `Tên phải là ${PLUGIN_NAME}`;
+  const bin = path.join(p, 'Contents', 'MacOS', 'PepperFlashPlayer');
+  if (!fs.existsSync(bin)) return 'Không phải plugin Pepper Flash (thiếu Contents/MacOS/PepperFlashPlayer)';
+  try { execFileSync('/usr/bin/codesign', ['--verify', '--deep', '--strict', p], { stdio: 'pipe' }); }
+  catch (e) { return 'Chữ ký không hợp lệ (file đã bị sửa hoặc không phải bản của Adobe):\n' + String(e.stderr || e.message).trim(); }
+  const r = spawnSync('/usr/bin/codesign', ['-dv', p], { encoding: 'utf8' });
+  if (!new RegExp(`TeamIdentifier=${ADOBE_TEAM_ID}\\b`).test(r.stderr || '')) return 'Plugin không do Adobe ký';
+  const arch = spawnSync('/usr/bin/lipo', ['-archs', bin], { encoding: 'utf8' }).stdout || '';
+  if (!/x86_64/.test(arch)) return `Plugin không có bản x86_64 (đang là: ${arch.trim() || 'không rõ'})`;
+  return null;
+}
+
+// Chép plugin vào userData/plugins (ditto giữ nguyên symlink + chữ ký); chép ra chỗ tạm rồi đổi tên
+function installFlashPlugin(src) {
+  const dest = userPluginPath();
+  const tmp = dest + '.tmp';
+  fs.mkdirSync(path.dirname(dest), { recursive: true });
+  if (fs.existsSync(tmp)) fs.rmdirSync(tmp, { recursive: true });
+  execFileSync('/usr/bin/ditto', [src, tmp]);
+  if (fs.existsSync(dest)) fs.rmdirSync(dest, { recursive: true });
+  fs.renameSync(tmp, dest);
+  return dest;
+}
+
+// Lần đầu chạy: plugin đang nằm trong app mà chưa có ở userData → chép ra
+if (!fs.existsSync(userPluginPath()) && fs.existsSync(bundledPluginPath())) {
+  try { installFlashPlugin(bundledPluginPath()); } catch (e) { console.error('Không chép được plugin Flash:', e); }
 }
 
 // Đọc version của plugin (manifest.json hoặc Info.plist) để truyền cho ppapi-flash-version
@@ -263,15 +304,7 @@ function createWindow() {
   buildMenu();
   w.loadURL(startUrl);
 
-  if (wantedMode === 'flash' && !FLASH_PATH) {
-    setTimeout(() => dialog.showMessageBox(win, {
-      type: 'warning',
-      message: 'Chưa tìm thấy Flash Player (PepperFlashPlayer.plugin)',
-      detail: 'App đang chạy tạm bằng Ruffle (không chơi được game online cần socket).\n\n' +
-        'Hãy đặt PepperFlashPlayer.plugin (bản PPAPI, x64, 32.0.0.x) vào thư mục "plugins" của app ' +
-        'hoặc /Library/Internet Plug-Ins/PepperFlashPlayer/, rồi mở lại app.',
-    }), 800);
-  }
+  if (wantedMode === 'flash' && !FLASH_PATH) setTimeout(askForFlashPlugin, 800);
 }
 
 // ---------- điều hướng từ thanh công cụ ----------
@@ -625,6 +658,50 @@ async function checkFlash() {
   });
 }
 
+// ---------- cài plugin Flash (chọn file, kiểm tra chữ ký, chép vào userData/plugins) ----------
+async function askForFlashPlugin() {
+  if (!win) return;
+  const { response } = await dialog.showMessageBox(win, {
+    type: 'warning',
+    message: 'Chưa có Flash Player (PepperFlashPlayer.plugin)',
+    detail: 'App đang chạy tạm bằng Ruffle (không chơi được game online cần socket).\n\n' +
+      'Chọn file PepperFlashPlayer.plugin (bản PPAPI, x64, 32.0.0.x) để cài. ' +
+      'App chỉ nhận plugin có chữ ký hợp lệ của Adobe.',
+    buttons: ['Chọn plugin…', 'Để sau'], defaultId: 0, cancelId: 1,
+  });
+  if (response === 0) choosePluginFile();
+}
+
+async function choosePluginFile() {
+  const r = await dialog.showOpenDialog(win, {
+    title: `Chọn ${PLUGIN_NAME}`,
+    properties: ['openFile', 'openDirectory'],
+    filters: [{ name: 'Pepper Flash', extensions: ['plugin'] }],
+  });
+  if (r.canceled || !r.filePaths[0]) return;
+  let src = r.filePaths[0];
+  // chọn nhầm thư mục chứa plugin (vd. .../PepperFlashPlayer/) thì tìm bên trong
+  if (path.basename(src) !== PLUGIN_NAME && fs.existsSync(path.join(src, PLUGIN_NAME))) src = path.join(src, PLUGIN_NAME);
+  const err = verifyFlashPlugin(src);
+  if (err) {
+    dialog.showMessageBox(win, { type: 'error', message: 'Không cài được plugin này', detail: `${src}\n\n${err}` });
+    return;
+  }
+  try {
+    if (path.resolve(src) !== path.resolve(userPluginPath())) installFlashPlugin(src);
+  } catch (e) {
+    dialog.showMessageBox(win, { type: 'error', message: 'Chép plugin bị lỗi', detail: String(e.message || e) });
+    return;
+  }
+  saveConfig({ mode: 'flash' });
+  const { response } = await dialog.showMessageBox(win, {
+    type: 'info', message: `Đã cài Flash Player ${readFlashVersion(userPluginPath())} ✓`,
+    detail: `Plugin nằm ở:\n${userPluginPath()}\n\nMở lại app để dùng Flash thật.`,
+    buttons: ['Mở lại ngay', 'Để sau'], defaultId: 0, cancelId: 1,
+  });
+  if (response === 0) { app.relaunch(); app.exit(0); }
+}
+
 async function openSwfFile() {
   const r = await dialog.showOpenDialog(win, { properties: ['openFile'], filters: [{ name: 'Flash', extensions: ['swf'] }] });
   if (!r.canceled && r.filePaths[0] && wc()) wc().loadURL(normalizeUrl(r.filePaths[0]));
@@ -665,6 +742,8 @@ function buildMenu() {
     ]},
     { label: 'Flash', submenu: [
       { label: 'Kiểm tra Flash Player', click: checkFlash },
+      { label: FLASH_PATH ? 'Thay plugin Flash…' : 'Cài plugin Flash…', click: choosePluginFile },
+      { label: 'Mở thư mục plugin', click: () => { const d = path.dirname(userPluginPath()); fs.mkdirSync(d, { recursive: true }); shell.openPath(d); } },
       { type: 'separator' },
       { label: 'Chế độ: Flash Player thật', type: 'radio', checked: wantedMode === 'flash', enabled: !!FLASH_PATH || wantedMode === 'flash', click: () => setMode('flash') },
       { label: 'Chế độ: Ruffle (dự phòng)', type: 'radio', checked: wantedMode === 'ruffle', click: () => setMode('ruffle') },

@@ -6,7 +6,8 @@
   "main": "main.js",
   "scripts": {
     "start": "electron .",
-    "dist": "electron-builder --mac dmg --x64"
+    "dist": "electron-builder --mac dmg --x64",
+    "dist:personal": "electron-builder --mac dmg --x64 --config electron-builder.personal.js"
   },
   "dependencies": {
     "@ruffle-rs/ruffle": "0.7.1"
@@ -24,7 +25,6 @@
       "identity": null
     },
     "files": ["main.js", "toolbar.html", "toolbar-preload.js", "inspect.html", "inspect-preload.js", "page-preload.js", "player.html", "package.json", "node_modules/**/*"],
-    "extraResources": [{ "from": "plugins", "to": "plugins", "filter": ["PepperFlashPlayer.plugin/**"] }],
     "fileAssociations": [
       { "ext": "swf", "name": "Flash Movie", "role": "Viewer" }
     ],
