@@ -149,6 +149,10 @@ function mmsCfgContent() {
     'AutoUpdateDisable=1',
     'SilentAutoUpdateEnable=0',
     'EnableAllowList=1',
+    // Chỉ kiểm tra SWF gốc. Không có dòng này, Flash kiểm tra cả SWF con, request
+    // và socket: mẫu "*://domain/" không khớp URL có cổng (xmlsocket://game.cf4vn.bar:49119)
+    // → Flash lặng lẽ không nối tới máy chủ game → game báo 登陆超时.
+    'AllowListRootMovieOnly=1',
   ];
   for (const d of allowDomains()) {
     lines.push(`AllowListUrlPattern=*://${d}/`);
@@ -445,7 +449,18 @@ function createWindow() {
   });
   win.loadFile(path.join(__dirname, 'toolbar.html'));
   win.on('resize', layout);
-  win.on('closed', () => { win = null; tabs = []; activeId = null; });
+  // Nhớ tab trước khi cửa sổ đóng (sau 'closed' danh sách tab đã bị xoá)
+  win.on('close', () => { if (loadConfig().restoreTabs !== false) saveSession(); });
+  win.on('closed', () => {
+    // BrowserView không tự huỷ theo cửa sổ → DevTools (detach) của tab vẫn còn,
+    // Bảng kiểm tra cũng là cửa sổ riêng → đóng hết để app thoát hẳn
+    tabs.forEach(t => {
+      try { const w = t.view.webContents; if (!w.isDestroyed()) { w.closeDevTools(); w.destroy(); } } catch {}
+    });
+    win = null; tabs = []; activeId = null;
+    if (inspectorOpen()) inspectWin.close();
+    closeMenuPopup();
+  });
 
   buildMenu();
   const cfg = loadConfig();

@@ -15,22 +15,17 @@ Trạng thái: ✅ xong · 🔄 đang làm · ⬜ chưa làm
 | Bảng kiểm tra | Mạng / Socket TCP / Console / Flash, thử kết nối, NetLog, báo cáo JSON | `inspect.html`, `inspect-preload.js`, `main.js` |
 | Chạy thử dev | `WISP_USER_DATA` (dữ liệu riêng), `WISP_INSPECT=1` (mở sẵn bảng) | `main.js` |
 
-## 2. 🔄 Lỗi đăng nhập cf4vn.bar (`登陆超时，请稍后再试`)
+## 2. ✅ Lỗi đăng nhập cf4vn.bar (`登陆超时，请稍后再试`)
 
 Người khác vào được, Wisp thì báo "đăng nhập quá thời gian chờ".
 
-Đã biết:
-- Máy chủ game `game.cf4vn.bar` (103.116.39.95): cổng game **49119**, policy Flash **41843** (từ `https://cf4vn.bar/rez/server.cub`).
-- Từ máy này hai cổng đều mở; policy cho phép `cf4vn.bar` → mạng không bị chặn.
-- Máy chủ có hàng chờ (133/133 người); chưa lần nào bắt được lúc Flash nối tới 49119.
+Nguyên nhân: allowlist của Flash 32 (`mms.cfg`, `EnableAllowList=1`) mặc định kiểm tra **mọi** URL Flash tải / nối tới, kể cả socket. Mẫu `AllowListUrlPattern=*://*.cf4vn.bar/` **không khớp URL có cổng** (`game.cf4vn.bar:49119`), nên Flash lặng lẽ không mở socket tới máy chủ game (không có lsof, không có trong NetLog) rồi game báo hết thời gian đăng nhập. Flash vẫn tự báo lỗi về `offline.html?...msg=connect login svr overtime game.cf4vn.bar49119`.
 
-Việc tiếp:
-1. ⬜ Build lại app có Bảng kiểm tra (hoặc chạy bản dev).
-2. ⬜ Mở Bảng kiểm tra **trước khi** bấm Vào game, chờ tới lượt, đọc tab Socket TCP:
-   - không có dòng `:49119` → Flash không nối (lỗi phía Wisp/Flash);
-   - `SYN_SENT` / "đóng, chưa nối được" → bị chặn;
-   - `ESTABLISHED` rồi đóng → máy chủ ngắt / không trả lời (so với Mạng + Console).
-3. ⬜ Nếu lsof không thấy gì: bật NetLog, làm lại, mở file bằng netlog-viewer.
+Sửa: thêm `AllowListRootMovieOnly=1` vào `mms.cfg` (chỉ kiểm tra SWF gốc). Đã thử bản dev: vào được game, socket `103.116.39.95:49119` ESTABLISHED.
+
+Ghi chú khi gỡ lỗi:
+- `AllowListPreview=1` (menu "Ghi log allowlist") **không** tắt việc chặn.
+- Chạy dev từ terminal VS Code phải `env -u ELECTRON_RUN_AS_NODE`.
 
 ## 3. 🟡 Cập nhật app (tự động + bằng tay)
 
