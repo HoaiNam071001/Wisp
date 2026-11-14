@@ -17,6 +17,28 @@ npm start
 
 Kiểm tra Electron đúng bản x64: `file node_modules/electron/dist/Electron.app/Contents/MacOS/Electron` phải ra `x86_64`.
 
+### Chạy dev
+
+```bash
+npm start
+```
+
+Đang mở sẵn `Wisp.app` bản đã cài thì chạy bản dev với thư mục dữ liệu riêng để hai bản không dùng chung cookie / đăng nhập:
+
+```bash
+WISP_USER_DATA=/tmp/wisp-dev WISP_INSPECT=1 FLASH_URL=https://cf4vn.bar/ npm start
+```
+
+| Biến | Tác dụng |
+|---|---|
+| `WISP_USER_DATA` | Thư mục dữ liệu riêng cho bản dev (không đụng `~/Library/Application Support/Wisp`) |
+| `WISP_INSPECT=1` | Tự mở Bảng kiểm tra khi khởi động |
+| `FLASH_URL` | Mở thẳng địa chỉ này thay cho trang chủ (cũng nhận đường dẫn file `.swf`) |
+
+- Báo lỗi `Cannot read property 'getPath' of undefined` → terminal (hay gặp trong VS Code) đang có biến `ELECTRON_RUN_AS_NODE`. Thêm `env -u ELECTRON_RUN_AS_NODE` vào đầu lệnh, vd. `env -u ELECTRON_RUN_AS_NODE npm start`.
+- App không tự tải lại khi sửa code: tắt app rồi chạy lại lệnh. Trang web thì Cmd+R là đủ.
+- Đóng gói: `npm run dist` → `dist/Wisp-<version>.dmg` (xem mục 5).
+
 ## 2. Plugin Flash (bắt buộc cho chế độ Flash thật)
 
 App **không** kèm sẵn plugin. Đặt `PepperFlashPlayer.plugin` (PPAPI, x64, bản 32.0.0.x) vào một trong hai chỗ:
@@ -54,7 +76,6 @@ Nếu Flash vẫn bị chặn: bật **Flash → Ghi log allowlist** (thêm `All
   - **Console & sự kiện**: console của trang, lỗi tải trang, plugin crash, mở/đóng socket.
   - **Flash**: plugin, version, User-Agent, nội dung `mms.cfg`.
   - **Lưu báo cáo**: lưu toàn bộ log ra file JSON để gửi người khác xem.
-- Chạy thử bản dev song song với bản đã cài mà không đụng dữ liệu: `WISP_USER_DATA=/tmp/wisp-dev WISP_INSPECT=1 npm start` (`WISP_INSPECT=1` tự mở Bảng kiểm tra). Nếu chạy từ terminal của VS Code thì thêm `env -u ELECTRON_RUN_AS_NODE` ở đầu lệnh.
 
 Dữ liệu nằm ở `~/Library/Application Support/Wisp/`. Lần đầu chạy, app tự chuyển thư mục cũ `Flash Browser 2/` sang (giữ đăng nhập); nếu chỉ có bản 1 thì chép trang chủ từ `Flash Browser/config.json` (cookie bản 1 do Electron 45 tạo, Chromium 87 không đọc được).
 
