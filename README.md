@@ -44,9 +44,16 @@ WISP_USER_DATA=/tmp/wisp-dev WISP_INSPECT=1 FLASH_URL=https://cf4vn.bar/ npm sta
 Bản phát hành **không** kèm plugin của Adobe. Plugin (`PepperFlashPlayer.plugin`, PPAPI, x64, bản 32.0.0.x) được cài riêng vào
 `~/Library/Application Support/Wisp/plugins/`, nên cập nhật hay cài lại `Wisp.app` không làm mất plugin.
 
-Cách cài:
+Cách cài (chưa có plugin thì app tự hỏi khi mở; hoặc bấm nhãn **RUFFLE · CÀI FLASH** trên thanh công cụ, **⋮ → Tải và cài Flash Player**, menu **Flash → Cài Flash Player…**):
 
-- **Chọn file**: chưa có plugin thì app hỏi "Chọn plugin…" ngay khi mở (hoặc menu **Flash → Cài plugin Flash…**). App kiểm tra chữ ký (`codesign`, phải do *Adobe Inc. (JQ525L2MZD)* ký và có bản x86_64), chép vào thư mục trên rồi mở lại.
+- **Tải và cài tự động**: app tải bộ cài `install_flash_player_osx_ppapi.dmg` (32.0.0.465, ~15 MB) từ [archive.org](https://archive.org/details/adobe-flash-player-archive_202012) — Adobe đã gỡ bản cài khỏi trang của họ — kiểm tra MD5 `01276b441efca664141d42dc9680a2be`, rồi cài như bên dưới.
+- **Chọn file đã tải**: chọn file `.dmg` / `.pkg` / `.zip` / `.app` của bộ cài Adobe Pepper Flash (PPAPI), hoặc chính `PepperFlashPlayer.plugin`.
+- **Mở trang tải**: mở trang archive.org trong trình duyệt để tải tay.
+
+App **không chạy bộ cài của Adobe**: nó tự mở gói (`hdiutil attach` .dmg → `.app` → `pkgutil --expand-full` .pkg → payload `PepperFlashPlayer.plugin.lzma`), giải nén payload LZMA bằng thư viện `lzma` (JS thuần), dựng lại thư mục plugin. Sau đó kiểm tra chữ ký (`codesign`, phải do *Adobe Inc. (JQ525L2MZD)* ký và có bản x86_64), chép vào thư mục trên rồi mở lại.
+
+Định dạng payload `.lzma` của Adobe: 11 byte đầu riêng (byte 7–10 là kích thước sau giải nén, big-endian), tiếp theo là luồng LZMA (5 byte thuộc tính + dữ liệu). Sau giải nén là cây thư mục, mỗi mục = `[loại][cờ, 0x80 = thư mục][độ dài tên][tên][kích thước nội dung, 4 byte big-endian][nội dung]`.
+
 - **Tự chép lần đầu**: bản build cá nhân (`npm run dist:personal`) hoặc chạy dev có `plugins/PepperFlashPlayer.plugin` → lần đầu chạy app tự chép plugin sang thư mục trên.
 
 App tìm plugin theo thứ tự: `userData/plugins/` → plugin kèm trong app / `plugins/` khi chạy dev → `/Library/Internet Plug-Ins/PepperFlashPlayer/` → `~/Library/Internet Plug-Ins/PepperFlashPlayer/`.
@@ -72,17 +79,34 @@ Nếu Flash vẫn bị chặn: bật **Flash → Ghi log allowlist** (thêm `All
 - **Flash → Kiểm tra Flash Player**: xem `navigator.plugins`, version, kiến trúc, đường dẫn `mms.cfg`.
 - **Flash → Chế độ: Flash Player thật / Ruffle**: đổi chế độ (app khởi động lại).
 - Huy hiệu trên thanh công cụ: xanh `FLASH 32.0.0.x` là Flash thật, cam `RUFFLE` là đang giả lập.
-- Gõ địa chỉ rồi Enter (Cmd+L). **★ Đặt làm trang chủ** để lần sau mở vào thẳng trang đó. Mặc định là `DEFAULT_URL` trong `main.js`.
+- Gõ địa chỉ rồi Enter (Cmd+L). Mặc định mở `DEFAULT_URL` trong `main.js`; đổi bằng **⋮ → Đặt trang này làm trang chủ**.
 - Mở file `.swf`: Cmd+O, gõ đường dẫn (`~/Downloads/game.swf`), hoặc kéo file vào icon app.
-- Phím tắt: Cmd+R tải lại, Ctrl+Cmd+F toàn màn hình, Cmd+= / Cmd+- / Cmd+0 zoom, Alt+Cmd+I DevTools.
-- **Bảng kiểm tra** (nút 🔍 trên thanh công cụ, hoặc Shift+Cmd+I) để gỡ lỗi game không vào được:
+- **Tab**: Cmd+T tab mới, Cmd+W đóng (hoặc chuột giữa), Shift+Cmd+T mở lại tab vừa đóng, Ctrl+Tab / Cmd+1…9 chuyển tab, chuột phải vào tab để nhân bản / đóng tab khác. Popup và link mở cửa sổ mới mở thành tab mới. Tab đang phát tiếng có 🔊, bấm để tắt tiếng (Shift+Cmd+M).
+- **Lịch sử**: Cmd+Y hoặc `wisp://history`; tìm kiếm, xoá từng trang, xoá theo giờ qua / hôm nay / toàn bộ. Lưu ở `history.json`.
+- **Nút ⋮** (góc phải): lịch sử, thu phóng, chụp màn hình tab (Shift+Cmd+S, lưu vào `~/Pictures/Wisp` và clipboard), Bảng kiểm tra, xoá cache và tải lại, menu Flash, tuỳ chọn.
+- **Ô hiệu năng** trên thanh công cụ: ping tới máy chủ game (chấm xanh < 80ms, vàng < 150ms, đỏ: cao / mất gói) và CPU. Bấm để mở bảng Hiệu năng.
+- **Tuỳ chọn** (menu Tuỳ chọn hoặc ⋮ → Tuỳ chọn), mặc định đều bật:
+  - Mở lại các tab lần trước khi mở app.
+  - Chống App Nap: macOS không hãm game khi cửa sổ bị che / thu nhỏ.
+  - Theo dõi ping máy chủ game.
+- Phím tắt: Cmd+R tải lại, Shift+Cmd+R tải lại không dùng cache, Ctrl+Cmd+F toàn màn hình, Cmd+= / Cmd+- / Cmd+0 zoom, Alt+Cmd+I DevTools.
+- **Bảng kiểm tra** (bấm ô hiệu năng, ⋮, hoặc Shift+Cmd+I):
+  - **Hiệu năng**: ping, mất gói, dao động ping của máy chủ game; CPU / RAM của Wisp, của Flash và từng tab; biểu đồ vài phút gần nhất. Cảnh báo vào Console khi Flash ăn CPU ≥ 90% liên tục, tab dùng > 1,5 GB RAM, hoặc mất ≥ 50% gói ping. Ping đo bằng ICMP; máy chủ chặn ICMP thì đo thời gian mở kết nối TCP tới cổng game (10 giây / lần).
   - **Mạng**: mọi request HTTP của trang, kể cả request do Flash gửi (lọc, chỉ lỗi, xem header, sao chép cURL).
-  - **Socket TCP**: các kết nối TCP của Wisp, đọc bằng `lsof` khi bảng đang mở, nên **mở bảng trước khi vào game**. `SYN_SENT` mãi hoặc "đóng, chưa nối được" là bị chặn; `ESTABLISHED` rồi đóng là máy chủ ngắt. Ô **Thử kết nối** nối thẳng tới host:port, có thể kèm xin policy Flash. Nút **NetLog** ghi log mạng chi tiết của Chromium vào Downloads (mở bằng netlog-viewer.appspot.com).
+  - **Socket TCP**: các kết nối TCP của Wisp, đọc bằng `lsof` (mỗi 2s, mỗi 0,4s khi bảng đang mở; kết nối quá ngắn có thể bị sót nên **mở bảng trước khi vào game** nếu cần soi kỹ). `SYN_SENT` mãi hoặc "đóng, chưa nối được" là bị chặn; `ESTABLISHED` rồi đóng là máy chủ ngắt. Ô **Thử kết nối** nối thẳng tới host:port, có thể kèm xin policy Flash. Nút **NetLog** ghi log mạng chi tiết của Chromium vào Downloads (mở bằng netlog-viewer.appspot.com).
   - **Console & sự kiện**: console của trang, lỗi tải trang, plugin crash, mở/đóng socket.
   - **Flash**: plugin, version, User-Agent, nội dung `mms.cfg`.
   - **Lưu báo cáo**: lưu toàn bộ log ra file JSON để gửi người khác xem.
 
 Dữ liệu nằm ở `~/Library/Application Support/Wisp/`. Lần đầu chạy, app tự chuyển thư mục cũ `Flash Browser 2/` sang (giữ đăng nhập); nếu chỉ có bản 1 thì chép trang chủ từ `Flash Browser/config.json` (cookie bản 1 do Electron 45 tạo, Chromium 87 không đọc được).
+
+## 4b. Cập nhật app
+
+App tự kiểm tra bản mới trên GitHub Releases (10 giây sau khi mở, rồi mỗi 6 giờ). Có bản mới thì thanh công cụ hiện nút **Cập nhật x.y.z** màu cam (và chấm cam trên ⋮). Bấm → xem ghi chú phát hành → **Cập nhật ngay**: app tải `Wisp-x.y.z-mac.zip`, kiểm tra `sha256`, giải nén, thoát, thay `Wisp.app` rồi tự mở lại. Plugin Flash, đăng nhập, lịch sử, tab đang mở được giữ nguyên (nằm ở thư mục dữ liệu, không nằm trong app).
+
+Kiểm tra bằng tay: menu **Wisp → Kiểm tra cập nhật…** hoặc **⋮ → Kiểm tra cập nhật**. Bản cũ hơn 2.2.0 chưa có bộ cập nhật, phải cài tay một lần.
+
+Phát hành bản mới (để app nhận được): release trên GitHub phải đính kèm `Wisp-x.y.z-mac.zip` và `Wisp-x.y.z-mac.zip.sha256` (`shasum -a 256 Wisp-x.y.z-mac.zip > Wisp-x.y.z-mac.zip.sha256`), tag dạng `vx.y.z`, không phải bản nháp / pre-release.
 
 ## 5. Đóng gói `.dmg`
 

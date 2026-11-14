@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<title>Menu</title>
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'unsafe-inline'; script-src 'unsafe-inline'">
+<style>
+  :root {
+    --card: #25272c; --surface: #2f3137; --hover: #363940; --border: #3b3e46; --line: #31343a;
+    --text: #e8e9eb; --muted: #9da0a8; --faint: #6f737b;
+    --brand: #ff6a3d; --blue: #4c8dff; --indigo: #7c83ff; --green: #3fb950; --amber: #e3a008;
+    --red: #f85149; --purple: #a371f7; --teal: #2bb3a3; --pink: #e05fa8; --gray: #8b949e;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: transparent; }
+  body { padding: 4px 6px 10px; font: 13px system-ui, -apple-system, sans-serif; color: var(--text); user-select: none; overflow: hidden; }
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 8px;
+          box-shadow: 0 12px 32px rgba(0,0,0,.45), 0 2px 6px rgba(0,0,0,.3); max-height: calc(100vh - 14px); overflow-y: auto; }
+  .card::-webkit-scrollbar { width: 8px; } .card::-webkit-scrollbar-thumb { background: #44474f; border-radius: 4px; }
+  svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+  button { font: inherit; color: inherit; border: 0; background: none; cursor: pointer; }
+  button:focus-visible { outline: 2px solid var(--blue); outline-offset: 1px; }
+
+  /* thao tác nhanh */
+  .quick { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+  .q { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 10px 2px 8px; border-radius: 9px;
+       background: var(--surface); color: var(--text); font-size: 11.5px; line-height: 1.2; text-align: center; }
+  .q:hover { background: var(--hover); }
+  .q:disabled { opacity: .4; cursor: default; }
+  .q .ic { width: 32px; height: 32px; border-radius: 9px; display: grid; place-items: center; }
+  .q svg { width: 17px; height: 17px; }
+
+  /* màu cho chip icon: nền nhạt + icon đậm */
+  .c-blue   { background: rgba(76,141,255,.16);  color: var(--blue); }
+  .c-indigo { background: rgba(124,131,255,.16); color: var(--indigo); }
+  .c-green  { background: rgba(63,185,80,.16);   color: var(--green); }
+  .c-amber  { background: rgba(227,160,8,.16);   color: var(--amber); }
+  .c-red    { background: rgba(248,81,73,.15);   color: var(--red); }
+  .c-purple { background: rgba(163,113,247,.16); color: var(--purple); }
+  .c-teal   { background: rgba(43,179,163,.16);  color: var(--teal); }
+  .c-pink   { background: rgba(224,95,168,.16);  color: var(--pink); }
+  .c-gray   { background: rgba(139,148,158,.16); color: var(--gray); }
+  .c-brand  { background: rgba(255,106,61,.16);  color: var(--brand); }
+
+  .sep { height: 1px; background: var(--line); margin: 6px 2px; }
+  .sec { display: flex; align-items: center; gap: 8px; padding: 2px 8px 4px; color: var(--muted); font-size: 11px;
+         font-weight: 600; text-transform: uppercase; letter-spacing: .05em; }
+  .sec .tag { margin-left: auto; text-transform: none; letter-spacing: 0; font-weight: 600; font-size: 11px; padding: 2px 7px; border-radius: 5px; }
+
+  /* dòng menu */
+  .item { width: 100%; display: flex; align-items: center; gap: 10px; height: 31px; padding: 0 8px; border-radius: 7px; text-align: left; }
+  .item:hover, .item:focus-visible { background: var(--hover); outline: none; }
+  .item:disabled { opacity: .4; cursor: default; background: none; }
+  .item .ic { width: 24px; height: 24px; border-radius: 6px; display: grid; place-items: center; flex: none; }
+  .item .ic svg { width: 14px; height: 14px; }
+  .item .lb { flex: 1; min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+  .item .kb { color: var(--faint); font-size: 12px; font-family: ui-monospace, Menlo, monospace; letter-spacing: .02em; }
+  .item .pill { font-size: 11px; font-weight: 600; padding: 2px 7px; border-radius: 10px; }
+  .item.danger .lb { color: #ffb3ad; }
+  .item.install.need { background: rgba(255,106,61,.12); border: 1px solid rgba(255,106,61,.35); height: 38px; margin: 2px 0 4px; }
+  .item.install.need .lb { color: #ffc4b0; font-weight: 600; }
+
+  /* gần đây */
+  .recent { width: 100%; display: flex; align-items: center; gap: 10px; height: 28px; padding: 0 8px 0 12px; border-radius: 7px; text-align: left; }
+  .recent:hover, .recent:focus-visible { background: var(--hover); outline: none; }
+  .av { width: 18px; height: 18px; border-radius: 5px; display: grid; place-items: center; font-size: 10px; font-weight: 700; color: #fff; flex: none; }
+  .recent .t { flex: 1; min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; color: #d5d7da; }
+  .recent .h { color: var(--faint); font-size: 11px; max-width: 110px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+
+  /* thu phóng */
+  .zoom { display: flex; align-items: center; gap: 10px; height: 38px; padding: 0 8px; }
+  .zoom .lb { flex: 1; }
+  .seg { display: flex; align-items: center; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+  .seg button { height: 28px; min-width: 30px; display: grid; place-items: center; color: var(--text); }
+  .seg button:hover { background: var(--hover); }
+  .seg .val { min-width: 52px; text-align: center; font-variant-numeric: tabular-nums; font-weight: 600; font-size: 12px;
+              border-left: 1px solid var(--border); border-right: 1px solid var(--border); }
+  .seg button + button { border-left: 1px solid var(--border); }
+
+  /* chế độ Flash */
+  .modes { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; padding: 4px; margin: 2px 8px 4px; background: var(--surface); border-radius: 9px; }
+  .modes button { height: 28px; border-radius: 6px; color: var(--muted); font-weight: 600; font-size: 12px; }
+  .modes button:hover:not(.on):not(:disabled) { color: var(--text); background: var(--hover); }
+  .modes button.on.flash { background: rgba(63,185,80,.2); color: #7ee29a; }
+  .modes button.on.ruffle { background: rgba(227,160,8,.2); color: #f0c050; }
+  .modes button:disabled { opacity: .4; cursor: default; }
+
+  /* công tắc */
+  .opt { width: 100%; display: flex; align-items: center; gap: 10px; padding: 5px 8px; border-radius: 7px; text-align: left; }
+  .opt:hover, .opt:focus-visible { background: var(--hover); outline: none; }
+  .opt .tx { flex: 1; min-width: 0; }
+  .opt .tx b { display: block; font-weight: 500; }
+  .opt .tx small { display: block; color: var(--faint); font-size: 11.5px; margin-top: 1px; }
+  .sw { width: 32px; height: 18px; border-radius: 9px; background: #4a4d55; position: relative; flex: none; transition: background .15s; }
+  .sw::after { content: ''; position: absolute; top: 2px; left: 2px; width: 14px; height: 14px; border-radius: 50%; background: #fff;
+               transition: transform .15s; box-shadow: 0 1px 2px rgba(0,0,0,.3); }
+  .opt.on .sw { background: var(--green); }
+  .opt.on .sw::after { transform: translateX(14px); }
+</style>
+</head>
+<body>
+<div class="card" id="card">
+  <div class="quick">
+    <button class="q" data-do="newTab" title="Cmd+T"><span class="ic c-blue"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></span>Tab mới</button>
+    <button class="q" data-do="reopen" id="q-reopen" title="Shift+Cmd+T"><span class="ic c-indigo"><svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/></svg></span>Mở lại tab</button>
+    <button class="q" data-do="screenshot" id="q-shot" title="Shift+Cmd+S — lưu vào Ảnh/Wisp + clipboard"><span class="ic c-pink"><svg viewBox="0 0 24 24"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg></span>Chụp màn hình</button>
+    <button class="q" data-do="fullscreen" title="Ctrl+Cmd+F"><span class="ic c-teal"><svg viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></span><span id="q-fs">Toàn màn hình</span></button>
+  </div>
+
+  <div class="zoom">
+    <span class="item" style="padding:0;height:auto;flex:1;cursor:default"><span class="ic c-gray"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg></span><span class="lb">Thu phóng</span></span>
+    <div class="seg">
+      <button data-do="zoomOut" title="Thu nhỏ (Cmd+-)"><svg viewBox="0 0 24 24"><path d="M5 12h14"/></svg></button>
+      <button class="val" data-do="zoomReset" id="zoom" title="Về 100% (Cmd+0)">100%</button>
+      <button data-do="zoomIn" title="Phóng to (Cmd+=)"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button>
+    </div>
+  </div>
+
+  <div class="sep"></div>
+  <button class="item" data-do="history"><span class="ic c-blue"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></span><span class="lb">Lịch sử</span><span class="kb">⌘Y</span></button>
+  <div id="recent"></div>
+  <button class="item danger" data-do="clearHistory"><span class="ic c-red"><svg viewBox="0 0 24 24"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg></span><span class="lb">Xoá lịch sử…</span><span class="kb">⇧⌘⌫</span></button>
+
+  <div class="sep"></div>
+  <button class="item" data-do="inspector" data-arg="perf"><span class="ic c-green"><svg viewBox="0 0 24 24"><path d="M3 12h4l3-8 4 16 3-8h4"/></svg></span><span class="lb">Hiệu năng &amp; ping</span><span class="pill" id="ping-pill"></span></button>
+  <button class="item" data-do="inspector"><span class="ic c-purple"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5M8 11h6M11 8v6"/></svg></span><span class="lb">Bảng kiểm tra mạng &amp; socket</span><span class="kb">⇧⌘I</span></button>
+  <button class="item" data-do="devtools" data-need-tab><span class="ic c-gray"><svg viewBox="0 0 24 24"><path d="M8 7l-5 5 5 5M16 7l5 5-5 5M14 4l-4 16"/></svg></span><span class="lb">Công cụ nhà phát triển</span><span class="kb">⌥⌘I</span></button>
+
+  <div class="sep"></div>
+  <button class="item" data-do="hardReload" data-need-tab><span class="ic c-teal"><svg viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-2.6-6.4"/><path d="M21 3v6h-6"/></svg></span><span class="lb">Tải lại không dùng cache</span><span class="kb">⇧⌘R</span></button>
+  <button class="item" data-do="clearCache" data-need-tab><span class="ic c-brand"><svg viewBox="0 0 24 24"><path d="M3 6h18M7 6l1-3h8l1 3M5 6l1 14h12l1-14"/><path d="M12 10v6"/></svg></span><span class="lb">Xoá cache và tải lại</span></button>
+  <button class="item" data-do="mute" data-need-tab id="mute"><span class="ic c-pink"><svg viewBox="0 0 24 24"><path d="M11 5L6 9H3v6h3l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/></svg></span><span class="lb" id="mute-lb">Tắt tiếng tab này</span><span class="kb">⇧⌘M</span></button>
+  <button class="item" data-do="setHome" data-need-tab><span class="ic c-amber"><svg viewBox="0 0 24 24"><path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z"/></svg></span><span class="lb">Đặt trang này làm trang chủ</span></button>
+
+  <div class="sep"></div>
+  <div class="sec">Flash Player<span class="tag" id="flash-tag"></span></div>
+  <button class="item install" data-do="plugin" id="install"><span class="ic c-brand"><svg viewBox="0 0 24 24"><path d="M12 3v12M7 10l5 5 5-5"/><path d="M4 17v3h16v-3"/></svg></span><span class="lb" id="install-lb">Cài Flash Player…</span><span class="pill" id="install-pill"></span></button>
+  <div class="modes">
+    <button class="flash" data-do="modeFlash" id="m-flash">Flash thật</button>
+    <button class="ruffle" data-do="modeRuffle" id="m-ruffle">Ruffle</button>
+  </div>
+  <button class="item" data-do="allowSite" id="allow"><span class="ic c-green"><svg viewBox="0 0 24 24"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/><path d="M8.5 12l2.5 2.5 4.5-5"/></svg></span><span class="lb">Cho phép Flash trên trang này</span><span class="kb">⇧⌘A</span></button>
+  <button class="item" data-do="checkFlash"><span class="ic c-green"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16.5v.5"/></svg></span><span class="lb">Kiểm tra Flash Player</span></button>
+  <button class="item" data-do="flashMore"><span class="ic c-gray"><svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/></svg></span><span class="lb">Thêm tuỳ chọn Flash…</span></button>
+
+  <div class="sep"></div>
+  <div class="sec">Tuỳ chọn</div>
+  <button class="opt" data-opt="restoreTabs"><span class="tx"><b>Mở lại các tab lần trước</b><small>Khi mở app, mở lại đúng các tab đang dùng</small></span><span class="sw"></span></button>
+  <button class="opt" data-opt="preventAppNap"><span class="tx"><b>Chống App Nap</b><small>Game không bị chậm khi cửa sổ bị che / thu nhỏ</small></span><span class="sw"></span></button>
+  <button class="opt" data-opt="pingGame"><span class="tx"><b>Theo dõi ping máy chủ game</b><small>Hiện ping trên thanh công cụ, cảnh báo khi mạng chập chờn</small></span><span class="sw"></span></button>
+
+  <div class="sep"></div>
+  <button class="item" data-do="update" id="upd"><span class="ic c-brand"><svg viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-2.6-6.4"/><path d="M21 3v6h-6"/><path d="M12 8v5l3 2"/></svg></span><span class="lb" id="upd-lb">Kiểm tra cập nhật</span><span class="pill" id="upd-pill"></span></button>
+  <button class="item" data-do="openSwf"><span class="ic c-indigo"><svg viewBox="0 0 24 24"><path d="M14 3H6v18h12V7z"/><path d="M14 3v4h4"/></svg></span><span class="lb">Mở file .swf…</span><span class="kb">⌘O</span></button>
+  <button class="item" data-do="shots"><span class="ic c-pink"><svg viewBox="0 0 24 24"><path d="M3 7h6l2 2h10v10H3z"/></svg></span><span class="lb">Mở thư mục ảnh chụp</span></button>
+</div>
+<script>
+  const $ = (id) => document.getElementById(id);
+  const AV_COLORS = ['#4c8dff', '#3fb950', '#a371f7', '#e3a008', '#2bb3a3', '#e05fa8', '#ff6a3d', '#7c83ff'];
+  const hash = (s) => { let h = 0; for (const c of s) h = (h * 31 + c.charCodeAt(0)) | 0; return Math.abs(h); };
+  const pingClass = (ms) => ms == null ? ['mất gói', '#f85149'] : ms < 80 ? [ms + ' ms', '#3fb950'] : ms < 150 ? [ms + ' ms', '#e3a008'] : [ms + ' ms', '#f85149'];
+
+  function render(s) {
+    if (!s) return;
+    $('zoom').textContent = s.zoom + '%';
+    $('q-reopen').disabled = !s.canReopen;
+    $('q-shot').disabled = !s.hasTab;
+    $('q-fs').textContent = s.fullScreen ? 'Thoát toàn màn hình' : 'Toàn màn hình';
+    $('mute-lb').textContent = s.muted ? 'Bật tiếng tab này' : 'Tắt tiếng tab này';
+    document.querySelectorAll('[data-need-tab]').forEach(b => b.disabled = !s.hasTab);
+
+    const pill = $('ping-pill');
+    if (s.ping) {
+      const [txt, color] = pingClass(s.ping.ms);
+      pill.textContent = txt; pill.style.color = color; pill.style.background = color + '26';
+    } else { pill.textContent = ''; }
+
+    const rec = $('recent'); rec.textContent = '';
+    for (const r of s.recent) {
+      const b = document.createElement('button');
+      b.className = 'recent'; b.title = r.url;
+      const av = document.createElement('span'); av.className = 'av';
+      const host = r.host.replace(/^www\./, '');
+      av.textContent = (host[0] || '?').toUpperCase();
+      av.style.background = AV_COLORS[hash(host) % AV_COLORS.length];
+      const t = document.createElement('span'); t.className = 't'; t.textContent = r.title;
+      const h = document.createElement('span'); h.className = 'h'; h.textContent = host;
+      b.append(av, t, h);
+      b.onclick = () => wmenu.run('recent', r.url);
+      rec.appendChild(b);
+    }
+
+    const tag = $('flash-tag');
+    if (s.mode === 'flash') { tag.textContent = 'Flash ' + (s.version || ''); tag.style.cssText = 'background:rgba(63,185,80,.18);color:#7ee29a'; }
+    else { tag.textContent = s.wantedMode === 'flash' ? 'Ruffle (thiếu plugin)' : 'Ruffle'; tag.style.cssText = 'background:rgba(227,160,8,.18);color:#f0c050'; }
+    $('m-flash').classList.toggle('on', s.wantedMode === 'flash');
+    $('m-ruffle').classList.toggle('on', s.wantedMode === 'ruffle');
+    $('m-flash').disabled = !s.hasPlugin && s.wantedMode !== 'flash';
+    $('allow').disabled = s.mode !== 'flash' || !s.hasTab;
+    // chưa có plugin → mục cài Flash nổi bật; có rồi → mục thường "Cài lại / thay"
+    $('install').classList.toggle('need', !s.hasPlugin);
+    $('install-lb').textContent = s.hasPlugin ? 'Cài lại / thay Flash Player…' : 'Tải và cài Flash Player';
+    $('install-pill').textContent = s.hasPlugin ? '' : '15 MB';
+    $('install-pill').style.cssText = s.hasPlugin ? '' : 'color:#ffb08f;background:rgba(255,106,61,.18)';
+
+    document.querySelectorAll('.opt').forEach(o => o.classList.toggle('on', !!s.options[o.dataset.opt]));
+    const u = s.update || {};
+    $('upd').classList.toggle('install', true);
+    $('upd').classList.toggle('need', !!u.available);
+    $('upd-lb').textContent = u.available ? `Cập nhật lên Wisp ${u.available}` : 'Kiểm tra cập nhật';
+    $('upd-pill').textContent = 'v' + (u.current || '');
+    $('upd-pill').style.cssText = u.available ? 'color:#ffb08f;background:rgba(255,106,61,.18)' : 'color:#9da0a8;background:rgba(255,255,255,.06)';
+    // đo chiều cao thật của nội dung (khung .card đang bị giới hạn theo cửa sổ) + lề trên / dưới + viền
+    wmenu.size($('card').scrollHeight + 4 + 10 + 2);
+  }
+
+  document.querySelectorAll('[data-do]').forEach(b => b.onclick = async () => {
+    const r = await wmenu.run(b.dataset.do, b.dataset.arg);
+    if (r) render(r);
+  });
+  document.querySelectorAll('.opt').forEach(o => o.onclick = async () => render(await wmenu.run('option', o.dataset.opt)));
+
+  // bàn phím: Esc đóng, ↑ ↓ chuyển giữa các mục
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') return wmenu.close();
+    if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return;
+    e.preventDefault();
+    const list = [...document.querySelectorAll('button:not(:disabled)')];
+    const i = list.indexOf(document.activeElement);
+    const n = e.key === 'ArrowDown' ? (i + 1) % list.length : (i - 1 + list.length) % list.length;
+    list[n].focus();
+  });
+
+  wmenu.state().then(render);
+</script>
+</body>
+</html>

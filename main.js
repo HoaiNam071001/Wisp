@@ -7,6 +7,7 @@ const fs = require('fs');
 const net = require('net');
 const { execFile, execFileSync, spawnSync } = require('child_process');
 const { pathToFileURL } = require('url');
+const updater = require('./updater');
 
 // ====== ĐỔI ĐỊA CHỈ TRANG MẶC ĐỊNH Ở ĐÂY (hoặc bấm "★ Đặt làm trang chủ") ======
 const DEFAULT_URL = 'https://bangbang.cmn.vn/';
@@ -249,7 +250,8 @@ function tabInfo(t) {
   const w = t.view.webContents;
   const url = w.isDestroyed() ? '' : displayUrl(w.getURL());
   return { id: t.id, title: t.title || url || 'Tab mới', url, favicon: t.favicon || '',
-           loading: !w.isDestroyed() && w.isLoading(), history: isHistoryUrl(w.isDestroyed() ? '' : w.getURL()) };
+           loading: !w.isDestroyed() && w.isLoading(), history: isHistoryUrl(w.isDestroyed() ? '' : w.getURL()),
+           audible: !!t.audible, muted: !!t.muted };
 }
 
 // Gom nhiều thay đổi (đang tải, đổi tiêu đề…) rồi mới vẽ lại thanh tab + menu Tab
@@ -261,6 +263,7 @@ function sendTabs() {
     if (!winOk()) return;
     win.webContents.send('tabs', { tabs: tabs.map(tabInfo), active: activeId });
     scheduleMenu();
+    if (loadConfig().restoreTabs !== false) saveSession();
   }, 30);
 }
 
@@ -293,7 +296,7 @@ function tabPrefs() {
 
 function createTab(url, { activate = true, index = tabs.length } = {}) {
   const view = new BrowserView({ webPreferences: tabPrefs() });
-  const t = { id: ++tabSeq, view, title: '', favicon: '', htmlFull: false, hist: null };
+  const t = { id: ++tabSeq, view, title: '', favicon: '', htmlFull: false, hist: null, audible: false, muted: false };
   tabs.splice(Math.max(0, Math.min(index, tabs.length)), 0, t);
   // Game ở tab khác vẫn chạy bình thường (không bị Chromium hãm timer khi tab ẩn)
   view.webContents.setBackgroundThrottling(false);
@@ -369,6 +372,7 @@ function tabMenu(id) {
   Menu.buildFromTemplate([
     { label: 'Tải lại', click: () => t.view.webContents.reload() },
     { label: 'Nhân bản tab', click: () => createTab(t.view.webContents.getURL(), { index: i + 1 }) },
+    { label: t.muted ? 'Bật tiếng tab' : 'Tắt tiếng tab', click: () => toggleMute(id) },
     { type: 'separator' },
     { label: 'Đóng tab', click: () => closeTab(id) },
     { label: 'Đóng các tab khác', enabled: tabs.length > 1, click: () => tabs.filter(x => x !== t).forEach(x => closeTab(x.id)) },
@@ -431,6 +435,7 @@ function wireTab(t) {
 function createWindow() {
   const argUrl = process.argv.slice(1).find(a => /^https?:|\.swf$/i.test(a));
   const startUrl = normalizeUrl(process.env.FLASH_URL || pendingFile || argUrl) || homeUrl();
+  const pendingFileUsed = !!pendingFile;
   pendingFile = null;
 
   // Cửa sổ chính chứa thanh tab + thanh công cụ; trang web nằm trong BrowserView bên dưới
@@ -443,7 +448,15 @@ function createWindow() {
   win.on('closed', () => { win = null; tabs = []; activeId = null; });
 
   buildMenu();
-  createTab(startUrl);
+  const cfg = loadConfig();
+  const explicit = process.env.FLASH_URL || argUrl || pendingFileUsed;
+  const saved = cfg.session && Array.isArray(cfg.session.tabs) ? cfg.session.tabs.map(normalizeUrl).filter(Boolean) : [];
+  if (!explicit && cfg.restoreTabs !== false && saved.length) {
+    // mở lại các tab lần trước
+    saved.forEach((u) => createTab(u, { activate: false }));
+    activateTab(tabs[Math.min(cfg.session.active || 0, tabs.length - 1)].id);
+  } else createTab(startUrl);
+  startPerf();
 
   if (wantedMode === 'flash' && !FLASH_PATH) setTimeout(askForFlashPlugin, 800);
 }
@@ -554,15 +567,20 @@ ipcMain.on('nav', (_e, action, arg) => {
   else if (action === 'sethome') { saveConfig({ url: w.getURL() }); }
   else if (action === 'inspect') { openInspector(); }
   else if (action === 'history') { openHistory(); }
+  else if (action === 'update') { updater.promptUpdate(true); }
+  else if (action === 'flash') { if (MODE !== 'flash') askForFlashPlugin(); else checkFlash(); }
 });
+ipcMain.on('menu', (e, x, y) => { if (winOk() && e.sender === win.webContents) showMainMenu(x, y); });
+ipcMain.on('open-inspector', (e, tab) => { if (winOk() && e.sender === win.webContents) openInspector(tab); });
 ipcMain.on('tab', (e, action, id) => {
   if (!winOk() || e.sender !== win.webContents) return;
   if (action === 'new') newTab();
   else if (action === 'close') closeTab(id);
   else if (action === 'switch') activateTab(id);
   else if (action === 'menu') tabMenu(id);
+  else if (action === 'mute') toggleMute(id);
 });
-ipcMain.on('ready', () => { sendState(); sendTabs(); });
+ipcMain.on('ready', () => { sendState(); sendTabs(); if (winOk()) win.webContents.send('update', updater.state()); });
 
 // ---------- Bảng kiểm tra: HTTP, socket TCP, console, thông tin Flash ----------
 // DevTools không thấy kết nối socket của Flash (chúng không đi qua tab Network),
@@ -661,7 +679,9 @@ function installRequestLog(ses) {
 // ----- socket TCP: lsof trên mọi tiến trình của app (Flash nối qua tiến trình network) -----
 function procTypes() {
   const m = new Map();
-  for (const p of app.getAppMetrics()) m.set(p.pid, p.serviceName || p.name || p.type);
+  // dùng số liệu của perfTick: gọi getAppMetrics ở đây sẽ làm sai % CPU
+  const list = lastProcs.length ? lastProcs : app.getAppMetrics().map(p => ({ pid: p.pid, name: p.serviceName || p.name, type: p.type }));
+  for (const p of list) if (p.pid !== process.pid) m.set(p.pid, p.name || p.type);
   return m;
 }
 
@@ -716,12 +736,13 @@ function pollSockets() {
   });
 }
 
+// Luôn đọc mỗi 2s (để biết máy chủ game mà đo ping); mở Bảng kiểm tra thì đọc mỗi 0,4s
 function startSocketWatch() {
-  if (sockTimer) return;
+  clearInterval(sockTimer);
   pollSockets();
-  sockTimer = setInterval(pollSockets, 400);
+  sockTimer = setInterval(pollSockets, inspectorOpen() ? 400 : 2000);
 }
-function stopSocketWatch() { clearInterval(sockTimer); sockTimer = null; }
+function stopSocketWatch() { startSocketWatch(); }
 
 // Thử kết nối TCP từ app (tiến trình chính) – tách lỗi mạng khỏi lỗi của Flash
 function probeTcp(host, port, policy) {
@@ -777,13 +798,17 @@ async function flashInfo() {
 let netLogActive = false;
 function netLogApi() { return session.defaultSession.netLog || require('electron').netLog; }
 
-function openInspector() {
-  if (inspectorOpen()) { inspectWin.show(); inspectWin.focus(); return; }
+function openInspector(tab) {
+  if (inspectorOpen()) {
+    inspectWin.show(); inspectWin.focus();
+    if (tab) inspectWin.webContents.send('inspect:tab', tab);
+    return;
+  }
   inspectWin = new BrowserWindow({
     width: 1100, height: 700, minWidth: 720, minHeight: 420, title: 'Bảng kiểm tra — Wisp', backgroundColor: '#1e1f22',
     webPreferences: { preload: path.join(__dirname, 'inspect-preload.js'), contextIsolation: true, nodeIntegration: false, worldSafeExecuteJavaScript: true },
   });
-  inspectWin.loadFile(path.join(__dirname, 'inspect.html'));
+  inspectWin.loadFile(path.join(__dirname, 'inspect.html'), tab ? { hash: tab } : undefined);
   inspectWin.on('closed', () => { inspectWin = null; stopSocketWatch(); });
   startSocketWatch();
 }
@@ -797,6 +822,8 @@ ipcMain.handle('inspect:clear', (_e, kind) => {
   if (kind === 'sock') { for (const [k, s] of sockets) if (s.end) sockets.delete(k); }
 });
 ipcMain.handle('inspect:info', () => flashInfo());
+ipcMain.handle('inspect:perf', () => perfPayload());
+ipcMain.handle('inspect:shots', () => { fs.mkdirSync(shotsDir(), { recursive: true }); shell.openPath(shotsDir()); });
 ipcMain.handle('inspect:probe', (_e, host, port, policy) => probeTcp(String(host || '').trim(), port, !!policy));
 ipcMain.handle('inspect:devtools', () => { const w = wc(); if (w) w.openDevTools({ mode: 'detach' }); });
 ipcMain.handle('inspect:copy', (_e, text) => clipboard.writeText(String(text)));
@@ -821,7 +848,7 @@ ipcMain.handle('inspect:report', async () => {
     filters: [{ name: 'JSON', extensions: ['json'] }],
   });
   if (r.canceled || !r.filePath) return null;
-  const report = { createdAt: new Date().toISOString(), info: await flashInfo(),
+  const report = { createdAt: new Date().toISOString(), info: await flashInfo(), perf: perfPayload(),
                    http: [...httpLog.values()], sockets: [...sockets.values()], log: appLog };
   fs.writeFileSync(r.filePath, JSON.stringify(report, null, 2));
   shell.showItemInFolder(r.filePath);
@@ -901,48 +928,247 @@ async function checkFlash() {
   });
 }
 
-// ---------- cài plugin Flash (chọn file, kiểm tra chữ ký, chép vào userData/plugins) ----------
+// ---------- cài plugin Flash ----------
+// Adobe đã gỡ bản cài khỏi trang của họ; archive.org còn giữ bản cuối (32.0.0.465, PPAPI, macOS).
+// App không chạy bộ cài của Adobe: chỉ mở gói (.dmg → .app → .pkg → payload LZMA) để lấy
+// PepperFlashPlayer.plugin, kiểm tra chữ ký Adobe rồi chép vào userData/plugins.
+const FLASH_DOWNLOAD = {
+  url: 'https://archive.org/download/adobe-flash-player-archive_202012/install_flash_player_osx_ppapi.dmg',
+  page: 'https://archive.org/details/adobe-flash-player-archive_202012',
+  md5: '01276b441efca664141d42dc9680a2be',
+  file: 'install_flash_player_osx_ppapi.dmg',
+};
+const { promisify } = require('util');
+const execFileP = promisify(execFile);
+let flashInstalling = false;
+
+function progress(text, fraction) {
+  if (!winOk()) return;
+  toast(text);
+  win.setProgressBar(fraction == null ? -1 : fraction);
+}
+
 async function askForFlashPlugin() {
-  if (!win) return;
+  if (!winOk() || flashInstalling) return;
   const { response } = await dialog.showMessageBox(win, {
-    type: 'warning',
-    message: 'Chưa có Flash Player (PepperFlashPlayer.plugin)',
-    detail: 'App đang chạy tạm bằng Ruffle (không chơi được game online cần socket).\n\n' +
-      'Chọn file PepperFlashPlayer.plugin (bản PPAPI, x64, 32.0.0.x) để cài. ' +
-      'App chỉ nhận plugin có chữ ký hợp lệ của Adobe.',
-    buttons: ['Chọn plugin…', 'Để sau'], defaultId: 0, cancelId: 1,
+    type: FLASH_PATH ? 'question' : 'warning',
+    message: FLASH_PATH ? `Cài lại / thay Flash Player (đang dùng ${FLASH_VERSION})` : 'Chưa có Flash Player',
+    detail: (FLASH_PATH ? '' : 'App đang chạy tạm bằng Ruffle (không chơi được game online cần socket).\n\n') +
+      '• Tải và cài tự động: tải bản 32.0.0.465 (PPAPI) từ archive.org, ~15 MB, rồi tự cài.\n' +
+      '• Chọn file đã tải: file .dmg / .pkg / .zip của bộ cài Adobe, hoặc PepperFlashPlayer.plugin — app tự tách plugin ra và cài.\n\n' +
+      'App chỉ nhận plugin có chữ ký hợp lệ của Adobe, và không chạy bộ cài của Adobe.',
+    buttons: ['Tải và cài tự động', 'Chọn file đã tải…', 'Mở trang tải', 'Để sau'], defaultId: 0, cancelId: 3,
   });
-  if (response === 0) choosePluginFile();
+  if (response === 0) downloadFlashPlugin();
+  else if (response === 1) choosePluginFile();
+  else if (response === 2) shell.openExternal(FLASH_DOWNLOAD.page);
+}
+
+// Tải file (theo chuyển hướng), báo tiến độ, kiểm tra MD5
+function downloadFile(url, dest, onProgress, redirects = 0) {
+  const https = require('https');
+  const crypto = require('crypto');
+  return new Promise((resolve, reject) => {
+    const req = https.get(url, { headers: { 'User-Agent': 'Wisp' } }, (res) => {
+      if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
+        res.resume();
+        if (redirects > 5) return reject(new Error('Chuyển hướng quá nhiều lần'));
+        return resolve(downloadFile(new URL(res.headers.location, url).href, dest, onProgress, redirects + 1));
+      }
+      if (res.statusCode !== 200) { res.resume(); return reject(new Error('Máy chủ trả về HTTP ' + res.statusCode)); }
+      const total = Number(res.headers['content-length']) || 0;
+      const hash = crypto.createHash('md5');
+      const out = fs.createWriteStream(dest);
+      let got = 0;
+      res.on('data', (c) => { got += c.length; hash.update(c); if (total) onProgress(got / total); });
+      res.pipe(out);
+      out.on('finish', () => resolve(hash.digest('hex')));
+      out.on('error', reject);
+      res.on('error', reject);
+    });
+    req.setTimeout(30000, () => req.destroy(new Error('Hết thời gian chờ (30s)')));
+    req.on('error', reject);
+  });
+}
+
+async function downloadFlashPlugin() {
+  if (flashInstalling) return;
+  flashInstalling = true;
+  const tmp = fs.mkdtempSync(path.join(app.getPath('temp'), 'wisp-flash-'));
+  try {
+    const file = path.join(tmp, FLASH_DOWNLOAD.file);
+    progress('Đang tải Flash Player…', 0);
+    let last = 0;
+    const md5 = await downloadFile(FLASH_DOWNLOAD.url, file, (f) => {
+      const pct = Math.floor(f * 100);
+      if (pct >= last + 5) { last = pct; progress(`Đang tải Flash Player… ${pct}%`, f); }
+    });
+    if (md5 !== FLASH_DOWNLOAD.md5) throw new Error(`File tải về không đúng (MD5 ${md5}, cần ${FLASH_DOWNLOAD.md5}). Thử lại sau, hoặc tải tay rồi chọn file.`);
+    addLog('info', 'event', 'Đã tải bộ cài Flash Player, MD5 khớp');
+    flashInstalling = false;
+    await installFromFile(file);
+  } catch (e) {
+    if (winOk()) win.setProgressBar(-1);
+    addLog('error', 'event', 'Tải Flash Player lỗi: ' + e.message);
+    const { response } = await dialog.showMessageBox(win, {
+      type: 'error', message: 'Không tải được Flash Player', detail: String(e.message || e),
+      buttons: ['Mở trang tải', 'Chọn file đã tải…', 'Đóng'], defaultId: 0, cancelId: 2,
+    });
+    if (response === 0) shell.openExternal(FLASH_DOWNLOAD.page);
+    else if (response === 1) choosePluginFile();
+  } finally {
+    flashInstalling = false;
+    try { fs.rmdirSync(tmp, { recursive: true }); } catch {}
+  }
 }
 
 async function choosePluginFile() {
   const r = await dialog.showOpenDialog(win, {
-    title: `Chọn ${PLUGIN_NAME}`,
-    properties: ['openFile', 'openDirectory'],
-    filters: [{ name: 'Pepper Flash', extensions: ['plugin'] }],
+    title: 'Chọn bộ cài Flash Player hoặc PepperFlashPlayer.plugin',
+    message: 'Chọn file .dmg / .pkg / .zip của bộ cài Adobe Pepper Flash, hoặc PepperFlashPlayer.plugin',
+    defaultPath: app.getPath('downloads'),
+    properties: ['openFile', 'openDirectory', 'treatPackageAsDirectory'],
+    filters: [{ name: 'Flash Player', extensions: ['plugin', 'dmg', 'pkg', 'zip', 'app', 'lzma'] }],
   });
   if (r.canceled || !r.filePaths[0]) return;
-  let src = r.filePaths[0];
-  // chọn nhầm thư mục chứa plugin (vd. .../PepperFlashPlayer/) thì tìm bên trong
-  if (path.basename(src) !== PLUGIN_NAME && fs.existsSync(path.join(src, PLUGIN_NAME))) src = path.join(src, PLUGIN_NAME);
-  const err = verifyFlashPlugin(src);
-  if (err) {
-    dialog.showMessageBox(win, { type: 'error', message: 'Không cài được plugin này', detail: `${src}\n\n${err}` });
-    return;
-  }
+  await installFromFile(r.filePaths[0]);
+}
+
+// Từ file người dùng chọn (hoặc vừa tải) → tìm plugin → kiểm tra → cài → hỏi mở lại
+async function installFromFile(src) {
+  if (flashInstalling) return;
+  flashInstalling = true;
+  const work = fs.mkdtempSync(path.join(app.getPath('temp'), 'wisp-flash-x-'));
+  const mounts = [];
+  let plugin = null;
   try {
-    if (path.resolve(src) !== path.resolve(userPluginPath())) installFlashPlugin(src);
+    progress('Đang tìm Flash Player trong file…');
+    plugin = await findPluginIn(src, work, mounts, 0);
+    if (!plugin) throw new Error('Không tìm thấy PepperFlashPlayer.plugin trong file này.\nCần bộ cài "Adobe Flash Player for Opera and Chromium – PPAPI" cho macOS (install_flash_player_osx_ppapi.dmg).');
+    const err = verifyFlashPlugin(plugin);
+    if (err) throw new Error(err);
+    if (path.resolve(plugin) !== path.resolve(userPluginPath())) installFlashPlugin(plugin);
   } catch (e) {
-    dialog.showMessageBox(win, { type: 'error', message: 'Chép plugin bị lỗi', detail: String(e.message || e) });
+    if (winOk()) win.setProgressBar(-1);
+    addLog('error', 'event', 'Cài Flash Player lỗi: ' + e.message);
+    dialog.showMessageBox(win, { type: 'error', message: 'Không cài được Flash Player', detail: `${src}\n\n${e.message || e}` });
     return;
+  } finally {
+    for (const m of mounts.reverse()) { try { await execFileP('/usr/bin/hdiutil', ['detach', m, '-quiet', '-force']); } catch {} }
+    try { fs.rmdirSync(work, { recursive: true }); } catch {}
+    flashInstalling = false;
   }
+  if (winOk()) win.setProgressBar(-1);
   saveConfig({ mode: 'flash' });
+  const ver = readFlashVersion(userPluginPath());
+  addLog('info', 'event', `Đã cài Flash Player ${ver} vào ${userPluginPath()}`);
   const { response } = await dialog.showMessageBox(win, {
-    type: 'info', message: `Đã cài Flash Player ${readFlashVersion(userPluginPath())} ✓`,
+    type: 'info', message: `Đã cài Flash Player ${ver} ✓`,
     detail: `Plugin nằm ở:\n${userPluginPath()}\n\nMở lại app để dùng Flash thật.`,
     buttons: ['Mở lại ngay', 'Để sau'], defaultId: 0, cancelId: 1,
   });
-  if (response === 0) { app.relaunch(); app.exit(0); }
+  if (response === 0) relaunch();
+}
+
+// Tìm PepperFlashPlayer.plugin: mở .dmg, giải nén .pkg / .zip, giải mã payload .lzma của Adobe
+async function findPluginIn(p, work, mounts, depth) {
+  if (depth > 6 || !fs.existsSync(p)) return null;
+  const base = path.basename(p);
+  const ext = path.extname(p).toLowerCase();
+  const st = fs.statSync(p);
+  const sub = () => fs.mkdtempSync(path.join(work, 'x'));
+
+  if (base === PLUGIN_NAME && st.isDirectory()) return p;
+  if (base === PLUGIN_NAME + '.lzma' && st.isFile()) {
+    progress('Đang giải nén Flash Player (khoảng 10 giây)…');
+    return extractAdobeLzma(p, path.join(sub(), PLUGIN_NAME));
+  }
+  if (st.isFile() && ext === '.dmg') {
+    const mnt = sub();
+    await execFileP('/usr/bin/hdiutil', ['attach', p, '-nobrowse', '-readonly', '-noautoopen', '-mountpoint', mnt]);
+    mounts.push(mnt);
+    return findPluginIn(mnt, work, mounts, depth + 1);
+  }
+  if (st.isFile() && ext === '.pkg') {
+    // pkgutil chỉ giải nén, không chạy script cài đặt
+    const out = path.join(sub(), 'pkg');
+    await execFileP('/usr/sbin/pkgutil', ['--expand-full', p, out]);
+    return findPluginIn(out, work, mounts, depth + 1);
+  }
+  if (st.isFile() && ext === '.zip') {
+    const out = sub();
+    await execFileP('/usr/bin/ditto', ['-x', '-k', p, out]);
+    return findPluginIn(out, work, mounts, depth + 1);
+  }
+  if (!st.isDirectory()) return null;
+
+  // duyệt thư mục: ưu tiên plugin có sẵn, rồi tới payload .lzma, rồi tới gói lồng bên trong
+  const found = { plugin: [], lzma: [], nested: [] };
+  const walk = (dir, d) => {
+    if (d > 8) return;
+    let list = [];
+    try { list = fs.readdirSync(dir, { withFileTypes: true }); } catch { return; }
+    for (const e of list) {
+      const f = path.join(dir, e.name);
+      if (e.isSymbolicLink()) continue;
+      if (e.name === PLUGIN_NAME && e.isDirectory()) { found.plugin.push(f); continue; }
+      if (e.name === PLUGIN_NAME + '.lzma') { found.lzma.push(f); continue; }
+      const x = path.extname(e.name).toLowerCase();
+      // .pkg dạng file thì cần giải nén; dạng thư mục (gói đã mở sẵn) thì duyệt vào như thư mục thường
+      if (e.isFile() && ['.pkg', '.dmg', '.zip'].includes(x)) { found.nested.push(f); continue; }
+      if (e.isDirectory()) walk(f, d + 1);
+    }
+  };
+  walk(p, 0);
+  for (const f of [...found.plugin, ...found.lzma, ...found.nested]) {
+    const r = await findPluginIn(f, work, mounts, depth + 1);
+    if (r) return r;
+  }
+  return null;
+}
+
+// Payload của bộ cài Adobe: 11 byte đầu riêng (byte 7–10: kích thước sau giải nén, big-endian),
+// tiếp theo là luồng LZMA (5 byte thuộc tính + dữ liệu). Sau giải nén là cây thư mục:
+// mỗi mục = [loại][cờ: 0x80 = thư mục][độ dài tên][tên][kích thước nội dung, 4 byte big-endian][nội dung].
+function extractAdobeLzma(file, dest) {
+  const lzma = require('lzma');
+  const d = fs.readFileSync(file);
+  if (d.length < 32 || d[11] !== 0x5d) throw new Error('Payload Flash không đúng định dạng của Adobe');
+  const size = d.readUInt32BE(7);
+  const hdr = Buffer.alloc(13);
+  d.copy(hdr, 0, 11, 16);
+  hdr.writeUInt32LE(size, 5);
+  return new Promise((resolve, reject) => {
+    lzma.decompress(Buffer.concat([hdr, d.subarray(16)]), (res, err) => {
+      if (err) return reject(new Error('Giải nén LZMA lỗi: ' + err));
+      try {
+        const b = typeof res === 'string' ? Buffer.from(res, 'utf8') : Buffer.from(res);
+        if (b.length !== size) throw new Error(`Giải nén ra ${b.length} byte, cần ${size}`);
+        const writeTree = (pos, end, dir) => {
+          while (pos < end) {
+            const flag = b[pos + 1], nlen = b[pos + 2];
+            const name = b.toString('utf8', pos + 3, pos + 3 + nlen);
+            if (name.includes('/') || name === '..' || name === '.') throw new Error('Tên mục không hợp lệ: ' + name);
+            const len = b.readUInt32BE(pos + 3 + nlen);
+            const body = pos + 3 + nlen + 4;
+            if (body + len > end) throw new Error('Payload bị cắt cụt');
+            const target = name ? path.join(dir, name) : dir;
+            if (flag & 0x80) {
+              fs.mkdirSync(target, { recursive: true });
+              writeTree(body, body + len, target);
+            } else {
+              fs.writeFileSync(target, b.subarray(body, body + len));
+              // file chạy được nằm trong Contents/MacOS
+              fs.chmodSync(target, path.basename(dir) === 'MacOS' ? 0o755 : 0o644);
+            }
+            pos = body + len;
+          }
+        };
+        writeTree(0, b.length, dest);
+        resolve(dest);
+      } catch (e) { reject(e); }
+    });
+  });
 }
 
 async function openSwfFile() {
@@ -958,21 +1184,202 @@ function scheduleMenu() {
 
 function shorten(s, n = 60) { s = String(s || ''); return s.length > n ? s.slice(0, n - 1) + '…' : s; }
 
-function buildMenu() {
-  const w = () => wc();
-  const cfg = loadConfig();
-  // 15 trang xem gần nhất (không lặp)
+// ----- các thao tác trên trang hiện tại -----
+function zoomBy(step) { const w = wc(); if (w) w.setZoomLevel(step === 0 ? 0 : w.getZoomLevel() + step); }
+function zoomPercent() { const w = wc(); return w ? Math.round(100 * Math.pow(1.2, w.getZoomLevel())) : 100; }
+function toggleFullScreen() { if (winOk()) win.setFullScreen(!win.isFullScreen()); }
+function hardReload() { const w = wc(); if (w) w.reloadIgnoringCache(); }
+async function clearCacheReload() {
+  await session.defaultSession.clearCache();
+  addLog('info', 'event', 'Đã xoá cache HTTP, tải lại trang không dùng cache');
+  hardReload();
+  toast('Đã xoá cache, đang tải lại');
+}
+function setHomeHere() {
+  const w = wc();
+  if (!w) return;
+  saveConfig({ url: w.getURL() });
+  toast('Đã đặt trang này làm trang chủ');
+}
+function shotsDir() { return path.join(app.getPath('pictures'), 'Wisp'); }
+async function screenshotTab() {
+  const w = wc();
+  if (!w) return;
+  try {
+    const img = await w.capturePage();
+    const d = new Date();
+    const stamp = `${d.getFullYear()}${pad2(d.getMonth() + 1)}${pad2(d.getDate())}-${pad2(d.getHours())}${pad2(d.getMinutes())}${pad2(d.getSeconds())}`;
+    fs.mkdirSync(shotsDir(), { recursive: true });
+    const file = path.join(shotsDir(), `wisp-${stamp}.png`);
+    fs.writeFileSync(file, img.toPNG());
+    clipboard.writeImage(img);
+    addLog('info', 'event', 'Đã chụp màn hình: ' + file);
+    toast('Đã lưu ảnh vào Ảnh/Wisp và chép vào clipboard');
+  } catch (e) { toast('Không chụp được: ' + e.message); }
+}
+function pad2(n) { return String(n).padStart(2, '0'); }
+function toast(text) { if (winOk()) win.webContents.send('toast', text); }
+
+function recentHistory(n = 15) {
   const recent = [];
   const seen = new Set();
   const hist = loadHistory();
-  for (let i = hist.length - 1; i >= 0 && recent.length < 15; i--) {
+  for (let i = hist.length - 1; i >= 0 && recent.length < n; i--) {
     if (seen.has(hist[i].url)) continue;
     seen.add(hist[i].url);
     recent.push(hist[i]);
   }
+  return recent;
+}
+
+function historySubmenu() {
+  const recent = recentHistory();
+  return [
+    { label: 'Hiện toàn bộ lịch sử', accelerator: 'Cmd+Y', click: openHistory },
+    { label: 'Xoá lịch sử…', accelerator: 'Shift+Cmd+Backspace', click: clearHistoryDialog },
+    { type: 'separator' },
+    { label: recent.length ? 'Xem gần đây' : 'Chưa có lịch sử', enabled: false },
+    ...recent.map(h => ({ label: shorten(h.title || h.url), click: () => openUrl(h.url) })),
+  ];
+}
+
+function flashSubmenu() {
+  const cfg = loadConfig();
+  return [
+    { label: 'Kiểm tra Flash Player', click: checkFlash },
+    { label: FLASH_PATH ? 'Cài lại / thay Flash Player…' : 'Cài Flash Player…', click: askForFlashPlugin },
+    { label: 'Chọn file Flash Player đã tải…', click: choosePluginFile },
+    { label: 'Mở thư mục plugin', click: () => { const d = path.dirname(userPluginPath()); fs.mkdirSync(d, { recursive: true }); shell.openPath(d); } },
+    { type: 'separator' },
+    { label: 'Chế độ: Flash Player thật', type: 'radio', checked: wantedMode === 'flash', enabled: !!FLASH_PATH || wantedMode === 'flash', click: () => setMode('flash') },
+    { label: 'Chế độ: Ruffle (dự phòng)', type: 'radio', checked: wantedMode === 'ruffle', click: () => setMode('ruffle') },
+    { type: 'separator' },
+    { label: 'Cho phép Flash trên trang này', accelerator: 'Shift+Cmd+A', enabled: MODE === 'flash', click: allowCurrentSite },
+    { label: 'Sửa danh sách domain cho phép…', click: editAllowList },
+    { label: 'Ghi log allowlist (gỡ lỗi)', type: 'checkbox', checked: !!cfg.flashDebug, click: (item) => { saveConfig({ flashDebug: item.checked }); writeMmsCfg(); askRelaunch(item.checked ? 'Đã bật log allowlist.' : 'Đã tắt log allowlist.'); } },
+    { label: 'Mở thư mục mms.cfg', click: () => shell.showItemInFolder(mmsCfgPath()) },
+  ];
+}
+
+function optionsSubmenu() {
+  const cfg = loadConfig();
+  return [
+    { label: 'Mở lại các tab lần trước khi mở app', type: 'checkbox', checked: cfg.restoreTabs !== false,
+      click: (item) => { saveConfig({ restoreTabs: item.checked }); saveSession(true); } },
+    { label: 'Chống App Nap (game không bị chậm khi ẩn cửa sổ)', type: 'checkbox', checked: cfg.preventAppNap !== false,
+      click: (item) => { saveConfig({ preventAppNap: item.checked }); applyAppNap(); } },
+    { label: 'Theo dõi ping máy chủ game', type: 'checkbox', checked: cfg.pingGame !== false,
+      click: (item) => { saveConfig({ pingGame: item.checked }); if (!item.checked) pingTargets.clear(); } },
+  ];
+}
+
+// ---------- menu ⋮ (bảng xổ xuống tự vẽ: menu.html trong cửa sổ con không viền) ----------
+// Menu hệ thống của macOS không tô màu / đặt công tắc được, nên dùng cửa sổ HTML riêng.
+const MENU_W = 340;
+let menuWin = null;
+let menuClosedAt = 0;
+
+function menuOpen() { return menuWin && !menuWin.isDestroyed(); }
+function closeMenuPopup() { if (menuOpen()) menuWin.close(); }
+
+function showMainMenu(x, y) {
+  if (!winOk()) return;
+  if (menuOpen()) { closeMenuPopup(); return; }
+  // bấm ⋮ lúc menu đang mở: menu tự đóng vì mất focus ngay trước cú bấm → đừng mở lại
+  if (Date.now() - menuClosedAt < 250) return;
+  const cb = win.getContentBounds();
+  menuWin = new BrowserWindow({
+    parent: win, x: Math.round(cb.x + x - MENU_W), y: Math.round(cb.y + y), width: MENU_W, height: 120,
+    frame: false, transparent: true, resizable: false, movable: false, minimizable: false, maximizable: false,
+    fullscreenable: false, skipTaskbar: true, hasShadow: false, show: false, backgroundColor: '#00000000',
+    webPreferences: { preload: path.join(__dirname, 'menu-preload.js'), contextIsolation: true, nodeIntegration: false, worldSafeExecuteJavaScript: true },
+  });
+  menuWin.loadFile(path.join(__dirname, 'menu.html'));
+  menuWin.on('blur', closeMenuPopup);
+  menuWin.on('closed', () => {
+    menuWin = null;
+    menuClosedAt = Date.now();
+    if (winOk()) win.webContents.send('menu-closed');
+  });
+}
+
+function menuState() {
+  const w = wc();
+  const t = activeTab();
+  const cfg = loadConfig();
+  return {
+    hasTab: !!w, zoom: zoomPercent(), muted: !!(t && t.muted), canReopen: closedTabs.length > 0,
+    fullScreen: winOk() && win.isFullScreen(),
+    recent: recentHistory(4).map(h => ({ title: h.title || h.url, url: h.url, host: (() => { try { return new URL(h.url).host || 'file'; } catch { return ''; } })() })),
+    ping: pingSummary(),
+    mode: MODE, wantedMode, hasPlugin: !!FLASH_PATH, version: FLASH_VERSION,
+    options: { restoreTabs: cfg.restoreTabs !== false, preventAppNap: cfg.preventAppNap !== false, pingGame: cfg.pingGame !== false },
+    update: updater.state(),
+  };
+}
+
+function fromMenu(e) { return menuOpen() && e.sender === menuWin.webContents; }
+ipcMain.handle('menu:state', (e) => fromMenu(e) ? menuState() : null);
+ipcMain.on('menu:size', (e, h) => {
+  if (!fromMenu(e) || !winOk()) return;
+  const { screen } = require('electron');
+  const b = menuWin.getBounds();
+  const area = screen.getDisplayMatching(b).workArea;
+  const height = Math.max(80, Math.min(Math.ceil(h), area.y + area.height - b.y - 8));
+  menuWin.setBounds({ x: b.x, y: b.y, width: MENU_W, height });
+  if (!menuWin.isVisible()) { menuWin.show(); menuWin.focus(); }
+});
+ipcMain.on('menu:close', (e) => { if (fromMenu(e)) closeMenuPopup(); });
+ipcMain.handle('menu:do', (e, action, arg) => {
+  if (!fromMenu(e)) return null;
+  const w = wc();
+  // các thao tác giữ menu mở, trả lại trạng thái mới
+  const stay = {
+    zoomIn: () => zoomBy(0.5), zoomOut: () => zoomBy(-0.5), zoomReset: () => zoomBy(0),
+    option: () => {
+      const key = String(arg);
+      if (!['restoreTabs', 'preventAppNap', 'pingGame'].includes(key)) return;
+      const on = loadConfig()[key] === false; // đang tắt → bật
+      saveConfig({ [key]: on });
+      if (key === 'preventAppNap') applyAppNap();
+      if (key === 'restoreTabs') saveSession(true);
+      if (key === 'pingGame' && !on) pingTargets.clear();
+      scheduleMenu();
+    },
+  };
+  if (stay[action]) { stay[action](); return menuState(); }
+
+  const bounds = menuOpen() ? menuWin.getBounds() : null;
+  closeMenuPopup();
+  const run = {
+    newTab, reopen: reopenClosedTab, mute: () => activeTab() && toggleMute(activeId),
+    screenshot: screenshotTab, fullscreen: toggleFullScreen, shots: () => { fs.mkdirSync(shotsDir(), { recursive: true }); shell.openPath(shotsDir()); },
+    history: openHistory, clearHistory: clearHistoryDialog, recent: () => openUrl(String(arg || '')),
+    home: () => w && w.loadURL(homeUrl()).catch(() => {}), setHome: setHomeHere,
+    inspector: () => openInspector(arg ? String(arg) : undefined), devtools: () => w && w.toggleDevTools(),
+    hardReload, clearCache: clearCacheReload,
+    checkFlash, allowSite: allowCurrentSite, plugin: askForFlashPlugin,
+    modeFlash: () => setMode('flash'), modeRuffle: () => setMode('ruffle'),
+    flashMore: () => {
+      // các tuỳ chọn Flash ít dùng: menu hệ thống ngay chỗ menu vừa đóng
+      if (!winOk()) return;
+      const cb = win.getContentBounds();
+      Menu.buildFromTemplate(flashSubmenu()).popup({ window: win, x: bounds ? bounds.x - cb.x + 12 : 0, y: bounds ? bounds.y - cb.y + 12 : TOOLBAR_HEIGHT });
+    },
+    openSwf: openSwfFile,
+    update: () => (updater.state().available ? updater.promptUpdate(true) : updater.check({ manual: true })),
+  };
+  if (run[action]) setTimeout(run[action], 0);
+  return null;
+});
+
+function buildMenu() {
+  const w = () => wc();
   const menu = Menu.buildFromTemplate([
     { label: app.name, submenu: [
       { role: 'about', label: 'Giới thiệu Wisp' },
+      { label: updater.state && updater.state().available ? `Cập nhật lên ${updater.state().available}…` : 'Kiểm tra cập nhật…',
+        click: () => (updater.state().available ? updater.promptUpdate(true) : updater.check({ manual: true })) },
       { type: 'separator' },
       { role: 'hide', label: 'Ẩn Wisp' },
       { role: 'hideOthers', label: 'Ẩn ứng dụng khác' },
@@ -985,6 +1392,8 @@ function buildMenu() {
       { type: 'separator' },
       { label: 'Đóng tab', accelerator: 'Cmd+W', click: () => activeTab() && closeTab(activeId) },
       { label: 'Mở lại tab vừa đóng', accelerator: 'Shift+Cmd+T', click: reopenClosedTab },
+      { type: 'separator' },
+      { label: 'Chụp màn hình tab', accelerator: 'Shift+Cmd+S', click: screenshotTab },
     ]},
     { label: 'Sửa', submenu: [
       { role: 'undo', label: 'Hoàn tác' }, { role: 'redo', label: 'Làm lại' }, { type: 'separator' },
@@ -996,37 +1405,23 @@ function buildMenu() {
       { label: 'Quay lại', accelerator: 'Cmd+[', click: () => w() && w().canGoBack() && w().goBack() },
       { label: 'Tiến tới', accelerator: 'Cmd+]', click: () => w() && w().canGoForward() && w().goForward() },
       { label: 'Tải lại', accelerator: 'Cmd+R', click: () => w() && w().reload() },
-      { label: 'Toàn màn hình', accelerator: 'Ctrl+Cmd+F', click: () => win.setFullScreen(!win.isFullScreen()) },
-      { label: 'Phóng to', accelerator: 'Cmd+=', click: () => w() && w().setZoomLevel(w().getZoomLevel() + 0.5) },
-      { label: 'Thu nhỏ', accelerator: 'Cmd+-', click: () => w() && w().setZoomLevel(w().getZoomLevel() - 0.5) },
-      { label: 'Cỡ gốc', accelerator: 'Cmd+0', click: () => w() && w().setZoomLevel(0) },
+      { label: 'Tải lại không dùng cache', accelerator: 'Shift+Cmd+R', click: hardReload },
+      { label: 'Xoá cache và tải lại', click: clearCacheReload },
       { type: 'separator' },
-      { label: 'Bảng kiểm tra (mạng, socket, console)', accelerator: 'Shift+Cmd+I', click: openInspector },
+      { label: 'Toàn màn hình', accelerator: 'Ctrl+Cmd+F', click: toggleFullScreen },
+      { label: 'Phóng to', accelerator: 'Cmd+=', click: () => zoomBy(0.5) },
+      { label: 'Thu nhỏ', accelerator: 'Cmd+-', click: () => zoomBy(-0.5) },
+      { label: 'Cỡ gốc', accelerator: 'Cmd+0', click: () => zoomBy(0) },
+      { type: 'separator' },
+      { label: 'Bảng kiểm tra (hiệu năng, mạng, socket)', accelerator: 'Shift+Cmd+I', click: () => openInspector() },
       { label: 'Công cụ nhà phát triển', accelerator: 'Alt+Cmd+I', click: () => w() && w().toggleDevTools() },
     ]},
-    { label: 'Flash', submenu: [
-      { label: 'Kiểm tra Flash Player', click: checkFlash },
-      { label: FLASH_PATH ? 'Thay plugin Flash…' : 'Cài plugin Flash…', click: choosePluginFile },
-      { label: 'Mở thư mục plugin', click: () => { const d = path.dirname(userPluginPath()); fs.mkdirSync(d, { recursive: true }); shell.openPath(d); } },
-      { type: 'separator' },
-      { label: 'Chế độ: Flash Player thật', type: 'radio', checked: wantedMode === 'flash', enabled: !!FLASH_PATH || wantedMode === 'flash', click: () => setMode('flash') },
-      { label: 'Chế độ: Ruffle (dự phòng)', type: 'radio', checked: wantedMode === 'ruffle', click: () => setMode('ruffle') },
-      { type: 'separator' },
-      { label: 'Cho phép Flash trên trang này', accelerator: 'Shift+Cmd+A', enabled: MODE === 'flash', click: allowCurrentSite },
-      { label: 'Sửa danh sách domain cho phép…', click: editAllowList },
-      { label: 'Ghi log allowlist (gỡ lỗi)', type: 'checkbox', checked: !!cfg.flashDebug, click: (item) => { saveConfig({ flashDebug: item.checked }); writeMmsCfg(); askRelaunch(item.checked ? 'Đã bật log allowlist.' : 'Đã tắt log allowlist.'); } },
-      { label: 'Mở thư mục mms.cfg', click: () => shell.showItemInFolder(mmsCfgPath()) },
-    ]},
-    { label: 'Lịch sử', submenu: [
-      { label: 'Hiện toàn bộ lịch sử', accelerator: 'Cmd+Y', click: openHistory },
-      { label: 'Xoá lịch sử…', accelerator: 'Shift+Cmd+Backspace', click: clearHistoryDialog },
-      { type: 'separator' },
-      { label: 'Xem gần đây', enabled: false },
-      ...recent.map(h => ({ label: shorten(h.title || h.url), click: () => openUrl(h.url) })),
-    ]},
+    { label: 'Flash', submenu: flashSubmenu() },
+    { label: 'Lịch sử', submenu: historySubmenu() },
     { label: 'Tab', submenu: [
       { label: 'Tab tiếp theo', accelerator: 'Ctrl+Tab', click: () => cycleTab(1) },
       { label: 'Tab trước', accelerator: 'Ctrl+Shift+Tab', click: () => cycleTab(-1) },
+      { label: 'Tắt / bật tiếng tab', accelerator: 'Shift+Cmd+M', click: () => activeTab() && toggleMute(activeId) },
       { type: 'separator' },
       ...tabs.map((t, i) => ({
         label: shorten(tabInfo(t).title, 50), type: 'radio', checked: t.id === activeId,
@@ -1034,9 +1429,227 @@ function buildMenu() {
       })),
       ...(tabs.length > 8 ? [{ label: 'Tab cuối', accelerator: 'Cmd+9', click: () => activateTab(tabs[tabs.length - 1].id) }] : []),
     ]},
+    { label: 'Tuỳ chọn', submenu: optionsSubmenu() },
     { role: 'windowMenu', label: 'Cửa sổ' },
   ]);
   Menu.setApplicationMenu(menu);
+}
+
+// ---------- theo dõi hiệu năng + ping máy chủ game ----------
+// Mỗi 2 giây: CPU / RAM của từng tiến trình (tab, Flash, GPU…), gửi lên thanh công cụ và Bảng kiểm tra.
+// Ping: lấy các kết nối TCP của game (không phải cổng 80/443) rồi đo ping ICMP tới máy chủ;
+// máy chủ chặn ICMP thì đo thời gian mở kết nối TCP tới đúng cổng game (thưa hơn, 10 giây / lần).
+const PERF_EVERY = 2000;
+const PERF_KEEP = 180;            // 6 phút
+const perfHist = [];              // { t, cpu, mem, flashCpu, flashMem }
+const pingTargets = new Map();    // "host:port" → { key, host, port, mode, icmpOk, fails, samples, busy, next, lastLive }
+let lastProcs = [];
+let perfTimer = null;
+let perfTicks = 0;
+const warned = { flashCpu: 0, mem: 0, ping: 0 };
+
+function splitHostPort(addr) {
+  const i = addr.lastIndexOf(':');
+  return [addr.slice(0, i).replace(/^\[|\]$/g, ''), Number(addr.slice(i + 1))];
+}
+
+function collectProcs() {
+  const byPid = new Map();
+  for (const t of tabs) {
+    const w = t.view.webContents;
+    if (!w.isDestroyed()) { const pid = w.getOSProcessId(); if (pid) byPid.set(pid, t); }
+  }
+  const ownPids = new Map();
+  if (winOk()) ownPids.set(win.webContents.getOSProcessId(), 'Thanh công cụ');
+  if (inspectorOpen()) ownPids.set(inspectWin.webContents.getOSProcessId(), 'Bảng kiểm tra');
+  return app.getAppMetrics().map(m => {
+    const t = byPid.get(m.pid);
+    let kind = m.type;
+    if (m.type === 'Pepper Plugin') kind = 'Flash';
+    else if (m.type === 'Browser') kind = 'Tiến trình chính';
+    else if (t) kind = 'Tab';
+    else if (ownPids.has(m.pid)) kind = ownPids.get(m.pid);
+    else if (m.type === 'Utility' && /network/i.test(m.serviceName || m.name || '')) kind = 'Mạng';
+    return {
+      pid: m.pid, type: m.type, kind, name: m.serviceName || m.name || '',
+      tabId: t ? t.id : null, tab: t ? tabInfo(t).title : '',
+      cpu: Math.round((m.cpu.percentCPUUsage || 0) * 10) / 10,
+      mem: Math.round((m.memory.workingSetSize || 0) / 1024), // MB
+    };
+  });
+}
+
+function pingSummary() {
+  // máy chủ game đang kết nối, mẫu ping gần nhất
+  let best = null;
+  for (const p of pingTargets.values()) {
+    if (!p.live || !p.samples.length) continue;
+    if (!best || p.lastLive > best.lastLive) best = p;
+  }
+  if (!best) return null;
+  const recent = best.samples.slice(-15);
+  const ok = recent.filter(s => s.ms != null);
+  return {
+    host: best.host, port: best.port, mode: best.mode,
+    ms: recent[recent.length - 1].ms,
+    avg: ok.length ? Math.round(ok.reduce((a, s) => a + s.ms, 0) / ok.length) : null,
+    loss: Math.round(100 * (recent.length - ok.length) / recent.length),
+  };
+}
+
+function perfTick() {
+  perfTicks++;
+  // âm thanh: tab nào đang phát tiếng (mỗi 1s)
+  let audioChanged = false;
+  for (const t of tabs) {
+    const w = t.view.webContents;
+    if (w.isDestroyed()) continue;
+    const a = w.isCurrentlyAudible();
+    if (a !== t.audible) { t.audible = a; audioChanged = true; }
+  }
+  if (audioChanged) sendTabs();
+  if (perfTicks % 2) return;
+
+  const procs = collectProcs();
+  lastProcs = procs;
+  const sum = (list, k) => list.reduce((a, p) => a + p[k], 0);
+  const flash = procs.filter(p => p.kind === 'Flash');
+  const active = activeTab();
+  const tabProcs = procs.filter(p => active && p.tabId === active.id);
+  const point = {
+    t: Date.now(),
+    cpu: Math.round(sum(procs, 'cpu')), mem: sum(procs, 'mem'),
+    flashCpu: Math.round(sum(flash, 'cpu')), flashMem: sum(flash, 'mem'),
+    tabCpu: Math.round(sum(tabProcs, 'cpu')), tabMem: sum(tabProcs, 'mem'),
+  };
+  perfHist.push(point);
+  if (perfHist.length > PERF_KEEP) perfHist.shift();
+
+  // cảnh báo (mỗi loại tối đa 1 lần / 5 phút)
+  const now = Date.now();
+  const recent = perfHist.slice(-5);
+  if (recent.length === 5 && recent.every(p => p.flashCpu >= 90) && now - warned.flashCpu > 300000) {
+    warned.flashCpu = now;
+    addLog('warning', 'perf', `Flash dùng ${point.flashCpu}% CPU liên tục 10 giây — máy có thể nóng / giật. Thử tắt bớt tab game hoặc giảm chất lượng trong game.`);
+  }
+  for (const p of procs) {
+    if (p.kind === 'Tab' && p.mem > 1500 && now - warned.mem > 300000) {
+      warned.mem = now;
+      addLog('warning', 'perf', `Tab "${shorten(p.tab, 40)}" dùng ${p.mem} MB RAM — nếu game chậm dần, tải lại tab (Cmd+R).`);
+    }
+  }
+
+  // ping máy chủ game
+  if (loadConfig().pingGame !== false) {
+    updatePingTargets();
+    for (const p of pingTargets.values()) if (p.live && now >= p.next) pingOnce(p);
+  }
+  const ping = pingSummary();
+  if (ping && ping.loss >= 50 && now - warned.ping > 120000) {
+    warned.ping = now;
+    addLog('warning', 'perf', `Mất ${ping.loss}% gói ping tới máy chủ game ${ping.host} — mạng chập chờn, game dễ bị lag / rớt kết nối.`);
+  }
+
+  if (winOk()) win.webContents.send('perf', { ...point, ping });
+  if (inspectorOpen()) inspectWin.webContents.send('inspect:perf', perfPayload());
+}
+
+function perfPayload() {
+  return {
+    procs: lastProcs, hist: perfHist,
+    pings: [...pingTargets.values()].map(p => ({ key: p.key, host: p.host, port: p.port, mode: p.mode, live: p.live, samples: p.samples })),
+    appNap: napBlocker !== null,
+  };
+}
+
+function updatePingTargets() {
+  const now = Date.now();
+  for (const s of sockets.values()) {
+    if (s.end || s.port === 80 || s.port === 443 || !s.states.includes('ESTABLISHED')) continue;
+    const [host, port] = splitHostPort(s.remote);
+    if (!host || /^(127\.|::1$|localhost)/.test(host)) continue;
+    const key = `${host}:${port}`;
+    let p = pingTargets.get(key);
+    if (!p) {
+      p = { key, host, port, mode: 'icmp', icmpOk: false, fails: 0, samples: [], busy: false, next: 0, lastLive: now, live: true };
+      pingTargets.set(key, p);
+      addLog('info', 'perf', `Theo dõi ping máy chủ game ${key}`);
+    }
+    p.lastLive = now;
+  }
+  for (const [k, p] of pingTargets) {
+    p.live = now - p.lastLive < 5000;
+    if (now - p.lastLive > 10 * 60000) pingTargets.delete(k);
+  }
+}
+
+function pingOnce(p) {
+  if (p.busy) return;
+  p.busy = true;
+  const record = (ms) => {
+    p.busy = false;
+    p.samples.push({ t: Date.now(), ms });
+    if (p.samples.length > PERF_KEEP) p.samples.shift();
+  };
+  if (p.mode === 'icmp') {
+    p.next = Date.now() + 2000;
+    execFile('/sbin/ping', ['-n', '-c', '1', '-W', '1500', p.host], { timeout: 3000 }, (_err, out) => {
+      const m = /time[=<]([\d.]+)\s*ms/.exec(String(out || ''));
+      if (m) { p.icmpOk = true; p.fails = 0; return record(Math.round(Number(m[1]))); }
+      if (!p.icmpOk && ++p.fails >= 2) {
+        // máy chủ chặn ICMP → đo bằng thời gian mở kết nối TCP tới cổng game
+        p.busy = false; p.mode = 'tcp'; p.next = 0;
+        addLog('info', 'perf', `${p.host} không trả lời ping ICMP → đo bằng thời gian nối TCP tới cổng ${p.port} (10 giây / lần)`);
+        return;
+      }
+      if (p.icmpOk) record(null); else p.busy = false;
+    });
+  } else {
+    p.next = Date.now() + 10000;
+    const t0 = Date.now();
+    const sock = net.connect({ host: p.host, port: p.port });
+    let done = false;
+    const fin = (ms) => { if (done) return; done = true; sock.destroy(); record(ms); };
+    sock.setTimeout(3000, () => fin(null));
+    sock.on('connect', () => fin(Date.now() - t0));
+    sock.on('error', () => fin(null));
+  }
+}
+
+function startPerf() {
+  if (perfTimer) return;
+  perfTimer = setInterval(perfTick, PERF_EVERY / 2);
+  startSocketWatch();
+}
+
+// ---------- âm thanh từng tab ----------
+function toggleMute(id) {
+  const t = tabOf(id);
+  if (!t) return;
+  t.muted = !t.muted;
+  t.view.webContents.setAudioMuted(t.muted);
+  sendTabs();
+}
+
+// ---------- chống App Nap: macOS hãm app bị che / thu nhỏ → game giật, rớt kết nối ----------
+const { powerSaveBlocker } = require('electron');
+let napBlocker = null;
+function applyAppNap() {
+  const on = loadConfig().preventAppNap !== false;
+  if (on && napBlocker === null) napBlocker = powerSaveBlocker.start('prevent-app-suspension');
+  else if (!on && napBlocker !== null) { powerSaveBlocker.stop(napBlocker); napBlocker = null; }
+}
+
+// ---------- nhớ các tab đang mở để lần sau mở lại ----------
+let lastSessionJson = '';
+function saveSession(force = false) {
+  if (!tabs.length) return;
+  const list = tabs.map(t => t.view.webContents.isDestroyed() ? '' : displayUrl(t.view.webContents.getURL())).filter(Boolean);
+  const data = { tabs: list, active: Math.max(0, tabs.indexOf(activeTab())) };
+  const json = JSON.stringify(data);
+  if (!force && json === lastSessionJson) return;
+  lastSessionJson = json;
+  saveConfig({ session: data });
 }
 
 // ---------- khởi động ----------
@@ -1074,7 +1687,12 @@ app.whenReady().then(() => {
     });
   }
 
+  applyAppNap();
   createWindow();
+  updater.init({
+    getWin: () => (winOk() ? win : null), toast, addLog, loadConfig, saveConfig,
+    notify: (st) => { if (winOk()) win.webContents.send('update', st); scheduleMenu(); },
+  });
   if (process.env.WISP_INSPECT) openInspector();
 });
 
@@ -1085,5 +1703,5 @@ app.on('open-file', (e, file) => {
   else pendingFile = file;
 });
 
-app.on('before-quit', saveHistoryNow);
+app.on('before-quit', () => { saveHistoryNow(); if (loadConfig().restoreTabs !== false) saveSession(); });
 app.on('window-all-closed', () => app.quit());

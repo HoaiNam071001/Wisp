@@ -32,37 +32,37 @@ Việc tiếp:
    - `ESTABLISHED` rồi đóng → máy chủ ngắt / không trả lời (so với Mạng + Console).
 3. ⬜ Nếu lsof không thấy gì: bật NetLog, làm lại, mở file bằng netlog-viewer.
 
-## 3. ⬜ Cập nhật app (tự động + bằng tay)
+## 3. 🟡 Cập nhật app (tự động + bằng tay)
 
-Không dùng `electron-updater`: trên macOS nó chỉ tự cài khi app có chữ ký Apple (app đang `identity: null`). Tự viết bộ cập nhật dựa trên **GitHub Releases** của repo public `HoaiNam071001/Wisp` (gọi API không cần token).
+Không dùng `electron-updater`: trên macOS nó chỉ tự cài khi app có chữ ký Apple (app đang `identity: null`). Tự viết bộ cập nhật (`updater.js`) dựa trên **GitHub Releases** của repo public `HoaiNam071001/Wisp` (gọi API không cần token).
 
 ### 3.1 Tách plugin Flash khỏi app (✅)
 Lý do: bản phát hành công khai không được kèm plugin của Adobe, và cập nhật thay cả `Wisp.app` thì plugin không được mất.
 - ✅ Vị trí tìm plugin `~/Library/Application Support/Wisp/plugins/PepperFlashPlayer.plugin` đứng đầu danh sách trong `findFlashPlugin`.
 - ✅ Lần đầu chạy: plugin đang nằm trong app (`resources/plugins`, hoặc `plugins/` khi dev) mà chưa có ở `userData/plugins` → chép ra bằng `ditto`.
-- ✅ Chưa có plugin → hộp thoại "Chọn plugin…" (cũng có ở menu Flash → Cài / Thay plugin Flash…). Kiểm tra `codesign --verify --deep --strict`, Team ID Adobe `JQ525L2MZD`, có x86_64; chép vào `userData/plugins` rồi mời mở lại app.
+- ✅ Chưa có plugin → hộp thoại: **Tải và cài tự động** (archive.org, kiểm tra MD5) / **Chọn file đã tải…** (.dmg / .pkg / .zip / .app / .plugin, app tự tách plugin, không chạy bộ cài Adobe) / **Mở trang tải**. Kiểm tra `codesign --verify --deep --strict`, Team ID Adobe `JQ525L2MZD`, có x86_64; chép vào `userData/plugins` rồi mời mở lại app.
 - ✅ Bỏ `extraResources` khỏi `package.json`; bản cá nhân kèm plugin: `npm run dist:personal` (`electron-builder.personal.js`, ra `Wisp-<version>-personal.dmg`).
 
 ### 3.2 Phát hành
-- ⬜ `npm run release`: tăng version (`npm version patch|minor`), `electron-builder --mac zip dmg --x64`, tính `sha256` của file zip, `gh release create vX.Y.Z` đính kèm `Wisp-X.Y.Z-mac.zip`, `.sha256`, `.dmg`, ghi chú phát hành lấy từ commit.
-- ⬜ Thêm target `zip` vào `build.mac.target` (bộ cập nhật dùng zip, người mới tải dmg).
+- 🟡 Đang làm tay: `npm version minor --no-git-tag-version` → `electron-builder --mac zip dmg --x64` → `shasum -a 256` file zip → `gh release create vX.Y.Z` đính kèm `Wisp-X.Y.Z-mac.zip`, `.sha256`, `.dmg`.
+- ⬜ Gói thành `npm run release`; thêm target `zip` vào `build.mac.target`.
 
-### 3.3 Kiểm tra bản mới
-- ⬜ `updater.js` (tiến trình chính): `GET https://api.github.com/repos/HoaiNam071001/Wisp/releases/latest`, so `tag_name` với `app.getVersion()` (semver), bỏ qua bản nháp / pre-release.
-- ⬜ Tự kiểm tra: 10 giây sau khi mở app, sau đó mỗi 6 giờ; lưu `lastCheck`, `skipVersion` trong `config.json`.
-- ⬜ Bằng tay: menu **Wisp → Kiểm tra cập nhật…** (luôn báo kết quả, kể cả "đang là bản mới nhất").
-- ⬜ Có bản mới: chấm báo trên toolbar + hộp thoại có ghi chú phát hành, nút **Cập nhật** / **Để sau** / **Bỏ qua bản này**.
+### 3.3 Kiểm tra bản mới (✅)
+- ✅ `GET https://api.github.com/repos/HoaiNam071001/Wisp/releases/latest`, so `tag_name` với `app.getVersion()`, bỏ qua bản nháp / pre-release.
+- ✅ Tự kiểm tra 10 giây sau khi mở app, sau đó mỗi 6 giờ; lưu `updateLastCheck`, `updateSkip` trong `config.json`.
+- ✅ Bằng tay: menu **Wisp → Kiểm tra cập nhật…** hoặc **⋮ → Kiểm tra cập nhật** (luôn báo kết quả).
+- ✅ Có bản mới: nút **Cập nhật x.y.z** màu cam trên toolbar + chấm trên ⋮; hộp thoại có ghi chú phát hành, nút **Cập nhật ngay** / **Để sau** / **Bỏ qua bản này** / **Xem trên GitHub**.
 - ⬜ Cài đặt: bật / tắt "Tự kiểm tra cập nhật".
 
-### 3.4 Cài bản mới
-- ⬜ Tải zip vào `os.tmpdir()/wisp-update/` (hiện tiến độ), so `sha256`.
-- ⬜ Giải nén bằng `ditto -x -k`, kiểm tra `Wisp.app/Contents/Info.plist` đúng version.
-- ⬜ Ghi script shell nhỏ: chờ PID của Wisp thoát → đổi tên app cũ thành bản dự phòng → chuyển app mới vào đúng chỗ (`path.dirname(app.getAppPath())` lên tới `.app`) → `xattr -cr` → `open` app mới → xoá bản dự phòng khi app mới chạy được.
-- ⬜ Không ghi được vào `/Applications` (thiếu quyền) → mở trang Release để tải tay.
-- ⬜ Lỗi ở bất kỳ bước nào → giữ app cũ, báo lỗi, gợi ý tải tay.
+### 3.4 Cài bản mới (✅, chưa thử thật end-to-end)
+- ✅ Tải zip vào thư mục tạm (tiến độ trên toolbar + Dock), so `sha256`.
+- ✅ Giải nén bằng `ditto -x -k`, kiểm tra `Info.plist` đúng version.
+- ✅ Script shell: chờ PID của Wisp thoát → đổi tên app cũ thành `.old` → `ditto` app mới vào đúng chỗ (lỗi thì trả app cũ về) → `xattr -cr` → `open`.
+- ✅ Không ghi được vào thư mục chứa app / đang chạy dev → mở trang Release để tải tay.
+- ✅ Lỗi ở bước tải / kiểm tra / giải nén → giữ app cũ, báo lỗi, gợi ý tải tay.
 
 ### 3.5 Kiểm tra
-- ⬜ Tạo release thử `v2.0.1` → app `2.0.0` thấy bản mới, cập nhật, mở lại đúng `2.0.1`, plugin + đăng nhập + `config.json` còn nguyên.
+- ⬜ Bản có bộ cập nhật đầu tiên phải cài tay. Sau đó phát hành bản kế tiếp → app thấy bản mới, cập nhật, mở lại đúng version, plugin + đăng nhập + `config.json` còn nguyên.
 - ⬜ Mất mạng / sai sha256 / không có quyền ghi → app cũ vẫn chạy.
 
 ## 4. ⬜ Wisp làm trình duyệt cho Ghosthand

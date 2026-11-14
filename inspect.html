@@ -28,6 +28,12 @@
   .tab:hover { background: var(--hover); }
   .tab.active { background: var(--bg); color: var(--text); }
   .tab .n { margin-left: 6px; font-size: 11px; color: var(--muted); }
+  /* mỗi tab một màu nhận diện, cùng bảng màu với thanh công cụ và menu ⋮ */
+  .tab::before { content: ''; display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-right: 7px; vertical-align: 1px; background: var(--c, #666); opacity: .55; }
+  .tab.active::before { opacity: 1; }
+  .tab[data-tab=perf] { --c: #3fb950; } .tab[data-tab=http] { --c: #4c8dff; } .tab[data-tab=sock] { --c: #a371f7; }
+  .tab[data-tab=log] { --c: #e3a008; } .tab[data-tab=info] { --c: #ff6a3d; }
+  .tab.active { box-shadow: inset 0 2px 0 var(--c); }
   .tab .n.bad { color: var(--err); }
   header .sp { flex: 1; }
   header button:not(.tab) { margin-bottom: 4px; }
@@ -85,11 +91,31 @@
   pre { margin: 0; padding: 8px; background: #17181a; border-radius: 6px; font: 12px ui-monospace, Menlo, monospace;
         white-space: pre-wrap; word-break: break-all; }
   .empty { padding: 24px; color: var(--muted); text-align: center; }
+
+  /* ---- Hiệu năng ---- */
+  .perf { padding: 12px 14px; overflow: auto; display: flex; flex-direction: column; gap: 14px; }
+  .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 10px; }
+  .card { background: var(--panel); border-radius: 10px; padding: 10px 12px; border-left: 3px solid var(--c, #555); }
+  .card:nth-child(1) { --c: #3fb950; } .card:nth-child(2) { --c: #f85149; } .card:nth-child(3) { --c: #a371f7; }
+  .card:nth-child(4) { --c: #4c8dff; } .card:nth-child(5) { --c: #2bb3a3; }
+  .card .lbl { color: var(--muted); font-size: 12px; }
+  .card .val { font-size: 22px; font-weight: 600; margin-top: 2px; font-variant-numeric: tabular-nums; }
+  .card .sub { color: var(--muted); font-size: 11px; margin-top: 2px; }
+  .chart { background: var(--panel); border-radius: 10px; padding: 10px 12px; }
+  .chart .ttl { display: flex; gap: 12px; align-items: baseline; color: var(--muted); font-size: 12px; margin-bottom: 6px; }
+  .chart .ttl b { color: var(--text); font-weight: 600; }
+  .chart svg { display: block; width: 100%; height: 90px; }
+  .lg { display: inline-flex; align-items: center; gap: 4px; }
+  .lg i { width: 10px; height: 3px; border-radius: 2px; display: inline-block; }
+  .good { color: var(--ok); } .mid { color: var(--warn); } .poor { color: var(--err); }
+  .perf table td { font-family: system-ui, sans-serif; }
+  .tips { color: var(--muted); font-size: 12px; line-height: 1.6; margin: 0; padding-left: 18px; }
 </style>
 </head>
 <body>
 <header>
-  <button class="tab active" data-tab="http">Mạng<span class="n" id="n-http"></span></button>
+  <button class="tab active" data-tab="perf">Hiệu năng<span class="n" id="n-perf"></span></button>
+  <button class="tab" data-tab="http">Mạng<span class="n" id="n-http"></span></button>
   <button class="tab" data-tab="sock">Socket TCP<span class="n" id="n-sock"></span></button>
   <button class="tab" data-tab="log">Console &amp; sự kiện<span class="n" id="n-log"></span></button>
   <button class="tab" data-tab="info">Flash</button>
@@ -98,8 +124,44 @@
   <button id="report" title="Lưu toàn bộ log + thông tin ra file JSON để gửi cho người khác xem">Lưu báo cáo</button>
 </header>
 
+<!-- ===== Hiệu năng ===== -->
+<section class="pane active" id="pane-perf">
+  <div class="perf scroll">
+    <div class="cards">
+      <div class="card"><div class="lbl">Ping máy chủ game</div><div class="val" id="c-ping">—</div><div class="sub" id="c-ping-sub">Chưa thấy kết nối game</div></div>
+      <div class="card"><div class="lbl">Mất gói (15 lần đo gần nhất)</div><div class="val" id="c-loss">—</div><div class="sub" id="c-jitter"></div></div>
+      <div class="card"><div class="lbl">CPU của Flash</div><div class="val" id="c-fcpu">—</div><div class="sub" id="c-fmem"></div></div>
+      <div class="card"><div class="lbl">CPU toàn bộ Wisp</div><div class="val" id="c-cpu">—</div><div class="sub">100% = 1 nhân CPU</div></div>
+      <div class="card"><div class="lbl">RAM toàn bộ Wisp</div><div class="val" id="c-mem">—</div><div class="sub" id="c-nap"></div></div>
+    </div>
+    <div class="chart">
+      <div class="ttl"><b>Ping</b><span id="g-ping-legend"></span><span id="g-ping-scale"></span></div>
+      <svg id="g-ping" viewBox="0 0 600 90" preserveAspectRatio="none"></svg>
+    </div>
+    <div class="chart">
+      <div class="ttl"><b>CPU</b><span class="lg"><i style="background:#79b8ff"></i>Toàn bộ</span><span class="lg"><i style="background:#d2a8ff"></i>Flash</span><span id="g-cpu-scale"></span></div>
+      <svg id="g-cpu" viewBox="0 0 600 90" preserveAspectRatio="none"></svg>
+    </div>
+    <div class="chart">
+      <div class="ttl"><b>Tiến trình</b><span>cập nhật mỗi 2 giây</span></div>
+      <table>
+        <colgroup><col style="width:150px"><col><col style="width:80px"><col style="width:80px"><col style="width:90px"></colgroup>
+        <thead><tr><th>Loại</th><th>Tab / dịch vụ</th><th class="num">CPU</th><th class="num">RAM</th><th class="num">PID</th></tr></thead>
+        <tbody id="pr-body"></tbody>
+      </table>
+    </div>
+    <ul class="tips">
+      <li>Ping đo bằng ICMP tới máy chủ game; máy chủ chặn ICMP thì đo thời gian mở kết nối TCP tới cổng game (10 giây / lần).</li>
+      <li>Ping trên ~150ms hoặc có mất gói → game dễ giật / rớt phòng: thử đổi mạng, tắt tải xuống khác, cắm dây LAN.</li>
+      <li>Flash ăn CPU cao liên tục: đóng bớt tab game, giảm chất lượng hình trong game (chuột phải vào game → Settings / Quality).</li>
+      <li>Game chậm dần sau thời gian dài (RAM tăng mãi): tải lại tab bằng Cmd+R.</li>
+    </ul>
+    <div><button id="pf-shots">Mở thư mục ảnh chụp màn hình</button></div>
+  </div>
+</section>
+
 <!-- ===== Mạng ===== -->
-<section class="pane active" id="pane-http">
+<section class="pane" id="pane-http">
   <div class="bar">
     <input type="search" id="h-filter" placeholder="Lọc theo URL…" style="width:260px">
     <label><input type="checkbox" id="h-onlyerr"> Chỉ lỗi</label>
@@ -170,6 +232,7 @@
       <option value="event">Sự kiện trang / app</option>
       <option value="socket">Socket</option>
       <option value="probe">Thử kết nối</option>
+      <option value="perf">Hiệu năng / ping</option>
     </select>
     <span class="sp"></span>
     <button id="l-clear">Xoá</button>
@@ -194,13 +257,125 @@ const clock = (t) => { if (!t) return ''; const d = new Date(t); return `${pad(d
 const dur = (ms) => ms < 1000 ? ms + 'ms' : (ms / 1000).toFixed(ms < 10000 ? 2 : 1) + 's';
 
 // ---------- tab ----------
-let current = 'http';
-document.querySelectorAll('.tab').forEach((b) => b.onclick = () => {
-  current = b.dataset.tab;
+let current = 'perf';
+function showTab(name) {
+  const b = document.querySelector(`.tab[data-tab="${name}"]`);
+  if (!b) return;
+  current = name;
   document.querySelectorAll('.tab').forEach((x) => x.classList.toggle('active', x === b));
   document.querySelectorAll('.pane').forEach((p) => p.classList.toggle('active', p.id === 'pane-' + current));
   if (current === 'info') loadInfo();
-});
+}
+document.querySelectorAll('.tab').forEach((b) => b.onclick = () => showTab(b.dataset.tab));
+insp.onTab(showTab);
+if (location.hash) showTab(location.hash.slice(1));
+
+// ================= Hiệu năng =================
+const SVGNS = 'http://www.w3.org/2000/svg';
+const PING_COLORS = ['#7ee29a', '#f0b866', '#79b8ff', '#ff7b72'];
+const pingClass = (ms) => ms == null ? 'poor' : ms < 80 ? 'good' : ms < 150 ? 'mid' : 'poor';
+function svgLine(svg, values, max, color, n) {
+  // values: mảng số (null = mất gói → vẽ chấm đỏ ở đáy)
+  const W = 600, H = 90;
+  const step = W / Math.max(1, n - 1);
+  const off = n - values.length;
+  let d = '';
+  values.forEach((v, i) => {
+    const x = (off + i) * step;
+    if (v == null) {
+      const c = document.createElementNS(SVGNS, 'rect');
+      c.setAttribute('x', x - 1.5); c.setAttribute('y', H - 6); c.setAttribute('width', 3); c.setAttribute('height', 6);
+      c.setAttribute('fill', '#ff7b72'); svg.appendChild(c);
+      d += ' ';
+      return;
+    }
+    const y = H - 2 - (Math.min(v, max) / max) * (H - 6);
+    d += (d.endsWith(' ') || !d ? 'M' : 'L') + x.toFixed(1) + ',' + y.toFixed(1);
+  });
+  const p = document.createElementNS(SVGNS, 'path');
+  p.setAttribute('d', d.replace(/ /g, ''));
+  p.setAttribute('fill', 'none'); p.setAttribute('stroke', color); p.setAttribute('stroke-width', '1.6');
+  p.setAttribute('vector-effect', 'non-scaling-stroke');
+  svg.appendChild(p);
+}
+function gridLines(svg, max, unit) {
+  for (const f of [0.5, 1]) {
+    const y = 90 - 2 - f * 84;
+    const l = document.createElementNS(SVGNS, 'line');
+    l.setAttribute('x1', 0); l.setAttribute('x2', 600); l.setAttribute('y1', y); l.setAttribute('y2', y);
+    l.setAttribute('stroke', '#3a3d44'); l.setAttribute('stroke-dasharray', '3 4'); l.setAttribute('vector-effect', 'non-scaling-stroke');
+    svg.appendChild(l);
+  }
+  // SVG bị kéo giãn theo chiều ngang nên ghi thang đo ở dòng tiêu đề thay vì trong hình
+  const scale = $(svg.id + '-scale');
+  if (scale) scale.textContent = `vạch kẻ: ${Math.round(max / 2)}${unit} · ${max}${unit}`;
+}
+function renderPerf(d) {
+  const last = d.hist[d.hist.length - 1];
+  if (last) {
+    $('c-cpu').textContent = last.cpu + '%';
+    $('c-mem').textContent = last.mem >= 1024 ? (last.mem / 1024).toFixed(1) + ' GB' : last.mem + ' MB';
+    $('c-fcpu').textContent = last.flashMem ? last.flashCpu + '%' : '—';
+    $('c-fcpu').className = 'val ' + (last.flashCpu >= 90 ? 'poor' : last.flashCpu >= 50 ? 'mid' : '');
+    $('c-fmem').textContent = last.flashMem ? `RAM ${last.flashMem} MB` : 'Flash chưa chạy';
+  }
+  $('c-nap').textContent = d.appNap ? 'Chống App Nap: bật' : 'Chống App Nap: tắt';
+
+  // ping: máy chủ đang kết nối, mới nhất trước
+  const pings = d.pings.filter(p => p.samples.length).sort((a, b) => (b.live - a.live));
+  const main = pings[0];
+  if (main) {
+    const recent = main.samples.slice(-15);
+    const ok = recent.filter(s => s.ms != null).map(s => s.ms);
+    const ms = recent[recent.length - 1].ms;
+    $('c-ping').textContent = ms == null ? 'mất' : ms + ' ms';
+    $('c-ping').className = 'val ' + pingClass(ms);
+    $('c-ping-sub').textContent = `${main.host}:${main.port} · ${main.mode === 'icmp' ? 'ICMP' : 'nối TCP'}${main.live ? '' : ' · đã ngắt'}`;
+    const loss = Math.round(100 * (recent.length - ok.length) / recent.length);
+    $('c-loss').textContent = loss + '%';
+    $('c-loss').className = 'val ' + (loss === 0 ? 'good' : loss < 20 ? 'mid' : 'poor');
+    if (ok.length > 1) {
+      const avg = ok.reduce((a, b) => a + b, 0) / ok.length;
+      const jit = ok.slice(1).reduce((a, v, i) => a + Math.abs(v - ok[i]), 0) / (ok.length - 1);
+      $('c-jitter').textContent = `TB ${Math.round(avg)} ms · min ${Math.min(...ok)} · max ${Math.max(...ok)} · dao động ${Math.round(jit)} ms`;
+    } else $('c-jitter').textContent = '';
+  }
+  $('n-perf').textContent = main && main.live ? (main.samples[main.samples.length - 1].ms ?? '—') + 'ms' : '';
+
+  const gp = $('g-ping'); gp.textContent = '';
+  const leg = $('g-ping-legend'); leg.textContent = '';
+  const N = 180;
+  let pmax = 100;
+  for (const p of pings) for (const s of p.samples) if (s.ms != null) pmax = Math.max(pmax, s.ms);
+  pmax = Math.ceil(pmax / 50) * 50;
+  gridLines(gp, pmax, 'ms');
+  pings.slice(0, 4).forEach((p, i) => {
+    svgLine(gp, p.samples.slice(-N).map(s => s.ms), pmax, PING_COLORS[i], N);
+    const l = el('span', 'lg'); const c = el('i'); c.style.background = PING_COLORS[i];
+    l.append(c, document.createTextNode(p.key + (p.live ? '' : ' (đã ngắt)'))); leg.appendChild(l);
+  });
+  if (!pings.length) leg.textContent = 'chưa có máy chủ game — vào game để Flash mở kết nối';
+
+  const gc = $('g-cpu'); gc.textContent = '';
+  let cmax = 100;
+  for (const h of d.hist) cmax = Math.max(cmax, h.cpu);
+  cmax = Math.ceil(cmax / 50) * 50;
+  gridLines(gc, cmax, '%');
+  svgLine(gc, d.hist.map(h => h.cpu), cmax, '#79b8ff', N);
+  svgLine(gc, d.hist.map(h => h.flashCpu), cmax, '#d2a8ff', N);
+
+  const body = $('pr-body'); body.textContent = '';
+  for (const p of [...d.procs].sort((a, b) => b.cpu - a.cpu || b.mem - a.mem)) {
+    const tr = el('tr', p.kind === 'Flash' ? 'game' : '');
+    tr.append(el('td', '', p.kind), el('td', '', p.tab || p.name || p.type),
+              el('td', 'num', p.cpu.toFixed(1) + '%'), el('td', 'num', p.mem + ' MB'), el('td', 'num', p.pid));
+    if (p.cpu >= 90) tr.className = 'err';
+    body.appendChild(tr);
+  }
+}
+insp.onPerf(renderPerf);
+insp.perf().then(renderPerf);
+$('pf-shots').onclick = () => insp.shots();
 
 // ================= Mạng =================
 const http = new Map();   // id → {r, tr}

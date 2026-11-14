@@ -5,84 +5,226 @@
 <title>Wisp</title>
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; img-src http: https: data: file:">
 <style>
+  /* Bảng màu chung của Wisp: nền tối trung tính, mỗi nhóm chức năng một màu nhấn */
+  :root {
+    --strip: #17181b; --bar: #232428; --surface: #2e3036; --hover: #383a41; --field: #17181b;
+    --border: #3a3d45; --text: #e8e9eb; --muted: #9da0a8; --faint: #70747c;
+    --brand: #ff6a3d; --blue: #4c8dff; --green: #3fb950; --amber: #e3a008; --red: #f85149; --purple: #a371f7; --teal: #2bb3a3;
+  }
   * { box-sizing: border-box; }
   body { margin: 0; height: 80px; display: flex; flex-direction: column;
-         background: #2b2d31; font: 14px system-ui, sans-serif; color: #eee; user-select: none; overflow: hidden; }
+         background: var(--bar); font: 13px system-ui, -apple-system, sans-serif; color: var(--text); user-select: none; overflow: hidden; }
+  svg.i { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+  button { font: inherit; color: inherit; border: 0; background: none; cursor: pointer; padding: 0; }
 
   /* ---- thanh tab ---- */
-  #tabbar { height: 36px; display: flex; align-items: flex-end; gap: 2px; padding: 6px 8px 0; background: #1e1f22; }
-  #tabs { display: flex; gap: 2px; min-width: 0; flex: 0 1 auto; overflow: hidden; }
-  .tab { position: relative; flex: 0 1 220px; min-width: 48px; height: 30px; display: flex; align-items: center; gap: 6px;
-         padding: 0 6px 0 10px; border-radius: 8px 8px 0 0; background: transparent; color: #aaa; cursor: default; }
-  .tab:hover { background: #26282c; color: #ddd; }
-  .tab.active { background: #2b2d31; color: #eee; }
-  .tab:not(.active):not(:hover) + .tab:not(.active):not(:hover)::before {
-    content: ''; position: absolute; left: -2px; top: 8px; bottom: 8px; width: 1px; background: #3a3d44; }
-  .fav { width: 16px; height: 16px; flex: none; display: grid; place-items: center; font-size: 12px; }
-  .fav img { width: 16px; height: 16px; }
-  .spin { width: 12px; height: 12px; border: 2px solid #555; border-top-color: #e8562a; border-radius: 50%;
-          animation: spin .8s linear infinite; }
+  #tabbar { height: 36px; display: flex; align-items: flex-end; padding: 6px 8px 0; background: var(--strip); }
+  /* nút + nằm trong #tabs, ngay sau tab cuối; tab tự co lại khi nhiều */
+  #tabs { flex: 1; min-width: 0; height: 100%; display: flex; align-items: flex-end; gap: 1px; overflow: hidden; }
+  .tab { position: relative; flex: 0 1 220px; width: 220px; min-width: 40px; height: 30px; display: flex; align-items: center; gap: 7px;
+         padding: 0 6px 0 10px; border-radius: 9px 9px 0 0; color: var(--muted); cursor: default; transition: background .12s, color .12s; }
+  .tab:hover { background: #202125; color: #d6d8db; }
+  .tab.active { background: var(--bar); color: var(--text); }
+  .tab.active::before { content: ''; position: absolute; left: 10px; right: 10px; top: 0; height: 2px; border-radius: 0 0 2px 2px; background: var(--brand); }
+  .tab:not(.active):not(:hover) + .tab:not(.active):not(:hover)::after {
+    content: ''; position: absolute; left: -1px; top: 9px; bottom: 7px; width: 1px; background: #33363c; }
+  .fav { width: 16px; height: 16px; flex: none; display: grid; place-items: center; }
+  .fav img { width: 16px; height: 16px; border-radius: 3px; }
+  .fav.hist { color: var(--blue); }
+  .fav.globe { color: var(--faint); }
+  .spin { width: 13px; height: 13px; border: 2px solid rgba(255,106,61,.25); border-top-color: var(--brand); border-radius: 50%;
+          animation: spin .7s linear infinite; }
   @keyframes spin { to { transform: rotate(360deg); } }
-  .title { flex: 1; min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-size: 13px; }
-  .x { flex: none; width: 20px; height: 20px; min-width: 0; padding: 0; border-radius: 5px; background: transparent;
-       color: #999; font-size: 14px; line-height: 20px; }
-  .x:hover { background: #4a4e57 !important; color: #fff; }
+  .title { flex: 1; min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-size: 12.5px; }
+  .x, .snd { flex: none; width: 20px; height: 20px; border-radius: 5px; display: grid; place-items: center; color: var(--faint); }
+  .x svg, .snd svg { width: 12px; height: 12px; }
+  .x:hover { background: rgba(248,81,73,.18); color: var(--red); }
+  .snd { color: var(--blue); }
+  .snd.muted { color: var(--red); }
+  .snd:hover { background: var(--hover); }
   .tab.narrow .title { display: none; }
   .tab.narrow:not(.active) .x { display: none; }
-  #newtab { flex: none; width: 28px; min-width: 0; height: 26px; margin: 0 0 2px 4px; padding: 0; background: transparent; font-size: 18px; color: #aaa; }
-  #newtab:hover { background: #3a3d44; color: #fff; }
-  #filler { flex: 1; height: 100%; }
+  #newtab { flex: none; width: 28px; height: 26px; margin: 0 0 2px 4px; border-radius: 7px; display: grid; place-items: center; color: var(--muted); }
+  #newtab:hover { background: var(--surface); color: var(--text); }
 
   /* ---- thanh địa chỉ ---- */
-  #bar { height: 44px; display: flex; align-items: center; gap: 6px; padding: 0 8px; }
-  button { height: 30px; min-width: 32px; border: 0; border-radius: 6px; background: #3a3d44; color: #eee;
-           font-size: 15px; cursor: pointer; padding: 0 8px; }
-  button:hover:not(:disabled) { background: #4a4e57; }
-  button:disabled { opacity: .35; cursor: default; }
-  form { flex: 1; display: flex; }
-  input { flex: 1; height: 30px; border: 1px solid #44474f; border-radius: 6px; background: #1e1f22; color: #eee;
-          padding: 0 10px; font-size: 14px; outline: none; }
-  input:focus { border-color: #e8562a; }
-  .badge { font-size: 11px; font-weight: 600; white-space: nowrap; padding: 3px 7px; border-radius: 5px;
-           background: #3a3d44; color: #aaa; }
-  .badge.flash { background: #1f4d2b; color: #7ee29a; }
-  .badge.ruffle { background: #4d3a1f; color: #f0b866; }
+  #bar { height: 44px; display: flex; align-items: center; gap: 4px; padding: 0 8px; border-bottom: 1px solid #1b1c1f; }
+  .nb { width: 32px; height: 32px; border-radius: 8px; display: grid; place-items: center; color: #c9cbcf; transition: background .12s; }
+  .nb:hover:not(:disabled) { background: var(--surface); color: #fff; }
+  .nb:active:not(:disabled) { background: var(--hover); }
+  .nb:disabled { opacity: .3; cursor: default; }
+  #reload.stop { color: var(--red); }
+  #home:hover { color: var(--amber) !important; }
+
+  form { flex: 1; min-width: 0; display: flex; margin: 0 4px; position: relative; }
+  .sec { position: absolute; left: 4px; top: 4px; height: 24px; display: flex; align-items: center; gap: 5px; padding: 0 7px;
+         border-radius: 6px; font-size: 11.5px; font-weight: 600; pointer-events: none; }
+  .sec.https { color: var(--green); }
+  .sec.http { color: var(--amber); background: rgba(227,160,8,.12); }
+  .sec.file { color: var(--blue); }
+  .sec.internal { color: var(--purple); }
+  .sec svg { width: 14px; height: 14px; }
+  input { flex: 1; min-width: 0; height: 32px; border: 1px solid transparent; border-radius: 16px; background: var(--field); color: var(--text);
+          padding: 0 14px 0 34px; font: 13.5px system-ui, -apple-system, sans-serif; outline: none; transition: border-color .12s, box-shadow .12s; }
+  input.wide { padding-left: 128px; }
+  input:hover { border-color: var(--border); }
+  input:focus { border-color: var(--brand); box-shadow: 0 0 0 3px rgba(255,106,61,.2); }
+  input::placeholder { color: var(--faint); }
+
+  #perf { height: 30px; display: flex; align-items: center; gap: 7px; padding: 0 11px; border-radius: 15px; font-size: 12px;
+          color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; background: var(--surface); transition: background .12s; }
+  #perf:hover { background: var(--hover); }
+  #perf svg { width: 14px; height: 14px; color: var(--faint); }
+  #perf .dot { width: 8px; height: 8px; border-radius: 50%; background: #5b5e66; }
+  #perf .good { color: var(--green); } #perf .mid { color: var(--amber); } #perf .poor { color: var(--red); }
+  #perf .dot.good { background: var(--green); box-shadow: 0 0 0 3px rgba(63,185,80,.18); }
+  #perf .dot.mid { background: var(--amber); box-shadow: 0 0 0 3px rgba(227,160,8,.18); }
+  #perf .dot.poor { background: var(--red); box-shadow: 0 0 0 3px rgba(248,81,73,.18); }
+  #perf .cpu { color: #c4c6ca; }
+  #perf .sep1 { width: 1px; height: 14px; background: var(--border); }
+
+  .badge { height: 24px; display: flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 700; letter-spacing: .02em;
+           white-space: nowrap; padding: 0 9px; border-radius: 12px; margin-left: 4px; background: var(--surface); color: var(--muted); }
+  .badge::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+  .badge.flash { background: rgba(63,185,80,.14); color: #6fdc8c; }
+  .badge.ruffle { background: rgba(227,160,8,.14); color: #f0c050; }
+  .badge { cursor: pointer; } .badge:hover { filter: brightness(1.25); }
+
+  #more { margin-left: 2px; position: relative; }
+  #more.dot::after { content: ''; position: absolute; top: 6px; right: 6px; width: 7px; height: 7px; border-radius: 50%;
+                     background: var(--brand); box-shadow: 0 0 0 2px var(--bar); }
+  #upd { display: none; height: 28px; align-items: center; gap: 6px; padding: 0 11px; margin-left: 4px; border-radius: 14px;
+         background: var(--brand); color: #fff; font-size: 12px; font-weight: 650; white-space: nowrap; }
+  #upd.show { display: flex; }
+  #upd:hover { filter: brightness(1.1); }
+  #upd svg { width: 14px; height: 14px; }
+  #more.open { background: var(--hover); color: #fff; }
+
+  #toast { position: fixed; right: 52px; top: 42px; height: 32px; display: flex; align-items: center; gap: 8px; padding: 0 12px 0 10px;
+           border-radius: 8px; background: #1d3a27; border: 1px solid #2d6a3e; color: #d6f5df; font-size: 12.5px; white-space: nowrap;
+           opacity: 0; transform: translateY(-4px); pointer-events: none; transition: opacity .18s, transform .18s; }
+  #toast svg { width: 15px; height: 15px; color: var(--green); }
+  #toast.show { opacity: 1; transform: none; }
+
+  @media (max-width: 980px) { #perf .cpu, #perf .sep1 { display: none; } }
+  @media (max-width: 760px) { .badge, #home { display: none; } }
 </style>
 </head>
 <body>
   <div id="tabbar">
-    <div id="tabs"></div>
-    <button id="newtab" title="Tab mới (Cmd+T)">+</button>
-    <div id="filler" title="Bấm đúp để mở tab mới"></div>
+    <div id="tabs">
+      <button id="newtab" title="Tab mới (Cmd+T)"><svg class="i" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button>
+    </div>
   </div>
   <div id="bar">
-    <button id="back" title="Quay lại">◀</button>
-    <button id="fwd" title="Tiến tới">▶</button>
-    <button id="reload" title="Tải lại (F5)">⟳</button>
-    <button id="home" title="Trang chủ">⌂</button>
-    <form id="f"><input id="url" spellcheck="false" placeholder="Nhập địa chỉ trang web hoặc file .swf rồi Enter"></form>
-    <button id="sethome" title="Đặt trang hiện tại làm trang chủ (lần sau mở app sẽ vào thẳng)">★ Đặt làm trang chủ</button>
-    <button id="history" title="Lịch sử (Cmd+Y)">🕘</button>
-    <button id="inspect" title="Bảng kiểm tra: mạng, socket, console (Shift+Cmd+I)">🔍</button>
+    <button class="nb" id="back" title="Quay lại (Cmd+[)"><svg class="i" viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg></button>
+    <button class="nb" id="fwd" title="Tiến tới (Cmd+])"><svg class="i" viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg></button>
+    <button class="nb" id="reload" title="Tải lại (Cmd+R)"></button>
+    <button class="nb" id="home" title="Trang chủ"><svg class="i" viewBox="0 0 24 24"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h5v-6h4v6h5V10"/></svg></button>
+    <form id="f">
+      <span class="sec" id="sec"></span>
+      <input id="url" spellcheck="false" placeholder="Nhập địa chỉ trang web hoặc file .swf rồi Enter">
+    </form>
+    <button id="perf" title="Hiệu năng — bấm để xem chi tiết">
+      <span class="dot" id="pf-dot"></span><span id="pf-ping">—</span><span class="sep1"></span><span class="cpu" id="pf-cpu">CPU —</span>
+    </button>
     <span class="badge" id="badge">…</span>
+    <button id="upd" title="Có bản Wisp mới — bấm để xem và cập nhật"><svg class="i" viewBox="0 0 24 24"><path d="M12 3v12M7 10l5 5 5-5"/><path d="M4 17v3h16v-3"/></svg><span id="upd-t">Cập nhật</span></button>
+    <button class="nb" id="more" title="Menu: lịch sử, chụp màn hình, hiệu năng, Flash, tuỳ chọn…">
+      <svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="5" r="1.2"/><circle cx="12" cy="12" r="1.2"/><circle cx="12" cy="19" r="1.2"/></svg>
+    </button>
   </div>
+  <div id="toast"><svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.5 2.5 5.5-6"/></svg><span id="toast-t"></span></div>
 <script>
   const $ = (id) => document.getElementById(id);
+  const ICON = {
+    reload: '<svg class="i" viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-2.6-6.4"/><path d="M21 3v6h-6"/></svg>',
+    stop: '<svg class="i" viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg>',
+    x: '<svg class="i" viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg>',
+    lock: '<svg class="i" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>',
+    unlock: '<svg class="i" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 7.5-2"/></svg>',
+    file: '<svg class="i" viewBox="0 0 24 24"><path d="M14 3H6v18h12V7z"/><path d="M14 3v4h4"/></svg>',
+    clock: '<svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>',
+    globe: '<svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/></svg>',
+    sound: '<svg class="i" viewBox="0 0 24 24"><path d="M11 5L6 9H3v6h3l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13"/></svg>',
+    muted: '<svg class="i" viewBox="0 0 24 24"><path d="M11 5L6 9H3v6h3l5 4z"/><path d="M22 9l-6 6M16 9l6 6"/></svg>',
+  };
+  $('reload').innerHTML = ICON.reload;
+
   $('back').onclick = () => nav.back();
   $('fwd').onclick = () => nav.forward();
   $('reload').onclick = () => nav.reload();
   $('home').onclick = () => nav.home();
-  $('history').onclick = () => nav.history();
-  $('inspect').onclick = () => nav.inspect();
-  $('sethome').onclick = () => { nav.setHome(); $('sethome').textContent = '✓ Đã lưu'; setTimeout(() => $('sethome').textContent = '★ Đặt làm trang chủ', 1500); };
   $('f').onsubmit = (e) => { e.preventDefault(); nav.go($('url').value); $('url').blur(); };
   $('newtab').onclick = () => nav.newTab();
-  $('filler').ondblclick = () => nav.newTab();
+  // bấm đúp vào chỗ trống trên thanh tab → tab mới
+  $('tabs').ondblclick = (e) => { if (e.target === $('tabs')) nav.newTab(); };
+  $('more').onclick = () => {
+    const r = $('more').getBoundingClientRect();
+    $('more').classList.add('open');
+    nav.menu(r.right + 6, r.bottom + 2);
+  };
+  nav.onMenuClosed(() => $('more').classList.remove('open'));
+  $('perf').onclick = () => nav.inspect('perf');
+  // nhãn FLASH / RUFFLE: chưa có Flash thì mở hộp thoại cài, có rồi thì kiểm tra Flash
+  $('badge').onclick = () => nav.flash();
+  $('upd').onclick = () => nav.update();
+  nav.onUpdate((u) => {
+    const on = !!(u && u.available && !u.busy);
+    $('upd').classList.toggle('show', on);
+    $('upd-t').textContent = on ? `Cập nhật ${u.available}` : 'Cập nhật';
+    $('more').classList.toggle('dot', on);
+  });
+
+  // ---- biểu tượng bảo mật trong ô địa chỉ ----
+  function renderSec(url) {
+    const s = $('sec'); const inp = $('url');
+    let cls = '', html = '', wide = false;
+    if (/^https:/i.test(url)) { cls = 'https'; html = ICON.lock; }
+    else if (/^http:/i.test(url)) { cls = 'http'; html = ICON.unlock + 'Không bảo mật'; wide = true; }
+    else if (/^file:/i.test(url)) { cls = 'file'; html = ICON.file; }
+    else if (/^wisp:/i.test(url)) { cls = 'internal'; html = ICON.clock; }
+    else { html = ICON.globe; }
+    s.className = 'sec ' + cls;
+    s.innerHTML = html;
+    inp.classList.toggle('wide', wide);
+  }
+  $('url').addEventListener('focus', () => { $('sec').style.visibility = 'hidden'; $('url').classList.remove('wide'); $('url').style.paddingLeft = '14px'; });
+  $('url').addEventListener('blur', () => { $('sec').style.visibility = ''; $('url').style.paddingLeft = ''; renderSec(lastUrl); });
+  let lastUrl = '';
+
+  // ---- ô hiệu năng: ping máy chủ game + CPU ----
+  const pingClass = (ms) => ms == null ? 'poor' : ms < 80 ? 'good' : ms < 150 ? 'mid' : 'poor';
+  nav.onPerf((p) => {
+    const g = p.ping;
+    $('pf-dot').className = 'dot ' + (g ? pingClass(g.ms) : '');
+    $('pf-ping').className = g ? pingClass(g.ms) : '';
+    $('pf-ping').textContent = g ? (g.ms == null ? 'mất gói' : g.ms + ' ms') : 'Chưa vào game';
+    $('pf-cpu').textContent = `CPU ${p.cpu}%`;
+    $('pf-cpu').className = 'cpu ' + (p.cpu >= 150 ? 'poor' : p.cpu >= 80 ? 'mid' : '');
+    const mem = (mb) => mb >= 1024 ? (mb / 1024).toFixed(1) + ' GB' : mb + ' MB';
+    $('perf').title = [
+      g ? `Ping ${g.host}:${g.port}: ${g.ms == null ? 'mất gói' : g.ms + ' ms'} (TB ${g.avg ?? '—'} ms, mất ${g.loss}%, đo bằng ${g.mode === 'icmp' ? 'ICMP' : 'nối TCP'})`
+        : 'Chưa thấy kết nối tới máy chủ game',
+      `Wisp: CPU ${p.cpu}% · RAM ${mem(p.mem)}`,
+      `Tab này: CPU ${p.tabCpu}% · RAM ${mem(p.tabMem)}`,
+      p.flashMem ? `Flash: CPU ${p.flashCpu}% · RAM ${mem(p.flashMem)}` : 'Flash chưa chạy',
+      '', 'Bấm để mở bảng Hiệu năng',
+    ].join('\n');
+  });
+
+  let toastTimer = null;
+  nav.onToast((text) => {
+    $('toast-t').textContent = text;
+    $('toast').classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => $('toast').classList.remove('show'), 2500);
+  });
 
   // ---- vẽ thanh tab ----
   function renderTabs({ tabs, active }) {
     const box = $('tabs');
-    box.textContent = '';
+    for (const old of box.querySelectorAll('.tab')) old.remove();
     for (const t of tabs) {
       const el = document.createElement('div');
       el.className = 'tab' + (t.id === active ? ' active' : '');
@@ -93,52 +235,67 @@
       if (t.loading) {
         const s = document.createElement('span'); s.className = 'spin'; fav.appendChild(s);
       } else if (t.history) {
-        fav.textContent = '🕘';
+        fav.classList.add('hist'); fav.innerHTML = ICON.clock;
       } else if (t.favicon) {
         const img = document.createElement('img');
         img.src = t.favicon;
-        img.onerror = () => { img.remove(); fav.textContent = '🌐'; };
+        img.onerror = () => { img.remove(); fav.classList.add('globe'); fav.innerHTML = ICON.globe; };
         fav.appendChild(img);
-      } else fav.textContent = '🌐';
+      } else { fav.classList.add('globe'); fav.innerHTML = ICON.globe; }
 
       const title = document.createElement('span');
       title.className = 'title';
       title.textContent = t.title;
+      el.append(fav, title);
+
+      if (t.audible || t.muted) {
+        const snd = document.createElement('button');
+        snd.className = 'snd' + (t.muted ? ' muted' : '');
+        snd.innerHTML = t.muted ? ICON.muted : ICON.sound;
+        snd.title = t.muted ? 'Bật tiếng tab' : 'Tắt tiếng tab (Shift+Cmd+M)';
+        snd.onmousedown = (e) => e.stopPropagation();
+        snd.onclick = (e) => { e.stopPropagation(); nav.muteTab(t.id); };
+        el.appendChild(snd);
+      }
 
       const x = document.createElement('button');
       x.className = 'x';
-      x.textContent = '×';
+      x.innerHTML = ICON.x;
       x.title = 'Đóng tab (Cmd+W)';
       x.onmousedown = (e) => e.stopPropagation();
       x.onclick = (e) => { e.stopPropagation(); nav.closeTab(t.id); };
+      el.appendChild(x);
 
-      el.append(fav, title, x);
       el.onmousedown = (e) => { if (e.button === 0) nav.switchTab(t.id); };
       el.onauxclick = (e) => { if (e.button === 1) nav.closeTab(t.id); }; // bấm chuột giữa → đóng
       el.oncontextmenu = (e) => { e.preventDefault(); nav.tabMenu(t.id); };
-      box.appendChild(el);
+      box.insertBefore(el, $('newtab'));
     }
     fitTabs();
   }
   // Nhiều tab quá thì ẩn tiêu đề, chỉ còn icon
   function fitTabs() {
-    for (const el of $('tabs').children) el.classList.toggle('narrow', el.getBoundingClientRect().width < 84);
+    for (const el of $('tabs').querySelectorAll('.tab')) el.classList.toggle('narrow', el.getBoundingClientRect().width < 84);
   }
   window.addEventListener('resize', fitTabs);
 
   nav.onTabs(renderTabs);
   nav.onState((s) => {
-    if (document.activeElement !== $('url')) $('url').value = s.url;
+    lastUrl = s.url;
+    if (document.activeElement !== $('url')) { $('url').value = s.url; renderSec(s.url); }
     $('back').disabled = !s.canBack;
     $('fwd').disabled = !s.canForward;
-    $('reload').textContent = s.loading ? '✕' : '⟳';
+    $('reload').innerHTML = s.loading ? ICON.stop : ICON.reload;
+    $('reload').classList.toggle('stop', s.loading);
+    $('reload').title = s.loading ? 'Dừng tải' : 'Tải lại (Cmd+R)';
     const b = $('badge');
     if (s.mode === 'flash') {
       b.className = 'badge flash'; b.textContent = 'FLASH ' + (s.version || '');
-      b.title = 'Đang dùng Flash Player thật (Pepper Flash)';
+      b.title = 'Đang dùng Flash Player thật (Pepper Flash). Bấm để kiểm tra';
     } else {
       b.className = 'badge ruffle'; b.textContent = 'RUFFLE';
-      b.title = s.wantedFlash ? 'Chưa có PepperFlashPlayer.plugin — đang chạy tạm bằng Ruffle' : 'Chế độ Ruffle (giả lập Flash)';
+      b.title = s.wantedFlash ? 'Chưa có Flash Player — đang chạy tạm bằng Ruffle. Bấm để tải / cài Flash Player' : 'Chế độ Ruffle (giả lập Flash). Bấm để cài Flash Player';
+      if (s.wantedFlash) b.textContent = 'RUFFLE · CÀI FLASH';
     }
   });
   nav.ready();
