@@ -159,7 +159,7 @@ Mục tiêu: Ghosthand điều khiển được trang web trong Wisp (đọc tra
 - Có thể thêm một cách để Ghosthand biết tab nào đang hiện (vd. mỗi tab là một BrowserView, đặt tiêu đề rõ ràng).
 - Đổi tên tiến trình/bundle id để Ghosthand nhận ra app (hiện: `local.wisp`).
 
-## 9. Đang làm dở: Bảng kiểm tra (mạng, socket, console) — 14/11/2026
+## 9. Bảng kiểm tra (mạng, socket, console) — 14/11/2026 — ĐÃ XONG bước 1–3 (chạy thử OK cả 4 tab); còn: build lại dmg, dùng để bắt lỗi đăng nhập cf4vn
 
 **Lý do:** vào cf4vn.bar (Bang Bang 4VN) bằng Wisp luôn báo `登陆超时，请稍后再试` ("đăng nhập quá thời gian chờ"), trong khi người khác vẫn vào được → nghi Wisp lỗi. DevTools có sẵn không thấy kết nối socket của Flash, nên cần bảng riêng.
 

@@ -24,9 +24,10 @@ const PLUGIN_NAME = 'PepperFlashPlayer.plugin';
 // định dạng mới mà Chromium 87 không đọc được, nên chỉ chép config.json.
 {
   const appData = app.getPath('appData');
-  const newDir = path.join(appData, 'Wisp');
+  // WISP_USER_DATA: chạy thử bản dev với thư mục dữ liệu riêng, không đụng bản đang dùng
+  const newDir = process.env.WISP_USER_DATA || path.join(appData, 'Wisp');
   app.setPath('userData', newDir);
-  try {
+  if (!process.env.WISP_USER_DATA) try {
     const v2Dir = path.join(appData, 'Flash Browser 2');
     const v1Cfg = path.join(appData, 'Flash Browser', 'config.json');
     // Electron có thể đã tự tạo thư mục Wisp (rỗng) trước khi code này chạy,
@@ -292,6 +293,7 @@ ipcMain.on('ready', sendState);
 // nên app tự ghi: mọi request HTTP của phiên (cả request do Flash gửi), các kết nối
 // TCP của mọi tiến trình Wisp (đọc bằng lsof), console + sự kiện của trang.
 const LOG_MAX = 3000;
+const APP_FILE_URL = pathToFileURL(__dirname).href + '/';
 const httpLog = new Map();        // id → request
 const appLog = [];                // console + sự kiện
 const sockets = new Map();        // pid:fd:địa chỉ → kết nối TCP
@@ -347,6 +349,8 @@ function installRequestLog(ses) {
   wr.onBeforeRequest((d, cb) => {
     cb({});
     if (/^(devtools|chrome-extension|data|blob):/i.test(d.url) || ownWebContents(d.webContentsId)) return;
+    // file giao diện của chính app (toolbar.html, inspect.html…), trừ player.html bọc file .swf
+    if (d.url.startsWith(APP_FILE_URL) && !d.url.startsWith(APP_FILE_URL + 'player.html')) return;
     httpLog.set(d.id, { id: d.id, start: Date.now(), method: d.method, url: d.url, type: d.resourceType,
                         status: 0, state: 'pending', error: '', ip: '', fromCache: false, end: 0,
                         reqHeaders: null, resHeaders: null, redirects: [] });
@@ -711,6 +715,7 @@ app.whenReady().then(() => {
   }
 
   createWindow();
+  if (process.env.WISP_INSPECT) openInspector();
 });
 
 // Mở file .swf bằng cách kéo thả vào icon app trên Dock / "Open With"

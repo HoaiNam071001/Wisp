@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<title>Bảng kiểm tra — Wisp</title>
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'unsafe-inline'; script-src 'unsafe-inline'">
+<style>
+  :root {
+    --bg: #1e1f22; --panel: #2b2d31; --line: #3a3d44; --hover: #34373d; --sel: #3b4a66;
+    --text: #e6e6e6; --muted: #9a9ca3; --accent: #e8562a;
+    --ok: #7ee29a; --warn: #f0b866; --err: #ff7b72; --info: #79b8ff; --game: #d2a8ff;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body { margin: 0; display: flex; flex-direction: column; background: var(--bg); color: var(--text);
+         font: 13px system-ui, -apple-system, sans-serif; }
+  button { height: 26px; border: 0; border-radius: 5px; background: #3a3d44; color: var(--text); font: inherit;
+           padding: 0 10px; cursor: pointer; white-space: nowrap; }
+  button:hover { background: #4a4e57; }
+  button.on { background: #6b2a17; color: #ffd2c2; }
+  input[type=text], input[type=search], select { height: 26px; border: 1px solid #44474f; border-radius: 5px;
+           background: #17181a; color: var(--text); padding: 0 8px; font: inherit; outline: none; }
+  input:focus, select:focus { border-color: var(--accent); }
+  label { display: inline-flex; align-items: center; gap: 4px; color: var(--muted); white-space: nowrap; cursor: pointer; }
+
+  header { display: flex; align-items: center; gap: 4px; padding: 6px 8px 0; background: var(--panel); border-bottom: 1px solid var(--line); }
+  .tab { height: 32px; border-radius: 6px 6px 0 0; background: transparent; color: var(--muted); padding: 0 14px; }
+  .tab:hover { background: var(--hover); }
+  .tab.active { background: var(--bg); color: var(--text); }
+  .tab .n { margin-left: 6px; font-size: 11px; color: var(--muted); }
+  .tab .n.bad { color: var(--err); }
+  header .sp { flex: 1; }
+  header button:not(.tab) { margin-bottom: 4px; }
+
+  .pane { flex: 1; min-height: 0; display: none; flex-direction: column; }
+  .pane.active { display: flex; }
+  .bar { display: flex; align-items: center; gap: 10px; padding: 6px 8px; border-bottom: 1px solid var(--line); flex-wrap: wrap; }
+  .bar .sp { flex: 1; }
+  .hint { color: var(--muted); font-size: 12px; }
+  .scroll { flex: 1; min-height: 0; overflow: auto; }
+
+  table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+  th { position: sticky; top: 0; background: var(--panel); color: var(--muted); font-weight: 500; text-align: left;
+       padding: 4px 6px; border-bottom: 1px solid var(--line); z-index: 1; }
+  td { padding: 3px 6px; border-bottom: 1px solid #26282c; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+       font: 12px ui-monospace, Menlo, monospace; }
+  tbody tr { cursor: default; }
+  tbody tr:hover { background: var(--hover); }
+  tbody tr.sel { background: var(--sel); }
+  tr.err td { color: var(--err); }
+  tr.warn td { color: var(--warn); }
+  tr.pending td { color: var(--muted); }
+  tr.game td { color: var(--game); }
+  tr.closed td { opacity: .6; }
+  .num { text-align: right; }
+
+  .split { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+  .detail { height: 40%; min-height: 120px; border-top: 2px solid var(--line); overflow: auto; padding: 8px 10px; display: none; }
+  .detail.show { display: block; }
+  .detail h4 { margin: 10px 0 4px; color: var(--muted); font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: .04em; }
+  .detail h4:first-child { margin-top: 0; }
+  .kv { display: grid; grid-template-columns: max-content 1fr; gap: 2px 12px; font: 12px ui-monospace, Menlo, monospace; }
+  .kv .k { color: var(--muted); }
+  .kv .v { word-break: break-all; }
+  .detail .acts { display: flex; gap: 6px; margin-bottom: 8px; }
+
+  .log .row { display: grid; grid-template-columns: 92px 64px 64px 1fr; gap: 8px; padding: 3px 8px; border-bottom: 1px solid #26282c;
+              font: 12px ui-monospace, Menlo, monospace; }
+  .log .row .msg { white-space: pre-wrap; word-break: break-word; }
+  .log .row .src { color: var(--muted); display: block; }
+  .lv { font-size: 11px; font-weight: 600; text-transform: uppercase; }
+  .lv-error { color: var(--err); } .lv-warning { color: var(--warn); } .lv-info { color: var(--info); } .lv-verbose { color: var(--muted); }
+  .row.r-error { background: #3a1e1e; } .row.r-warning { background: #3a321e; }
+  .kind { color: var(--muted); }
+
+  .probe { padding: 8px; border-top: 2px solid var(--line); display: flex; flex-direction: column; gap: 6px; max-height: 45%; }
+  .probe .line { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .probe .res { overflow: auto; font: 12px ui-monospace, Menlo, monospace; }
+  .probe .res div { padding: 3px 0; border-bottom: 1px solid #26282c; white-space: pre-wrap; word-break: break-all; }
+  .ok { color: var(--ok); } .bad { color: var(--err); }
+
+  .info { padding: 12px 14px; overflow: auto; }
+  .info h3 { margin: 16px 0 6px; font-size: 13px; color: var(--muted); }
+  .info h3:first-child { margin-top: 0; }
+  pre { margin: 0; padding: 8px; background: #17181a; border-radius: 6px; font: 12px ui-monospace, Menlo, monospace;
+        white-space: pre-wrap; word-break: break-all; }
+  .empty { padding: 24px; color: var(--muted); text-align: center; }
+</style>
+</head>
+<body>
+<header>
+  <button class="tab active" data-tab="http">Mạng<span class="n" id="n-http"></span></button>
+  <button class="tab" data-tab="sock">Socket TCP<span class="n" id="n-sock"></span></button>
+  <button class="tab" data-tab="log">Console &amp; sự kiện<span class="n" id="n-log"></span></button>
+  <button class="tab" data-tab="info">Flash</button>
+  <span class="sp"></span>
+  <button id="devtools" title="Mở DevTools của trang (Elements, Sources, xem nội dung response…)">DevTools</button>
+  <button id="report" title="Lưu toàn bộ log + thông tin ra file JSON để gửi cho người khác xem">Lưu báo cáo</button>
+</header>
+
+<!-- ===== Mạng ===== -->
+<section class="pane active" id="pane-http">
+  <div class="bar">
+    <input type="search" id="h-filter" placeholder="Lọc theo URL…" style="width:260px">
+    <label><input type="checkbox" id="h-onlyerr"> Chỉ lỗi</label>
+    <label><input type="checkbox" id="h-hidestatic" checked> Ẩn ảnh / font / css</label>
+    <span class="sp"></span>
+    <span class="hint" id="h-count"></span>
+    <button id="h-clear">Xoá</button>
+  </div>
+  <div class="split">
+    <div class="scroll" id="h-scroll">
+      <table>
+        <colgroup><col style="width:96px"><col style="width:58px"><col style="width:170px"><col style="width:84px"><col style="width:180px"><col><col style="width:72px"></colgroup>
+        <thead><tr><th>Giờ</th><th>Method</th><th>Trạng thái</th><th>Loại</th><th>Host</th><th>Đường dẫn</th><th class="num">Thời gian</th></tr></thead>
+        <tbody id="h-body"></tbody>
+      </table>
+    </div>
+    <div class="detail" id="h-detail"></div>
+  </div>
+</section>
+
+<!-- ===== Socket ===== -->
+<section class="pane" id="pane-sock">
+  <div class="bar">
+    <label><input type="checkbox" id="s-hideweb" checked> Ẩn HTTPS / HTTP (cổng 443, 80)</label>
+    <label><input type="checkbox" id="s-hideclosed"> Ẩn kết nối đã đóng</label>
+    <span class="sp"></span>
+    <span class="hint">Kết nối của mọi tiến trình Wisp, đọc mỗi 0,4s khi bảng này mở. Kết nối quá ngắn có thể bị sót → dùng NetLog.</span>
+    <button id="s-clear">Xoá dòng đã đóng</button>
+  </div>
+  <div class="scroll">
+    <table>
+      <colgroup><col style="width:96px"><col style="width:96px"><col style="width:72px"><col style="width:150px"><col style="width:210px"><col><col style="width:110px"></colgroup>
+      <thead><tr><th>Bắt đầu</th><th>Kết thúc</th><th class="num">Thời lượng</th><th>Tiến trình</th><th>Đích</th><th>Trạng thái TCP</th><th>Tình trạng</th></tr></thead>
+      <tbody id="s-body"></tbody>
+    </table>
+    <div class="empty" id="s-empty">Chưa có kết nối nào (ngoài 443 / 80). Vào game để Flash mở kết nối tới máy chủ.</div>
+  </div>
+  <div class="probe">
+    <div class="line">
+      <strong>Thử kết nối từ Wisp</strong>
+      <input type="text" id="p-host" value="game.cf4vn.bar" style="width:200px" spellcheck="false">
+      <input type="text" id="p-port" value="49119" style="width:70px">
+      <label><input type="checkbox" id="p-policy"> Xin policy Flash</label>
+      <button id="p-go">Thử</button>
+      <button class="p-quick" data-port="49119" data-policy="0">Cổng game 49119</button>
+      <button class="p-quick" data-port="41843" data-policy="1">Policy 41843</button>
+      <button class="p-quick" data-port="843" data-policy="1">Policy 843</button>
+      <span class="sp" style="flex:1"></span>
+      <button id="nl-btn" title="Ghi log mạng chi tiết của Chromium (gồm socket, DNS, lỗi kết nối). Mở file bằng netlog-viewer.appspot.com">Bắt đầu ghi NetLog</button>
+      <button id="nl-reveal" style="display:none">Hiện file</button>
+    </div>
+    <div class="res" id="p-res"></div>
+  </div>
+</section>
+
+<!-- ===== Console ===== -->
+<section class="pane" id="pane-log">
+  <div class="bar">
+    <input type="search" id="l-filter" placeholder="Lọc nội dung…" style="width:260px">
+    <select id="l-level">
+      <option value="all">Mọi mức</option>
+      <option value="warning">Cảnh báo trở lên</option>
+      <option value="error">Chỉ lỗi</option>
+    </select>
+    <select id="l-kind">
+      <option value="all">Mọi nguồn</option>
+      <option value="console">Console của trang</option>
+      <option value="event">Sự kiện trang / app</option>
+      <option value="socket">Socket</option>
+      <option value="probe">Thử kết nối</option>
+    </select>
+    <span class="sp"></span>
+    <button id="l-clear">Xoá</button>
+  </div>
+  <div class="scroll log" id="l-scroll"><div id="l-body"></div></div>
+</section>
+
+<!-- ===== Flash ===== -->
+<section class="pane" id="pane-info">
+  <div class="bar">
+    <button id="i-refresh">Làm mới</button>
+    <button id="i-mms">Mở thư mục mms.cfg</button>
+  </div>
+  <div class="info" id="i-body"><div class="empty">Đang đọc…</div></div>
+</section>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
+const pad = (n, w = 2) => String(n).padStart(w, '0');
+const clock = (t) => { if (!t) return ''; const d = new Date(t); return `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}.${pad(d.getMilliseconds(), 3)}`; };
+const dur = (ms) => ms < 1000 ? ms + 'ms' : (ms / 1000).toFixed(ms < 10000 ? 2 : 1) + 's';
+
+// ---------- tab ----------
+let current = 'http';
+document.querySelectorAll('.tab').forEach((b) => b.onclick = () => {
+  current = b.dataset.tab;
+  document.querySelectorAll('.tab').forEach((x) => x.classList.toggle('active', x === b));
+  document.querySelectorAll('.pane').forEach((p) => p.classList.toggle('active', p.id === 'pane-' + current));
+  if (current === 'info') loadInfo();
+});
+
+// ================= Mạng =================
+const http = new Map();   // id → {r, tr}
+let selHttp = null;
+const STATIC = new Set(['image', 'font', 'stylesheet', 'media']);
+// Lỗi nội bộ của cache Chromium (tải trùng, preload) – vô hại, không tính là lỗi
+const minorErr = (r) => r.state === 'error' && /ERR_CACHE_/.test(r.error);
+const isBad = (r) => (r.state === 'error' && !minorErr(r)) || r.status >= 400;
+
+function httpClass(r) {
+  if (minorErr(r)) return 'pending';
+  if (r.state === 'error') return 'err';
+  if (r.status >= 400) return 'warn';
+  if (r.state === 'pending') return 'pending';
+  return '';
+}
+function httpVisible(r) {
+  const q = $('h-filter').value.trim().toLowerCase();
+  if (q && !r.url.toLowerCase().includes(q)) return false;
+  if ($('h-onlyerr').checked && !isBad(r)) return false;
+  if ($('h-hidestatic').checked && STATIC.has(r.type)) return false;
+  return true;
+}
+function upsertHttp(r) {
+  let item = http.get(r.id);
+  if (!item) {
+    const tr = el('tr');
+    for (let i = 0; i < 7; i++) tr.appendChild(el('td', i === 6 ? 'num' : ''));
+    tr.onclick = () => selectHttp(r.id);
+    item = { r, tr };
+    http.set(r.id, item);
+    const sc = $('h-scroll');
+    const atBottom = sc.scrollTop + sc.clientHeight >= sc.scrollHeight - 30;
+    $('h-body').appendChild(tr);
+    if (atBottom) sc.scrollTop = sc.scrollHeight;
+  }
+  item.r = r;
+  let u; try { u = new URL(r.url); } catch { u = { host: '', pathname: r.url, search: '' }; }
+  const c = item.tr.children;
+  c[0].textContent = clock(r.start);
+  c[1].textContent = r.method;
+  c[2].textContent = r.state === 'error' ? r.error : r.state === 'pending' && !r.status ? '(đang chờ)' : r.status + (r.fromCache ? ' (cache)' : '');
+  c[3].textContent = r.type;
+  c[4].textContent = u.host; c[4].title = u.host + (r.ip ? '  →  ' + r.ip : '');
+  c[5].textContent = u.pathname + u.search; c[5].title = r.url;
+  c[6].textContent = r.end ? dur(r.end - r.start) : '…';
+  item.tr.className = httpClass(r) + (selHttp === r.id ? ' sel' : '');
+  item.tr.hidden = !httpVisible(r);
+  if (selHttp === r.id) renderHttpDetail(r);
+}
+function refilterHttp() { for (const { r, tr } of http.values()) tr.hidden = !httpVisible(r); countHttp(); }
+function countHttp() {
+  let n = 0, bad = 0;
+  for (const { r } of http.values()) { n++; if (isBad(r)) bad++; }
+  $('n-http').textContent = bad ? `${n} · ${bad} lỗi` : n || '';
+  $('n-http').className = 'n' + (bad ? ' bad' : '');
+  $('h-count').textContent = `${n} request${bad ? ', ' + bad + ' lỗi' : ''}`;
+}
+function selectHttp(id) {
+  if (selHttp && http.get(selHttp)) http.get(selHttp).tr.classList.remove('sel');
+  selHttp = id;
+  const item = http.get(id);
+  if (!item) { $('h-detail').classList.remove('show'); return; }
+  item.tr.classList.add('sel');
+  $('h-detail').classList.add('show');
+  renderHttpDetail(item.r);
+}
+function kvBlock(title, obj, parent) {
+  parent.appendChild(el('h4', '', title));
+  const kv = el('div', 'kv');
+  const keys = obj ? Object.keys(obj) : [];
+  if (!keys.length) kv.appendChild(el('span', 'k', '(không có)'));
+  for (const k of keys) {
+    const v = Array.isArray(obj[k]) ? obj[k].join('\n') : String(obj[k]);
+    kv.appendChild(el('span', 'k', k)); kv.appendChild(el('span', 'v', v));
+  }
+  parent.appendChild(kv);
+}
+const shq = (s) => "'" + String(s).replace(/'/g, "'\\''") + "'";
+function curlOf(r) {
+  const parts = ['curl', shq(r.url)];
+  if (r.method !== 'GET') parts.push('-X', r.method);
+  for (const [k, v] of Object.entries(r.reqHeaders || {})) parts.push('-H', shq(`${k}: ${v}`));
+  return parts.join(' ');
+}
+function renderHttpDetail(r) {
+  const d = $('h-detail');
+  d.textContent = '';
+  const acts = el('div', 'acts');
+  const b1 = el('button', '', 'Sao chép URL'); b1.onclick = () => insp.copy(r.url);
+  const b2 = el('button', '', 'Sao chép cURL'); b2.onclick = () => insp.copy(curlOf(r));
+  const b3 = el('button', '', 'Đóng'); b3.onclick = () => selectHttp(null);
+  acts.append(b1, b2, b3);
+  d.appendChild(acts);
+  const general = {
+    'URL': r.url, 'Method': r.method, 'Loại': r.type,
+    'Trạng thái': r.state === 'error' ? 'LỖI ' + r.error : (r.statusLine || r.status || '(đang chờ)'),
+    'IP máy chủ': r.ip || '-', 'Từ cache': r.fromCache ? 'có' : 'không',
+    'Bắt đầu': clock(r.start), 'Thời gian': r.end ? dur(r.end - r.start) : '(chưa xong)',
+  };
+  if (r.redirects && r.redirects.length) general['Chuyển hướng'] = r.redirects.join('\n');
+  kvBlock('Chung', general, d);
+  kvBlock('Response headers', r.resHeaders, d);
+  kvBlock('Request headers', r.reqHeaders, d);
+  d.appendChild(el('div', 'hint', 'Nội dung response: mở DevTools → Network (request của Flash có thể không hiện ở đó; dùng Sao chép cURL rồi chạy trong Terminal).'));
+}
+$('h-filter').oninput = refilterHttp;
+$('h-onlyerr').onchange = refilterHttp;
+$('h-hidestatic').onchange = refilterHttp;
+$('h-clear').onclick = () => { insp.clear('http'); http.clear(); $('h-body').textContent = ''; selectHttp(null); countHttp(); };
+
+// ================= Socket =================
+const socks = new Map();  // key → {s, tr}
+function sockVisible(s) {
+  if ($('s-hideweb').checked && (s.port === 443 || s.port === 80)) return false;
+  if ($('s-hideclosed').checked && s.end) return false;
+  return true;
+}
+function upsertSock(s) {
+  let item = socks.get(s.key);
+  if (!item) {
+    const tr = el('tr');
+    for (let i = 0; i < 7; i++) tr.appendChild(el('td', i === 2 ? 'num' : ''));
+    item = { s, tr };
+    socks.set(s.key, item);
+    $('s-body').appendChild(tr);
+  }
+  item.s = s;
+  const c = item.tr.children;
+  const ended = !!s.end;
+  c[0].textContent = clock(s.first);
+  c[1].textContent = ended ? clock(s.end) : '';
+  c[2].textContent = dur((ended ? s.end : s.last) - s.first);
+  c[3].textContent = `${s.proc || '?'} (${s.pid})`;
+  c[4].textContent = s.remote; c[4].title = s.local + ' → ' + s.remote;
+  c[5].textContent = s.states.join(' → '); c[5].title = c[5].textContent;
+  const stuck = !s.states.includes('ESTABLISHED');
+  c[6].textContent = ended ? (stuck ? 'đóng, chưa nối được' : 'đã đóng') : (stuck ? 'đang nối…' : 'đang mở');
+  const web = s.port === 443 || s.port === 80;
+  item.tr.className = (ended ? 'closed ' : '') + (stuck && (ended || Date.now() - s.first > 3000) ? 'err' : web ? '' : 'game');
+  item.tr.hidden = !sockVisible(s);
+}
+function refilterSock() {
+  let shown = 0, open = 0;
+  for (const { s, tr } of socks.values()) {
+    tr.hidden = !sockVisible(s);
+    if (!tr.hidden) shown++;
+    if (!s.end && s.port !== 443 && s.port !== 80) open++;
+  }
+  $('s-empty').style.display = shown ? 'none' : 'block';
+  $('n-sock').textContent = open ? open + ' mở' : '';
+}
+$('s-hideweb').onchange = refilterSock;
+$('s-hideclosed').onchange = refilterSock;
+$('s-clear').onclick = () => {
+  insp.clear('sock');
+  for (const [k, { s, tr }] of socks) if (s.end) { tr.remove(); socks.delete(k); }
+  refilterSock();
+};
+
+async function probe(port, policy) {
+  const host = $('p-host').value.trim();
+  if (!host || !port) return;
+  const line = el('div', '', `${clock(Date.now())}  ${host}:${port}${policy ? ' (policy)' : ''} … đang thử`);
+  $('p-res').prepend(line);
+  const r = await insp.probe(host, port, policy);
+  line.textContent = `${clock(Date.now())}  ${host}:${port}${policy ? ' (policy)' : ''}  `;
+  const s = el('span', r.ok ? 'ok' : 'bad', r.ok ? `OK — nối được sau ${r.ms}ms (${r.ip})` : 'LỖI — ' + r.error);
+  line.appendChild(s);
+  if (r.response) line.appendChild(el('div', '', r.response));
+}
+$('p-go').onclick = () => probe(Number($('p-port').value), $('p-policy').checked);
+document.querySelectorAll('.p-quick').forEach((b) => b.onclick = () => {
+  $('p-port').value = b.dataset.port; $('p-policy').checked = b.dataset.policy === '1';
+  probe(Number(b.dataset.port), b.dataset.policy === '1');
+});
+
+let netlogOn = false, netlogFile = null;
+function renderNetlog() {
+  $('nl-btn').textContent = netlogOn ? 'Dừng ghi NetLog' : 'Bắt đầu ghi NetLog';
+  $('nl-btn').classList.toggle('on', netlogOn);
+  $('nl-reveal').style.display = netlogFile ? '' : 'none';
+}
+$('nl-btn').onclick = async () => {
+  try {
+    const r = await insp.netlog(!netlogOn);
+    netlogOn = r.active; netlogFile = r.file;
+  } catch (e) { alert('Không bật được NetLog: ' + e.message); }
+  renderNetlog();
+};
+$('nl-reveal').onclick = () => insp.reveal(netlogFile);
+
+// ================= Console =================
+const RANK = { verbose: 0, info: 1, warning: 2, error: 3 };
+const logs = [];
+function logVisible(e) {
+  const q = $('l-filter').value.trim().toLowerCase();
+  if (q && !(e.message + ' ' + e.source).toLowerCase().includes(q)) return false;
+  const lv = $('l-level').value;
+  if (lv !== 'all' && RANK[e.level] < RANK[lv]) return false;
+  const k = $('l-kind').value;
+  if (k !== 'all' && e.kind !== k) return false;
+  return true;
+}
+const logIds = new Set();  // snapshot và lô cập nhật có thể trùng nhau lúc mới mở
+function addLogRow(e) {
+  if (logIds.has(e.id)) return;
+  logIds.add(e.id);
+  const row = el('div', 'row r-' + e.level);
+  row.appendChild(el('span', '', clock(e.time)));
+  row.appendChild(el('span', 'lv lv-' + e.level, e.level));
+  row.appendChild(el('span', 'kind', e.kind));
+  const m = el('span', 'msg', e.message);
+  if (e.source) m.appendChild(el('span', 'src', e.source));
+  row.appendChild(m);
+  row.hidden = !logVisible(e);
+  logs.push({ e, row });
+  if (logs.length > 3000) logs.shift().row.remove();
+  $('l-body').appendChild(row);
+}
+function countLog() {
+  const bad = logs.filter(({ e }) => e.level === 'error').length;
+  $('n-log').textContent = bad ? bad + ' lỗi' : '';
+  $('n-log').className = 'n' + (bad ? ' bad' : '');
+}
+function refilterLog() { for (const { e, row } of logs) row.hidden = !logVisible(e); }
+$('l-filter').oninput = refilterLog;
+$('l-level').onchange = refilterLog;
+$('l-kind').onchange = refilterLog;
+$('l-clear').onclick = () => { insp.clear('log'); logs.length = 0; $('l-body').textContent = ''; countLog(); };
+
+// ================= Flash =================
+async function loadInfo() {
+  const i = await insp.info();
+  const b = $('i-body');
+  b.textContent = '';
+  b.appendChild(el('h3', '', 'Flash Player'));
+  const kv = el('div', 'kv');
+  const rows = {
+    'Chế độ': i.mode === 'flash' ? 'Flash Player thật (Pepper Flash)' : 'Ruffle (giả lập)' + (i.wantedMode === 'flash' ? ' — không tìm thấy plugin' : ''),
+    'navigator.plugins': i.plugin || '(không thấy Shockwave Flash)',
+    'Plugin': i.flashPath || '(chưa có)', 'Version': i.flashVersion || '-',
+    'Electron / Chromium': `${i.electron} / ${i.chrome} (${i.arch})`,
+    'Trang hiện tại': i.pageUrl, 'User-Agent': i.userAgent,
+    'Domain được phép': i.allowDomains.join(', '),
+    'Domain .swf đã thấy': i.seenSwfHosts.join(', ') || '-',
+  };
+  for (const [k, v] of Object.entries(rows)) { kv.appendChild(el('span', 'k', k)); kv.appendChild(el('span', 'v', v)); }
+  b.appendChild(kv);
+  b.appendChild(el('h3', '', 'mms.cfg — ' + i.mmsCfgPath));
+  b.appendChild(el('pre', '', i.mmsCfg));
+  netlogOn = i.netLogging; netlogFile = i.netLogFile; renderNetlog();
+}
+$('i-refresh').onclick = loadInfo;
+$('i-mms').onclick = async () => { const i = await insp.info(); insp.reveal(i.mmsCfgPath); };
+
+// ---------- chung ----------
+$('devtools').onclick = () => insp.devtools();
+$('report').onclick = async () => {
+  const f = await insp.report();
+  if (f) { $('report').textContent = '✓ Đã lưu'; setTimeout(() => $('report').textContent = 'Lưu báo cáo', 1500); }
+};
+
+function applyBatch(batch) {
+  for (const r of batch.http || []) upsertHttp(r);
+  for (const s of batch.sock || []) upsertSock(s);
+  const sc = $('l-scroll');
+  const atBottom = sc.scrollTop + sc.clientHeight >= sc.scrollHeight - 30;
+  for (const e of batch.log || []) addLogRow(e);
+  if (atBottom) sc.scrollTop = sc.scrollHeight;
+  if ((batch.http || []).length) countHttp();
+  if ((batch.sock || []).length) refilterSock();
+  if ((batch.log || []).length) countLog();
+}
+insp.onUpdate(applyBatch);
+insp.snapshot().then((snap) => { applyBatch(snap); refilterSock(); });
+insp.info().then((i) => { netlogOn = i.netLogging; netlogFile = i.netLogFile; renderNetlog(); });
+</script>
+</body>
+</html>

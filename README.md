@@ -48,6 +48,13 @@ Nếu Flash vẫn bị chặn: bật **Flash → Ghi log allowlist** (thêm `All
 - Gõ địa chỉ rồi Enter (Cmd+L). **★ Đặt làm trang chủ** để lần sau mở vào thẳng trang đó. Mặc định là `DEFAULT_URL` trong `main.js`.
 - Mở file `.swf`: Cmd+O, gõ đường dẫn (`~/Downloads/game.swf`), hoặc kéo file vào icon app.
 - Phím tắt: Cmd+R tải lại, Ctrl+Cmd+F toàn màn hình, Cmd+= / Cmd+- / Cmd+0 zoom, Alt+Cmd+I DevTools.
+- **Bảng kiểm tra** (nút 🔍 trên thanh công cụ, hoặc Shift+Cmd+I) để gỡ lỗi game không vào được:
+  - **Mạng**: mọi request HTTP của trang, kể cả request do Flash gửi (lọc, chỉ lỗi, xem header, sao chép cURL).
+  - **Socket TCP**: các kết nối TCP của Wisp, đọc bằng `lsof` khi bảng đang mở, nên **mở bảng trước khi vào game**. `SYN_SENT` mãi hoặc "đóng, chưa nối được" là bị chặn; `ESTABLISHED` rồi đóng là máy chủ ngắt. Ô **Thử kết nối** nối thẳng tới host:port, có thể kèm xin policy Flash. Nút **NetLog** ghi log mạng chi tiết của Chromium vào Downloads (mở bằng netlog-viewer.appspot.com).
+  - **Console & sự kiện**: console của trang, lỗi tải trang, plugin crash, mở/đóng socket.
+  - **Flash**: plugin, version, User-Agent, nội dung `mms.cfg`.
+  - **Lưu báo cáo**: lưu toàn bộ log ra file JSON để gửi người khác xem.
+- Chạy thử bản dev song song với bản đã cài mà không đụng dữ liệu: `WISP_USER_DATA=/tmp/wisp-dev WISP_INSPECT=1 npm start` (`WISP_INSPECT=1` tự mở Bảng kiểm tra). Nếu chạy từ terminal của VS Code thì thêm `env -u ELECTRON_RUN_AS_NODE` ở đầu lệnh.
 
 Dữ liệu nằm ở `~/Library/Application Support/Wisp/`. Lần đầu chạy, app tự chuyển thư mục cũ `Flash Browser 2/` sang (giữ đăng nhập); nếu chỉ có bản 1 thì chép trang chủ từ `Flash Browser/config.json` (cookie bản 1 do Electron 45 tạo, Chromium 87 không đọc được).
 
