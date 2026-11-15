@@ -7,7 +7,7 @@ Trạng thái: ✅ xong · 🔄 đang làm · ⬜ chưa làm
 | # | Việc | Phụ thuộc | Trạng thái |
 |---|---|---|---|
 | [01](01-cong-ghosthand.md) | Cổng Wisp cho Ghosthand | – | 🔄 |
-| [02](02-ghosthand-backend-wisp.md) | Ghosthand dùng Wisp làm trình duyệt | 01 | ⬜ |
+| [02](02-ghosthand-backend-wisp.md) | Ghosthand dùng Wisp làm trình duyệt | 01 | ✅ |
 | [03](03-tach-main-js.md) | Tách main.js theo việc | – | 🔄 |
 | [04](04-mot-trinh-duyet-flash.md) | Một trình duyệt (Electron mới) + engine Flash cho trang cấu hình Flash | 03 | ⬜ |
 | [05](05-web-nhu-chrome.md) | Trình duyệt như Chrome thường | 04 | ⬜ |

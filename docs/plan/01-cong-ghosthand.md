@@ -21,18 +21,19 @@ Làm trên Electron 11 hiện tại (tab thường) để chốt API sớm; lên
 | | `open {url, newTab}` / `navigate {url}` / `back` / `forward` / `reload` / `close` / `activate` | tab id |
 | | `waitLoad {until:"load"\|"idle", timeoutMs}` | URL cuối, thời gian |
 | Đọc | `outline {root?, maxNodes?, visibleOnly?}` | cây gọn: `{ref, role, name, text, value, state[checked,disabled,expanded,focused], rect}`, bỏ node trang trí; có cờ `truncated` |
-| | `find {selectors[], all?, visibleOnly?}` | `[{ref, selector, role, name, text, rect, frame}]` (`frame` = đường dẫn frame theo `window.frames`: `""` trang chính, `"1.0"`); không thấy → `ok:true, found:[]` |
+| | `find {selectors[], all?, visibleOnly?, scope?:"dialog", brief?}` | `[{ref, selector, role, name, text, rect, frame, covered}]` (`frame` = đường dẫn frame theo `window.frames`: `""` trang chính, `"1.0"`; `covered` = phần tử đè lên tâm, `""` = không); không thấy → `ok:true, found:[], hidden` (số phần tử khớp đang ẩn); `scope dialog` = chỉ trong hộp thoại đang mở trên cùng (không có → `noDialog: true`); `brief` = không tính selector bền (nhanh – Ghosthand chạy kịch bản) |
 | | `read {ref\|selector, what:"text"\|"value"\|"html"\|"attrs"\|"table"}` | chữ / giá trị / bảng dạng mảng hàng |
 | | `pageText {maxChars}` | chữ chính của trang (bỏ menu / footer) |
 | | `screenshot {ref?, fullPage?}` | PNG base64 (cả trang / element) |
 | Thao tác | `click {ref\|selector, button, count, offset?}` | cuộn tới element, kiểm tra element ở trên cùng tại điểm bấm (`elementFromPoint`), bấm bằng `sendInputEvent`; trả `{navigated, url, popup}` |
-| | `type {ref\|selector, text, clear, enter}` | focus + kiểm tra focus đúng ô, gõ bằng `insertText` / `char` events |
+| | `type {ref\|selector?, text, clear, enter}` | focus + kiểm tra focus đúng ô, gõ bằng `insertText` / `char` events; không đích = gõ vào ô đang nhận phím |
+| | `focused {ref}` | `{ok, ref, active}` – ô đang nhận phím có phải `ref` (hoặc nằm trong nó); trang thay ô khi bấm → `ref` mới |
 | | `select {ref\|selector, value\|label}` / `check {ref, on}` | thao tác như người dùng (mở dropdown nếu cần) |
 | | `scroll {ref?\|dir, amount}` / `hover {ref}` / `keys {keys[], mods[]}` | |
 | Chờ | `waitFor {selectors[], state:"visible"\|"hidden"\|"enabled", timeoutMs}` | element hoặc `timeout` |
 | | `settle {timeoutMs}` | chờ hết điều hướng / mạng / DOM đổi |
 | Game | `frameRect {tab}` | khung game trên **màn hình** (toạ độ thật, có tỉ lệ màn hình) để Ghosthand OCR đúng vùng |
-| Sự kiện | `subscribe {events:["navigate","dialog","popup","download"]}` | Wisp đẩy sự kiện; hộp thoại `alert/confirm` trả bằng `dialog {accept, text}` |
+| Sự kiện | `subscribe {events:["navigate","dialog","popup","download"]}` | Wisp đẩy sự kiện; hộp thoại `alert/confirm` trả bằng `dialog {accept, text}`; hộp đóng (client trả lời / người dùng tự bấm) → `dialog {tab, closed: true}` |
 
 **Bên trong**
 - ✅ `ghosthand/server.js` (WebSocket, token, chia lệnh), `ghosthand/commands/{tabs,read,act,wait}.js`, `ghosthand/agent/` (preload khung chính, thế giới riêng: `dom` / `find` chép từ `autoclicker/internal/web/common.js` + `find.js` – cùng cách so; `outline`, `read`, `elements` = ref + selector), `agent-call.js` (IPC `gh:call` / `gh:reply`), `input.js` (sendInputEvent), `target.js` (tab đích, `screenRect`). Logic thuần có test: `selector.js`, `protocol.js` (kiểm đối số, trần đối số, chỉ http(s)), `keys.js`, `info-file.js`.
@@ -53,6 +54,8 @@ Làm trên Electron 11 hiện tại (tab thường) để chốt API sớm; lên
 - ✅ `subscribe {events}` (thay cả danh sách; `[]` = bỏ): đẩy `{"event": …, "data": …}` – `navigate`, `popup` (`tab`, `opener`, `url`), `download`, `dialog`. Hộp thoại JS: `webContents.debugger` chỉ domain Page, chỉ gắn khi có client subscribe `dialog`; `dialog {accept, text}` trả lời; lệnh chạm trang khi hộp đang mở → `timeout` nói rõ có hộp thoại. Electron không hỗ trợ `prompt()` (trang nhận lỗi) – chỉ `alert` / `confirm` / `beforeunload`.
 - ✅ `outline` một lượt (đếm tên cùng vai trò đứng trước như `outline.js` của Ghosthand): Wikipedia 417 node 1,6 s → 162 ms; 810 selector trên Wikipedia / GitHub / Hacker News tìm lại đúng phần tử.
 - ✅ Thao tác trên tab không xem: `type` / `click` vào tab nền chạy (`isTrusted: true`), `screenRect.offscreen = true`.
+
+- ✅ Thêm cho Ghosthand (bước 02, 2026-11-15, vẫn `api: 1` – chỉ thêm): `find` `scope` / `brief` / `covered` / `hidden`, `focused`, `type` không đích, sự kiện `dialog closed`.
 
 **Còn lại**
 - ⬜ `screenshot fullPage` (Electron 11 `capturePage` chỉ chụp phần đang thấy; cuộn rồi ghép thì trang thấy cuộn) → làm ở bước 04 bằng API của Electron mới.

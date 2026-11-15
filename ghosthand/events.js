@@ -22,6 +22,8 @@ function wire() {
   tabs.events.on('opened', (nt, opener, url) => emit('popup', { tab: nt.id, opener: opener.id, url }));
   session.defaultSession.on('will-download', (_e, item, wc) => emit('download', { tab: tabOfWc(wc), url: item.getURL(), file: item.getFilename() }));
   dialogs.events.on('open', d => emit('dialog', d));
+  // hộp đã đóng (client trả lời hoặc người dùng tự bấm): {tab, closed: true}
+  dialogs.events.on('closed', d => emit('dialog', { tab: d.tab, closed: true }));
 }
 
 // Bật debugger theo dõi hộp thoại chỉ khi còn kết nối cần.

@@ -46,6 +46,14 @@ test('checkArgs: select / check / subscribe / dialog', () => {
   assert.strictEqual(codeOf(() => checkArgs('dialog', { accept: true, text: 'ok' })), 'không lỗi');
 });
 
+test('checkArgs: find scope, type không đích, focused', () => {
+  assert.strictEqual(codeOf(() => checkArgs('find', { selectors: ['a'], scope: 'dialog' })), 'không lỗi');
+  assert.strictEqual(codeOf(() => checkArgs('find', { selectors: ['a'], scope: 'modal' })), 'bad_args');
+  assert.strictEqual(codeOf(() => checkArgs('type', { text: 'x', clear: true })), 'không lỗi');      // gõ vào ô đang nhận phím
+  assert.strictEqual(codeOf(() => checkArgs('focused', {})), 'bad_args');                             // thiếu ref
+  assert.strictEqual(codeOf(() => checkArgs('focused', { ref: 'abc123.4' })), 'không lỗi');
+});
+
 test('webUrlOnly: chỉ http(s)', () => {
   assert.strictEqual(webUrlOnly('https://a.vn/'), 'https://a.vn/');
   assert.strictEqual(webUrlOnly('HTTP://localhost:8080'), 'HTTP://localhost:8080');

@@ -6,7 +6,7 @@ const tabs = require('../tabs');
 const { fail } = require('./protocol');
 const { addLog } = require('../inspect/store');
 
-const events = new EventEmitter(); // 'open' {tab, type, message, url}
+const events = new EventEmitter(); // 'open' {tab, type, message, url}, 'closed' {tab}
 const opened = new Map();          // tab id → hộp đang mở
 const handlers = new Map();        // tab id → { onMsg, onDetach } đã gắn vào debugger
 let on = false;
@@ -24,7 +24,10 @@ function attach(t) {
       const d = { tab: t.id, type: p.type, message: String(p.message || '').slice(0, 2000), url: p.url };
       opened.set(t.id, d);
       events.emit('open', d);
-    } else if (method === 'Page.javascriptDialogClosed') opened.delete(t.id);
+    } else if (method === 'Page.javascriptDialogClosed') {
+      opened.delete(t.id);
+      events.emit('closed', { tab: t.id });
+    }
   };
   // tab bị huỷ / DevTools giành debugger → quên tab (lần 'changed' sau gắn lại nếu được)
   const onDetach = () => { handlers.delete(t.id); opened.delete(t.id); w.debugger.removeListener('message', onMsg); };

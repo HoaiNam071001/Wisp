@@ -5,7 +5,7 @@
 const { ipcRenderer } = require('electron');
 const { parseSelector } = require('../selector');
 const { setBase, inside, allRoots, pathOf, frameContent, frameOffset, view, clean, describe, place, coverOf, rectOf, shown } = require('./dom');
-const { findAll, firstMatch, pickClear } = require('./find');
+const { findAll, firstMatch, pickClear, topDialog } = require('./find');
 const { PAGE, resolveRef, info } = require('./elements');
 const { outline } = require('./outline');
 const { readElement, pageText } = require('./read');
@@ -33,14 +33,20 @@ function target({ ref, sels }, forAction) {
 }
 
 const FNS = {
-  find({ sels, all, visibleOnly = true }) {
+  // scope "dialog": chỉ trong hộp thoại đang mở trên cùng. covered = phần tử đè lên tâm (đang trong khung nhìn).
+  // brief: không tính selector bền (nhanh – Ghosthand chạy kịch bản chỉ cần ref + khung).
+  find({ sels, all, visibleOnly = true, scope, brief }) {
+    const box = scopeOf(scope);
+    if (box === undefined) return { selectorIndex: -1, found: [], hidden: 0, noDialog: true };
+    let hidden = 0;
     for (let i = 0; i < sels.length; i++) {
-      const m = firstMatch([sels[i]]);
-      const list = visibleOnly ? m.list : m.list.concat(hiddenOf(sels[i]));
+      const m = firstMatch([sels[i]], box);
+      hidden = Math.max(hidden, m.hidden);
+      const list = visibleOnly ? m.list : m.list.concat(hiddenOf(sels[i], box));
       if (!list.length) continue;
-      return { selectorIndex: i, found: (all ? list.slice(0, 50) : list.slice(0, 1)).map(el => info(el, true)), more: all ? Math.max(0, list.length - 50) : list.length - 1 };
+      return { selectorIndex: i, found: (all ? list.slice(0, 50) : list.slice(0, 1)).map(el => foundInfo(el, !brief)), more: all ? Math.max(0, list.length - 50) : list.length - 1 };
     }
-    return { selectorIndex: -1, found: [] };
+    return { selectorIndex: -1, found: [], hidden };
   },
   // Chuẩn bị bấm / di chuột: cuộn vào giữa nếu cần, điểm bấm (toạ độ trang chính, CSS px), phần tử che điểm đó.
   locate(args) {
@@ -106,9 +112,11 @@ const FNS = {
   checked(args) { const el = target(args, false); return { ref: info(el, false).ref, on: form.checkedOf(el) }; },
   gameRect: form.gameRect,
   // Ghép nhiều frame (page-call.js): selector đầu tiên có phần tử ở frame này; từng selector có khớp không.
-  firstIndex({ sels, visibleOnly = true }) {
-    if (visibleOnly) { const m = firstMatch(sels); return { index: m.index, hidden: m.hidden }; }
-    return { index: sels.findIndex(s => findAll(s).length > 0), hidden: 0 };
+  firstIndex({ sels, visibleOnly = true, scope }) {
+    const box = scopeOf(scope);
+    if (box === undefined) return { index: -1, hidden: 0, noDialog: true };
+    if (visibleOnly) { const m = firstMatch(sels, box); return { index: m.index, hidden: m.hidden }; }
+    return { index: sels.findIndex(s => findAll(s, box).length > 0), hidden: 0 };
   },
   matchesAny({ sels }) { return sels.map(s => firstMatch([s]).index === 0); },
   // Frame khác nguồn trong frame này: đường dẫn + vùng nội dung và phần nhìn thấy, theo toạ độ của frame này.
@@ -151,7 +159,16 @@ function frameEl(path) {
 }
 
 // Phần tử khớp nhưng đang ẩn (find visibleOnly = false).
-function hiddenOf(sel) { return findAll(sel).filter(el => !shown(el)); }
+function hiddenOf(sel, box) { return findAll(sel, box).filter(el => !shown(el)); }
+
+// Phạm vi tìm: null = cả trang, undefined = cần hộp thoại mà trang không có.
+function scopeOf(scope) { return scope === 'dialog' ? topDialog() || undefined : null; }
+
+function foundInfo(el, withSelectors) {
+  const out = info(el, withSelectors), p = place(el);
+  out.covered = p.inView ? coverOf(el, p.cx, p.cy) : '';
+  return out;
+}
 
 // sub = frame con khác nguồn với khung cha: báo main để được gọi riêng (sendToFrame), báo lại khi frame bị gỡ / chuyển trang.
 function install(sub) {

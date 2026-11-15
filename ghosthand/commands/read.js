@@ -9,7 +9,7 @@ const targetArgs = a => pick(a, ['ref', 'sels']);
 module.exports = {
   async find(a) {
     const t = resolveTab(a.tab);
-    const r = await callPage(t.view.webContents, 'find', pick(a, ['sels', 'all', 'visibleOnly']));
+    const r = await callPage(t.view.webContents, 'find', pick(a, ['sels', 'all', 'visibleOnly', 'scope', 'brief']));
     for (const f of r.found) f.screenRect = screenRect(t, f.rect);
     return r;
   },

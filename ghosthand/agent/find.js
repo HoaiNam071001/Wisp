@@ -95,6 +95,14 @@ function firstMatch(sels, scope) {
   return { index: -1, list: [], hidden };
 }
 
+// Hộp thoại đang mở trên cùng (cùng cách chọn với autoclicker/internal/web/find.js): cái cuối trong trang có tâm
+// nhìn thấy mà không bị che; không có thì cái cuối đang hiện; null = không có hộp thoại.
+const DIALOG = '[role=dialog], [role=alertdialog], [aria-modal=true], dialog[open]';
+function topDialog() {
+  const ds = [].concat(...allRoots().map(r => Array.from(r.querySelectorAll(DIALOG)))).filter(shown);
+  return ds.slice().reverse().find(d => { const p = place(d); return p.inView && !coverOf(d, p.cx, p.cy); }) || ds[ds.length - 1] || null;
+}
+
 // Sắp bấm: cái đầu đang trong vùng nhìn mà không bị che; không có thì cái đầu (để báo đúng phần tử che).
 function pickClear(list) {
   for (const el of list.slice(0, 20)) {
@@ -104,4 +112,4 @@ function pickClear(list) {
   return list[0];
 }
 
-module.exports = { matches, findAll, firstMatch, pickClear };
+module.exports = { matches, findAll, firstMatch, pickClear, topDialog };

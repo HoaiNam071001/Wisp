@@ -44,24 +44,36 @@ async function click(a) {
 }
 
 // Gõ như người dùng: bấm vào ô → kiểm ô nhận phím đúng là đích → (xoá chữ cũ) → gõ từng ký tự → (Enter).
+// Không đích: gõ vào ô đang nhận phím (client đã tự bấm vào ô + kiểm bằng focused).
 async function type(a) {
   const t = resolveTab(a.tab), w = t.view.webContents;
-  const loc = await locate(t, a);
+  let ref = null;
   focusIfActive(t);
-  await input.click(w, loc.x, loc.y);
-  await input.sleep(50);
-  const f = await callPage(w, 'focused', { ref: loc.ref, x: loc.x, y: loc.y });
-  if (!f.ok) fail('not_focused', `bấm vào rồi nhưng ô nhận phím là ${f.active} – chọn đúng ô nhập`);
+  if (a.ref || a.sels) {
+    const loc = await locate(t, a);
+    await input.click(w, loc.x, loc.y);
+    await input.sleep(50);
+    const f = await callPage(w, 'focused', { ref: loc.ref, x: loc.x, y: loc.y });
+    if (!f.ok) fail('not_focused', `bấm vào rồi nhưng ô nhận phím là ${f.active} – chọn đúng ô nhập`);
+    ref = f.ref;
+  }
   if (a.clear) {
-    const selected = await callPage(w, 'selectText', { ref: f.ref });
+    const selected = ref ? await callPage(w, 'selectText', { ref }) : false;
     if (!selected) w.selectAll();
     await input.pressKey(w, 'backspace');
   }
   await input.typeText(w, a.text);
   const after = a.enter ? watchAfter(t, 300) : null;
   if (a.enter) await input.pressKey(w, 'enter');
-  const r = { ref: f.ref };
+  const r = { ref };
   return after ? Object.assign(r, await after) : r;
+}
+
+// Ô đang nhận phím có phải ref (hoặc nằm trong nó) không; active = mô tả ô đang nhận phím khi không phải.
+async function focused(a) {
+  const t = resolveTab(a.tab);
+  const f = await callPage(t.view.webContents, 'focused', { ref: a.ref, x: -1, y: -1 });
+  return { ok: f.ok, ref: f.ref, active: f.active };
 }
 
 async function keys(a) {
@@ -95,4 +107,4 @@ async function hover(a) {
   return { ref: loc.ref, screenRect: screenRect(t, loc.rect) };
 }
 
-module.exports = { click, type, keys, scroll, hover };
+module.exports = { click, type, focused, keys, scroll, hover };

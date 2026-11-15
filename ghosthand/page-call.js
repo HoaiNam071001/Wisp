@@ -42,10 +42,11 @@ async function agentsOf(wc) {
 const byRef = (agents, ref) => agents.find(a => String(ref).startsWith(a.page + '.')) || agents[0];
 
 // Selector đầu tiên khớp ở agent nào (khung chính lỗi – vd css sai cú pháp – thì báo lỗi luôn).
-async function choose(wc, agents, sels, visibleOnly) {
-  const rs = await Promise.all(agents.map((a, i) => call(wc, a, 'firstIndex', { sels, visibleOnly }, i ? REMOTE_MS : 5000)
+// noDialog: scope dialog mà không frame nào có hộp thoại.
+async function choose(wc, agents, sels, visibleOnly, scope) {
+  const rs = await Promise.all(agents.map((a, i) => call(wc, a, 'firstIndex', { sels, visibleOnly, scope }, i ? REMOTE_MS : 5000)
     .catch(e => { if (!i) throw e; return null; })));
-  return pickFirst(rs);
+  return Object.assign(pickFirst(rs), { noDialog: rs.every(r => !r || r.noDialog) });
 }
 function notFound(p) {
   if (p.hidden) return new GhError('not_visible', `tìm thấy ${p.hidden} phần tử khớp nhưng đang ẩn`);
@@ -90,8 +91,8 @@ async function locate(wc, agents, a, args, ms) {
 }
 
 async function find(wc, agents, args, ms) {
-  const p = await choose(wc, agents, args.sels, args.visibleOnly !== false);
-  if (p.agent < 0) return { selectorIndex: -1, found: [] };
+  const p = await choose(wc, agents, args.sels, args.visibleOnly !== false, args.scope);
+  if (p.agent < 0) return Object.assign({ selectorIndex: -1, found: [], hidden: p.hidden }, p.noDialog ? { noDialog: true } : {});
   const r = await call(wc, agents[p.agent], 'find', Object.assign({}, args, { sels: [args.sels[p.index]] }), ms);
   r.selectorIndex = p.index;
   if (p.agent > 0) await ownSelectors(wc, agents.slice(0, p.agent), r.found);
