@@ -300,12 +300,18 @@ function updateTitle() {
   if (winOk()) win.setTitle((t && t.title ? t.title + ' — ' : '') + 'Wisp');
 }
 
+// Mọi tab luôn gắn vào cửa sổ: gỡ BrowserView ra rồi gắn lại làm Pepper Flash mất bề mặt vẽ
+// (quay lại tab chỉ thấy màn hình trống). Tab không xem được đẩy ra ngoài vùng nhìn thấy,
+// giữ nguyên kích thước để game vẫn chạy và vẽ bình thường.
 function layout() {
-  const t = activeTab();
-  if (!winOk() || !t) return;
+  if (!winOk()) return;
   const [width, height] = win.getContentSize();
-  const top = t.htmlFull ? 0 : TOOLBAR_HEIGHT; // trình phát Flash bật toàn màn hình → ẩn thanh công cụ
-  t.view.setBounds({ x: 0, y: top, width, height: height - top });
+  for (const t of tabs) {
+    if (t.view.webContents.isDestroyed()) continue;
+    const top = t.htmlFull ? 0 : TOOLBAR_HEIGHT; // trình phát Flash bật toàn màn hình → ẩn thanh công cụ
+    const x = t.id === activeId ? 0 : -(width + 100);
+    t.view.setBounds({ x, y: top, width, height: height - top });
+  }
 }
 
 function tabPrefs() {
@@ -329,8 +335,9 @@ function createTab(url, { activate = true, index = tabs.length } = {}) {
   // Game ở tab khác vẫn chạy bình thường (không bị Chromium hãm timer khi tab ẩn)
   view.webContents.setBackgroundThrottling(false);
   wireTab(t);
+  if (winOk()) win.addBrowserView(view);
   view.webContents.loadURL(url).catch(() => {});
-  if (activate) activateTab(t.id); else sendTabs();
+  if (activate) activateTab(t.id); else { layout(); sendTabs(); }
   return t;
 }
 
@@ -339,9 +346,8 @@ function activateTab(id) {
   if (!t || !winOk()) return;
   const prev = activeTab();
   if (prev !== t) {
-    if (prev) win.removeBrowserView(prev.view);
     activeId = t.id;
-    win.addBrowserView(t.view);
+    win.setTopBrowserView(t.view);
   }
   layout();
   t.view.webContents.focus();
@@ -360,10 +366,8 @@ function closeTab(id) {
     if (closedTabs.length > CLOSED_MAX) closedTabs.shift();
   }
   tabs.splice(i, 1);
-  if (activeId === id) {
-    activeId = null;
-    if (winOk()) win.removeBrowserView(t.view);
-  }
+  if (activeId === id) activeId = null;
+  if (winOk()) win.removeBrowserView(t.view);
   try { w.destroy(); } catch {}
   // Đóng tab cuối cùng thì mở tab trang chủ thay vì tắt app (tránh lỡ tay thoát game)
   if (!tabs.length) { createTab(homeUrl()); return; }
