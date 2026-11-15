@@ -1,4 +1,4 @@
-# 07. ⬜ Chế độ Game với Ghosthand
+# 07. ⬜ Trang Flash với Ghosthand
 
 Phụ thuộc: 04
 

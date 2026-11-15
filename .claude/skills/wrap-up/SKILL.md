@@ -11,7 +11,7 @@ description: Chốt việc Wisp trước khi commit / kết thúc session (vd "c
 npm run check && npm test
 ```
 
-Sửa đụng thứ chỉ app thật mới biết (tab, cổng Ghosthand, UI, chế độ Web / Game) → skill `test-after-change` trước khi báo xong. Không xanh → dừng, báo người dùng kèm output; không commit đỏ trừ khi người dùng bảo.
+Sửa đụng thứ chỉ app thật mới biết (tab, cổng Ghosthand, UI, engine web / Flash) → skill `test-after-change` trước khi báo xong. Không xanh → dừng, báo người dùng kèm output; không commit đỏ trừ khi người dùng bảo.
 
 ## 2. Đồng bộ tài liệu
 

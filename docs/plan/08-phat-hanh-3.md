@@ -8,5 +8,5 @@ Phụ thuộc: 05
 
 - ⬜ Chạy bộ trang thử (bước 05) + Flash (cf4vn.bar) trên mac và Windows.
 - ⬜ Sửa `updater.js` nếu gói mới khác cấu trúc (thư mục `Resources/game`).
-- ⬜ Ghi chú phát hành: chế độ Web / Game, cổng Ghosthand, cách bật / tắt.
+- ⬜ Ghi chú phát hành: một trình duyệt, bật Flash theo trang (icon thanh địa chỉ / Cài đặt), cổng Ghosthand, cách bật / tắt.
 - ⬜ Đóng mục 3.2 (`npm run release`) nếu chưa xong.

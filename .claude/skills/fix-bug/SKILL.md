@@ -13,7 +13,7 @@ Thấy lỗi sâu hơn → đường thường dưới đây.
 
 ## 1. Hiểu đúng lỗi
 
-- Ghi: làm gì → mong gì → thấy gì; chế độ Web hay Game; Flash hay Ruffle; macOS / Windows; bản cài hay dev; trang nào (URL).
+- Ghi: làm gì → mong gì → thấy gì; engine web hay Flash; Flash hay Ruffle; macOS / Windows; bản cài hay dev; trang nào (URL).
 - Thiếu thông tin quyết định hướng sửa → hỏi một lần (gom câu hỏi); còn lại tự tra.
 - Nguồn tra: **Bảng kiểm tra** (`WISP_INSPECT=1`: Mạng / Socket TCP / Console / Flash, NetLog, báo cáo JSON), console DevTools của tab, log terminal khi chạy dev, `config.json` + `Pepper Data/Shockwave Flash/System/mms.cfg` trong `userData`.
 
@@ -37,7 +37,7 @@ Không chắc → thêm log / test nhỏ để chứng minh, không đoán. Nói
 ## 4. Sửa
 
 - Sửa nhỏ nhất đúng chỗ gốc; không kèm refactor không liên quan (ghi thành việc riêng).
-- `grep` cùng mẫu ở chỗ khác (bản mac / Windows, chế độ Web / Game) và sửa luôn.
+- `grep` cùng mẫu ở chỗ khác (bản mac / Windows, engine web / Flash) và sửa luôn.
 - Thông báo lỗi cho người dùng nói được cách khắc phục.
 
 ## 5. Kiểm tra + ghi lại

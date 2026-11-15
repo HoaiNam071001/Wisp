@@ -1,6 +1,6 @@
 # Wisp
 
-Trình duyệt Electron mở webgame Flash bằng Flash Player thật (Pepper Flash 32 trong Electron 11.5.0 x64), dự phòng Ruffle; macOS + Windows. Hướng tới: trình duyệt chuẩn (chế độ **Web** Electron mới + chế độ **Game** Electron 11) có **cổng nối Ghosthand** để AI đọc / thao tác element – plan ở `docs/plan/`.
+Trình duyệt Electron mở webgame Flash bằng Flash Player thật (Pepper Flash 32 trong Electron 11.5.0 x64), dự phòng Ruffle; macOS + Windows. Hướng tới: **một trình duyệt** chuẩn (Electron mới) – trang được cấu hình Flash tự mở bằng engine Flash đi kèm (Electron 11) có **cổng nối Ghosthand** để AI đọc / thao tác element – plan ở `docs/plan/`.
 
 ## Bắt đầu mỗi session
 
@@ -22,12 +22,12 @@ npm run dist / dist:win / dist:personal                     # đóng gói (xem R
 
 ## Quy tắc code
 
-- **Một file một việc**, nhắm ≤ ~300 dòng / file, hàm ≤ ~60 dòng. `main.js` (~1900 dòng) đang vượt – thêm tính năng mới vào file riêng, không nhét thêm vào `main.js`; đụng phần nào của `main.js` thì tách phần đó ra trước (bước 03).
+- **Một file một việc**, nhắm ≤ ~300 dòng / file, hàm ≤ ~60 dòng. `main.js` chỉ lo khởi động – tính năng mới vào module riêng (`tabs.js` phát `tabs.events` thay vì gọi ngược lên lịch sử / menu; lớp dưới không `require` lớp trên, xem `docs/plan/03-tach-main-js.md`).
 - **Logic thuần tách khỏi Electron**: phần tính (chọn chế độ theo URL, tạo selector, phân tích lệnh cổng Ghosthand, so phiên bản…) để trong module không `require('electron')`, có test `test/<tên>.test.js` chạy bằng `node --test`.
 - **Tiến trình**: main (Node) ↔ preload (`contextIsolation: true`, `nodeIntegration: false`) ↔ trang. Preload chỉ đưa ra API tối thiểu qua `contextBridge`; **không gắn biến / hàm của app vào `window` của trang web** (trang thấy được → bị nhận ra là bị điều khiển).
 - **Cổng Ghosthand**: chỉ `127.0.0.1`, có token; không mở `--remote-debugging-port`; thao tác bằng `webContents.sendInputEvent` (sự kiện thật); lỗi trả `{code, detail}` với mã đã liệt kê ở `docs/plan/01-cong-ghosthand.md`. Selector cùng cú pháp Ghosthand (`text=` / `aria=` / `role=…[name="…"]` / `css=`).
 - **Không giả dấu vân tay** (canvas, GPU, font, TLS…). Chỉ UA / Client Hints cho khớp bản Chromium thật.
-- **Electron 11 = Node 12 + Chromium 87** cho mã chạy ở chế độ Game (và mã hiện tại): không dùng `fetch`, `structuredClone`, `Array.prototype.at`, `fs.rm`, top-level await… Mã chỉ chạy ở chế độ Web (Electron mới) thì được dùng API mới – ghi rõ đầu file.
+- **Electron 11 = Node 12 + Chromium 87** cho mã chạy ở engine Flash (và mã hiện tại): không dùng `fetch`, `structuredClone`, `Array.prototype.at`, `fs.rm`, top-level await… Mã chỉ chạy ở engine web (Electron mới) thì được dùng API mới – ghi rõ đầu file.
 - **Đa nền tảng**: mã riêng macOS / Windows tách file (`*-mac.js` / `*-win.js` như `flash-win.js`) hoặc nhánh `process.platform` gọn; đường dẫn bằng `path.join`, không nối chuỗi `/`.
 - **Dữ liệu người dùng**: `app.getPath('userData')` (đổi được bằng `WISP_USER_DATA`), `config.json` – thêm khoá mới phải có mặc định, không làm hỏng `config.json` cũ (người dùng cập nhật qua `updater.js`).
 - **File mới chạy trong app** (`.js`, `.html`, thư mục module) → thêm vào `build.files` trong `package.json`, không thì bản đóng gói thiếu file (dev vẫn chạy nên dễ sót). `test/`, `docs/`, `scripts/` không đóng gói.
@@ -44,4 +44,4 @@ npm run dist / dist:win / dist:personal                     # đóng gói (xem R
 
 - Electron 11 chỉ x64 → trên Apple Silicon chạy Rosetta; `npm install` với `npm_config_arch=x64`.
 - Plugin Flash không nằm trong repo / bản phát hành công khai (`plugins/` bị gitignore) – xem `plan.md` mục 3.1.
-- Bảo mật: Chromium 87 + Flash 32 không còn được vá – chế độ Game chỉ cho trang game.
+- Bảo mật: Chromium 87 + Flash 32 không còn được vá – engine Flash chỉ mở trang đã cấu hình Flash.

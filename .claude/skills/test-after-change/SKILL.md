@@ -1,6 +1,6 @@
 ---
 name: test-after-change
-description: Chạy Wisp bản dev vừa sửa rồi tự thử trên app thật (vd "test thử trên app", "chạy thử", sau khi sửa tab / cổng Ghosthand / chế độ Web / Game / UI). Chạy dev với dữ liệu riêng → thử đúng phần vừa sửa (client cổng, Ghosthand MCP xem màn hình) → báo kết quả, lỗi thì sửa và lặp.
+description: Chạy Wisp bản dev vừa sửa rồi tự thử trên app thật (vd "test thử trên app", "chạy thử", sau khi sửa tab / cổng Ghosthand / engine web / Flash / UI). Chạy dev với dữ liệu riêng → thử đúng phần vừa sửa (client cổng, Ghosthand MCP xem màn hình) → báo kết quả, lỗi thì sửa và lặp.
 ---
 
 # Chạy bản vừa sửa rồi thử
@@ -21,7 +21,7 @@ description: Chạy Wisp bản dev vừa sửa rồi tự thử trên app thật
 
 - **Cổng Ghosthand**: `node test/ghosthand-client.js` (đọc cổng + token từ `/tmp/wisp-dev/ghosthand.json`) – chạy lệnh vừa sửa, kiểm kết quả + mã lỗi; ca lỗi (token sai, `ref` cũ, không thấy element) cũng phải thử.
 - **Giao diện / hành vi trên màn hình**: dùng MCP Ghosthand – `describe_screen` (rẻ) trước, `screenshot` khi cần nhìn; chỉ thao tác chuột / phím khi cần và trên cửa sổ Wisp dev.
-- **Trang web**: ưu tiên trang không cần đăng nhập; chế độ Web chạy bộ trang thử (bước 05) khi đã có.
+- **Trang web**: ưu tiên trang không cần đăng nhập; chạy bộ trang thử (bước 05) khi đã có.
 - **Flash / vào game**: cần plugin + tài khoản game → thường để người dùng thử (`docs/checks.md`), trừ khi họ bảo thử.
 - Sửa → chạy lại từ mục 1.
 

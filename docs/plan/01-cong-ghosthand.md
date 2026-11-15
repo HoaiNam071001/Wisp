@@ -15,7 +15,7 @@ Làm trên Electron 11 hiện tại (tab thường) để chốt API sớm; lên
 
 | Nhóm | Lệnh | Trả về / ghi chú |
 |---|---|---|
-| Tab | `tabs` | `[{id, url, title, active, mode:"web"\|"game", loading}]` |
+| Tab | `tabs` | `[{id, url, title, active, engine:"web"\|"flash", loading}]` |
 | | `open {url, newTab}` / `navigate {url}` / `back` / `forward` / `reload` / `close` / `activate` | tab id |
 | | `waitLoad {until:"load"\|"idle", timeoutMs}` | URL cuối, thời gian |
 | Đọc | `outline {root?, maxNodes?, visibleOnly?}` | cây gọn: `{ref, role, name, text, value, state[checked,disabled,expanded,focused], rect}`, bỏ node trang trí; có cờ `truncated` |
@@ -38,4 +38,4 @@ Làm trên Electron 11 hiện tại (tab thường) để chốt API sớm; lên
 - ⬜ Mỗi element trả kèm **selector bền** theo thứ tự: `role=…[name="…"]` → `aria=` → `css=[data-testid=…]` / `#id` không tự sinh → `text=` → CSS đường dẫn ngắn. Logic chung với `StableSelector` của Ghosthand (dùng chung dữ liệu thử ở `testdata/`).
 - ⬜ iframe (cả khác domain – preload chạy mọi frame qua `nodeIntegrationInSubFrames`, giao tiếp qua IPC chính), shadow DOM mở, element trong cửa sổ popup.
 - ⬜ Toạ độ: `rect` theo CSS px trong trang + `screenRect` (cộng vị trí view + cửa sổ, nhân `zoomFactor`) để Ghosthand bấm chuột thật được khi cần.
-- ⬜ Mã lỗi: `not_found`, `not_visible`, `covered` (element khác đè lên điểm bấm – trả mô tả element đè), `not_focused`, `stale_ref`, `timeout`, `no_tab`, `game_mode` (lệnh DOM trên tab Game), `bad_args`.
+- ⬜ Mã lỗi: `not_found`, `not_visible`, `covered` (element khác đè lên điểm bấm – trả mô tả element đè), `not_focused`, `stale_ref`, `timeout`, `no_tab`, `flash_page` (lệnh DOM trên trang mở bằng engine flash), `bad_args`.

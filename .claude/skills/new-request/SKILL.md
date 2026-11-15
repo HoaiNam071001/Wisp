@@ -13,7 +13,7 @@ Mục tiêu: không yêu cầu nào chỉ nằm trong chat; `docs/plan/` luôn p
 - Đối chiếu:
   - Bảng *Các bước* trong `docs/plan/README.md` – đã có / đã lên plan chưa? Bước nào gần nhất?
   - *Mục tiêu & nguyên tắc* (`docs/plan/README.md`) + `docs/decisions.md` – có mâu thuẫn không (vd mở cổng CDP, giả dấu vân tay, gắn biến vào `window` của trang)?
-  - Đụng phần nào: chế độ Web / Game, cổng Ghosthand (API → phải sửa cả phía Ghosthand `../autoclicker`), `config.json` / cập nhật, đóng gói mac / Windows.
+  - Đụng phần nào: engine web / Flash, cấu hình Flash theo trang, cổng Ghosthand (API → phải sửa cả phía Ghosthand `../autoclicker`), `config.json` / cập nhật, đóng gói mac / Windows.
 
 ## 2. Phân loại
 

@@ -8,9 +8,9 @@ description: Làm một bước / việc theo plan Wisp trong docs/plan (vd "là
 ## 1. Nạp ngữ cảnh (đọc ít, đúng chỗ)
 
 1. Bảng bước đã có sẵn đầu session nhờ hook. Người dùng nêu bước nào thì theo người dùng; không nêu → bước ⬜ / 🔄 đầu tiên mà các bước **Phụ thuộc** đã ✅.
-2. Mở file bước `docs/plan/<NN>-<tên>.md`; *Mục tiêu & nguyên tắc* ở `docs/plan/README.md` khi bước đụng cổng Ghosthand / chế độ Web.
+2. Mở file bước `docs/plan/<NN>-<tên>.md`; *Mục tiêu & nguyên tắc* ở `docs/plan/README.md` khi bước đụng cổng Ghosthand / engine web.
 3. `docs/decisions.md` khi đụng điều đã chốt (không bàn lại).
-4. Code: `grep -n` tìm hàm trong `main.js` rồi đọc đúng đoạn, không đọc cả file. Bước phía Ghosthand → đọc `../autoclicker/CLAUDE.md` và làm theo skill của repo đó.
+4. Code: `grep -rn` tìm hàm trong các module (`tabs.js`, `flash/`, `inspect/`…) rồi đọc đúng đoạn. Bước phía Ghosthand → đọc `../autoclicker/CLAUDE.md` và làm theo skill của repo đó.
 
 ## 2. Lập kế hoạch trước khi code
 
@@ -21,7 +21,7 @@ description: Làm một bước / việc theo plan Wisp trong docs/plan (vd "là
 ## 3. Code theo thứ tự lớp
 
 1. **Logic thuần** (không `require('electron')`) + `test/<tên>.test.js` (`node --test`): chọn chế độ theo URL, selector, phân tích / kiểm tra lệnh cổng, so phiên bản…
-2. **Tiến trình main**: module riêng theo việc (vd `ghosthand/server.js`, `ghosthand/commands/<nhóm>.js`), `main.js` chỉ gọi vào. Đụng phần cũ của `main.js` → tách phần đó ra file riêng trước, không đổi hành vi.
+2. **Tiến trình main**: module riêng theo việc (vd `ghosthand/server.js`, `ghosthand/commands/<nhóm>.js`), `main.js` chỉ gọi vào. File cũ sắp vượt ~300 dòng → tách trước, không đổi hành vi.
 3. **Preload / trang**: `contextBridge` tối thiểu; mã chạy trong trang web (agent của cổng Ghosthand) nằm trong thế giới riêng, không để lại biến trên `window`.
 4. **UI** (`*.html`): biến màu CSS + theme tối, chữ tiếng Việt.
 5. File mới chạy trong app → thêm vào `build.files` (`package.json`).
