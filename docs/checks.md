@@ -5,12 +5,17 @@ Mới nhất ở trên, nhóm `## <NN> – <tên bước> · [link](plan/<NN>-<t
 ## 03 – Tách main.js · [link](plan/03-tach-main-js.md)
 
 Chạy `npm run dev` (dữ liệu `.dev-data/`), thử như bản 2.3.0:
-- [ ] Tab: mở (Cmd+T), đóng (Cmd+W), chuyển (Cmd+1…, Ctrl+Tab), mở lại tab vừa đóng (Shift+Cmd+T), chuột phải tab (nhân bản, tắt tiếng, đóng các tab khác), link target=_blank mở tab bên phải.
-- [ ] Menu ⋮ mở tức thì; phóng to / thu nhỏ giữ menu mở; bật / tắt 3 tuỳ chọn; "Flash…" (tuỳ chọn ít dùng) hiện menu đúng chỗ.
+- [x] Tab: Cmd+T, Cmd+W, Cmd+1, Shift+Cmd+T (Claude thử 2026-11-15).
+- [ ] Tab: chuột phải tab (nhân bản, tắt tiếng, đóng các tab khác), Ctrl+Tab, link target=_blank mở tab bên phải.
+- [x] Menu ⋮ mở tức thì, trạng thái đúng; phóng to giữ menu mở (100 → 110 → 120%); mở Bảng kiểm tra từ menu (Claude thử).
+- [ ] Menu ⋮: bật / tắt 3 tuỳ chọn; "Thêm tuỳ chọn Flash…" hiện menu đúng chỗ.
 - [ ] Menu hệ thống: Tệp / Trang / Flash / Lịch sử / Tab / Tuỳ chọn – mục Lịch sử hiện trang vừa xem, menu Tab cập nhật tên tab.
-- [ ] Trang Lịch sử (Cmd+Y): danh sách, mở, xoá, xoá lịch sử.
-- [ ] Bảng kiểm tra (Shift+Cmd+I): HTTP, socket TCP của game, console, hiệu năng, thông tin Flash, thử TCP, ghi NetLog, lưu báo cáo.
-- [ ] Vào game Flash (cf4vn.bar): Flash nạp, có ping máy chủ game trên thanh công cụ; "Cho phép Flash trên trang này".
-- [ ] Chụp màn hình tab (Shift+Cmd+S); đóng app → mở lại thì tab cũ được mở lại.
+- [x] Trang Lịch sử (wisp://history): danh sách, tự cập nhật khi xem trang mới (Claude thử).
+- [ ] Trang Lịch sử: mở, xoá một mục, xoá lịch sử.
+- [x] Bảng kiểm tra: hiệu năng (nhãn tiến trình đúng), Mạng (request + lỗi), Flash (navigator.plugins có Flash 32, mms.cfg) (Claude thử).
+- [ ] Bảng kiểm tra: socket TCP của game, thử TCP, ghi NetLog, lưu báo cáo.
+- [ ] Vào game Flash (cf4vn.bar, cần đăng nhập – Claude chỉ mở tới trang đăng nhập): vào trận, có ping máy chủ game trên thanh công cụ; "Cho phép Flash trên trang này".
+- [x] Cmd+Q → mở lại: khôi phục đúng 2 tab + tab đang xem; menu hệ thống hiện đủ (Claude thử).
+- [ ] Chụp màn hình tab (Shift+Cmd+S).
 - [ ] Chế độ Ruffle: đổi sang Ruffle, mở lại app, mở file .swf (Cmd+O).
 - [ ] Windows (`npm run dist:win`): cài plugin từ bộ cài .exe, socket / ping trong Bảng kiểm tra.
