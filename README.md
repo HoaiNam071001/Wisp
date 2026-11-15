@@ -104,7 +104,7 @@ Mặc định cho phép `cmn.vn`, `cf4vn.bar` (cùng mọi subdomain) và `file:
 Thêm domain của game:
 - Mở trang game, chờ Flash tải xong → menu **Flash → Cho phép Flash trên trang này** (Shift+Cmd+A). App tự thêm domain của trang và của các file `.swf` nó vừa tải, rồi hỏi để khởi động lại.
 - Hoặc **Flash → Sửa danh sách domain cho phép…** để sửa tay `allowDomains` trong `config.json`.
-- Sửa mặc định: `DEFAULT_ALLOW` ở đầu `main.js`.
+- Sửa mặc định: `DEFAULT_ALLOW` ở đầu `config.js`.
 
 Nếu Flash vẫn bị chặn: bật **Flash → Ghi log allowlist** (thêm `AllowListPreview=1`, `TraceOutputEcho=1`), xem thêm DevTools → Network. Nếu cách trên vẫn không được, chép file vào `/Library/Application Support/Macromedia/mms.cfg` (cần sudo).
 
@@ -113,7 +113,7 @@ Nếu Flash vẫn bị chặn: bật **Flash → Ghi log allowlist** (thêm `All
 - **Flash → Kiểm tra Flash Player**: xem `navigator.plugins`, version, kiến trúc, đường dẫn `mms.cfg`.
 - **Flash → Chế độ: Flash Player thật / Ruffle**: đổi chế độ (app khởi động lại).
 - Huy hiệu trên thanh công cụ: xanh `FLASH 32.0.0.x` là Flash thật, cam `RUFFLE` là đang giả lập.
-- Gõ địa chỉ rồi Enter (Cmd+L). Mặc định mở `DEFAULT_URL` trong `main.js`; đổi bằng **⋮ → Đặt trang này làm trang chủ**.
+- Gõ địa chỉ rồi Enter (Cmd+L). Mặc định mở `DEFAULT_URL` trong `config.js`; đổi bằng **⋮ → Đặt trang này làm trang chủ**.
 - Mở file `.swf`: Cmd+O, gõ đường dẫn (`~/Downloads/game.swf`), hoặc kéo file vào icon app.
 - **Tab**: Cmd+T tab mới, Cmd+W đóng (hoặc chuột giữa), Shift+Cmd+T mở lại tab vừa đóng, Ctrl+Tab / Cmd+1…9 chuyển tab, chuột phải vào tab để nhân bản / đóng tab khác. Popup và link mở cửa sổ mới mở thành tab mới. Tab đang phát tiếng có 🔊, bấm để tắt tiếng (Shift+Cmd+M).
 - **Lịch sử**: Cmd+Y hoặc `wisp://history`; tìm kiếm, xoá từng trang, xoá theo giờ qua / hôm nay / toàn bộ. Lưu ở `history.json`.

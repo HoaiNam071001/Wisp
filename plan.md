@@ -8,12 +8,12 @@ Trạng thái: ✅ xong · 🔄 đang làm · ⬜ chưa làm
 
 | Phần | Cách làm | Ở đâu |
 |---|---|---|
-| Flash thật | `ppapi-flash-path` / `ppapi-flash-version`, `plugins: true` | `main.js` – `findFlashPlugin`, `readFlashVersion` |
-| Kill switch Flash 32 | Ghi `mms.cfg` (allowlist) vào `userData/Pepper Data/Shockwave Flash/System/` mỗi lần mở | `main.js` – `writeMmsCfg`; domain: `DEFAULT_ALLOW` + `config.json` |
+| Flash thật | `ppapi-flash-path` / `ppapi-flash-version`, `plugins: true` | `flash/plugin.js` – `findFlashPlugin`, `readFlashVersion`; `flash/mode.js` |
+| Kill switch Flash 32 | Ghi `mms.cfg` (allowlist) vào `userData/Pepper Data/Shockwave Flash/System/` mỗi lần mở | `flash/mms-cfg.js`, `flash/allowlist.js`; domain: `DEFAULT_ALLOW` (`config.js`) + `config.json` |
 | Giao diện | `BrowserWindow` (toolbar) + `BrowserView` (trang) | `toolbar.html`, `toolbar-preload.js` |
 | Dự phòng Ruffle | Giao thức `ruffle://`, gỡ CSP, preload chèn Ruffle | `page-preload.js`, `player.html` |
-| Bảng kiểm tra | Mạng / Socket TCP / Console / Flash, thử kết nối, NetLog, báo cáo JSON | `inspect.html`, `inspect-preload.js`, `main.js` |
-| Chạy thử dev | `WISP_USER_DATA` (dữ liệu riêng), `WISP_INSPECT=1` (mở sẵn bảng) | `main.js` |
+| Bảng kiểm tra | Mạng / Socket TCP / Console / Flash, thử kết nối, NetLog, báo cáo JSON | `inspect.html`, `inspect-preload.js`, `inspect/` |
+| Chạy thử dev | `WISP_USER_DATA` (dữ liệu riêng), `WISP_INSPECT=1` (mở sẵn bảng) | `user-data.js`, `main.js` |
 
 ## 2. ✅ Lỗi đăng nhập cf4vn.bar (`登陆超时，请稍后再试`)
 

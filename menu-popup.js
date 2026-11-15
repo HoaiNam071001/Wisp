@@ -1,0 +1,141 @@
+// Menu ⋮: bảng xổ xuống tự vẽ (menu.html trong cửa sổ con không viền).
+// Menu hệ thống của macOS không tô màu / đặt công tắc được, nên dùng cửa sổ HTML riêng.
+// Cửa sổ được tạo sẵn một lần rồi chỉ ẩn / hiện: tạo cửa sổ mới mỗi lần bấm mất vài giây.
+const { BrowserWindow, Menu, ipcMain } = require('electron');
+const path = require('path');
+const updater = require('./updater');
+const tabs = require('./tabs');
+const history = require('./history');
+const page = require('./page-actions');
+const flash = require('./flash/actions');
+const { askForFlashPlugin } = require('./flash/install');
+const { MODE, FLASH_PATH, FLASH_VERSION, wantedMode } = require('./flash/mode');
+const { loadConfig, homeUrl } = require('./config');
+const { pingSummary } = require('./ping');
+const { openInspector } = require('./inspect/window');
+const appMenu = require('./app-menu');
+
+const MENU_W = 340;
+let menuWin = null;
+let menuClosedAt = 0;
+let menuWanted = false; // đã bấm ⋮, chờ menu vẽ xong nội dung mới hiện
+
+function menuAlive() { return menuWin && !menuWin.isDestroyed(); }
+function menuOpen() { return menuAlive() && (menuWin.isVisible() || menuWanted); }
+function closeMenuPopup() {
+  if (!menuOpen()) return;
+  menuWanted = false;
+  menuWin.hide();
+  menuClosedAt = Date.now();
+  const win = tabs.getWin();
+  if (win) win.webContents.send('menu-closed');
+}
+tabs.events.on('window-closed', closeMenuPopup);
+
+function ensureMenuWin() {
+  const win = tabs.getWin();
+  if (menuAlive() || !win) return;
+  menuWin = new BrowserWindow({
+    parent: win, width: MENU_W, height: 120,
+    frame: false, transparent: true, resizable: false, movable: false, minimizable: false, maximizable: false,
+    fullscreenable: false, skipTaskbar: true, hasShadow: false, show: false, backgroundColor: '#00000000',
+    webPreferences: { preload: path.join(__dirname, 'menu-preload.js'), contextIsolation: true, nodeIntegration: false, worldSafeExecuteJavaScript: true,
+                      backgroundThrottling: false },
+  });
+  menuWin.loadFile(path.join(__dirname, 'menu.html'));
+  menuWin.on('blur', closeMenuPopup);
+  menuWin.on('closed', () => { menuWin = null; menuWanted = false; });
+}
+
+function showMainMenu(x, y) {
+  const win = tabs.getWin();
+  if (!win) return;
+  if (menuOpen()) { closeMenuPopup(); return; }
+  // bấm ⋮ lúc menu đang mở: menu tự đóng vì mất focus ngay trước cú bấm → đừng mở lại
+  if (Date.now() - menuClosedAt < 250) return;
+  const fresh = !menuAlive();
+  ensureMenuWin();
+  const cb = win.getContentBounds();
+  menuWin.setBounds({ x: Math.round(cb.x + x - MENU_W), y: Math.round(cb.y + y), width: MENU_W, height: menuWin.getBounds().height });
+  menuWanted = true;
+  // cửa sổ mới tự lấy trạng thái khi tải xong; cửa sổ có sẵn thì báo vẽ lại → menu:size sẽ hiện nó
+  if (!fresh) menuWin.webContents.send('menu:open');
+}
+
+function hostOf(url) { try { return new URL(url).host || 'file'; } catch { return ''; } }
+
+function menuState() {
+  const t = tabs.activeTab();
+  const cfg = loadConfig();
+  const win = tabs.getWin();
+  return {
+    hasTab: !!tabs.wc(), zoom: page.zoomPercent(), muted: !!(t && t.muted), canReopen: tabs.canReopen(),
+    fullScreen: !!win && win.isFullScreen(),
+    recent: history.recentHistory(4).map(h => ({ title: h.title || h.url, url: h.url, host: hostOf(h.url) })),
+    ping: pingSummary(),
+    mode: MODE, wantedMode, hasPlugin: !!FLASH_PATH, version: FLASH_VERSION,
+    options: { restoreTabs: cfg.restoreTabs !== false, preventAppNap: cfg.preventAppNap !== false, pingGame: cfg.pingGame !== false },
+    update: updater.state(),
+  };
+}
+
+// Các tuỳ chọn Flash ít dùng: menu hệ thống ngay chỗ menu ⋮ vừa đóng
+function popupFlashMore(bounds) {
+  const win = tabs.getWin();
+  if (!win) return;
+  const cb = win.getContentBounds();
+  Menu.buildFromTemplate(appMenu.flashSubmenu()).popup({ window: win, x: bounds ? bounds.x - cb.x + 12 : 0, y: bounds ? bounds.y - cb.y + 12 : tabs.TOOLBAR_HEIGHT });
+}
+
+// Thao tác đóng menu rồi mới chạy
+function menuActions(arg, bounds) {
+  const w = tabs.wc();
+  return {
+    newTab: tabs.newTab, reopen: tabs.reopenClosedTab, mute: () => tabs.activeTab() && tabs.toggleMute(tabs.getActiveId()),
+    screenshot: page.screenshotTab, fullscreen: page.toggleFullScreen, shots: page.openShotsDir,
+    history: history.openHistory, clearHistory: history.clearHistoryDialog, recent: () => tabs.openUrl(String(arg || '')),
+    home: () => w && w.loadURL(homeUrl()).catch(() => {}), setHome: page.setHomeHere,
+    inspector: () => openInspector(arg ? String(arg) : undefined), devtools: () => w && w.toggleDevTools(),
+    hardReload: page.hardReload, clearCache: page.clearCacheReload,
+    checkFlash: flash.checkFlash, allowSite: flash.allowCurrentSite, plugin: askForFlashPlugin,
+    modeFlash: () => flash.setMode('flash'), modeRuffle: () => flash.setMode('ruffle'),
+    flashMore: () => popupFlashMore(bounds),
+    openSwf: page.openSwfFile,
+    update: appMenu.checkUpdate,
+  };
+}
+
+function fromMenu(e) { return menuAlive() && e.sender === menuWin.webContents; }
+ipcMain.handle('menu:state', (e) => fromMenu(e) ? menuState() : null);
+ipcMain.on('menu:size', (e, h) => {
+  if (!fromMenu(e) || !tabs.winOk()) return;
+  const { screen } = require('electron'); // screen chỉ dùng được sau app ready → lấy lúc cần
+  const b = menuWin.getBounds();
+  const area = screen.getDisplayMatching(b).workArea;
+  const height = Math.max(80, Math.min(Math.ceil(h), area.y + area.height - b.y - 8));
+  menuWin.setBounds({ x: b.x, y: b.y, width: MENU_W, height });
+  if (menuWanted && !menuWin.isVisible()) { menuWanted = false; menuWin.show(); menuWin.focus(); }
+});
+ipcMain.on('menu:close', (e) => { if (fromMenu(e)) closeMenuPopup(); });
+ipcMain.handle('menu:do', (e, action, arg) => {
+  if (!fromMenu(e)) return null;
+  // các thao tác giữ menu mở, trả lại trạng thái mới
+  const stay = {
+    zoomIn: () => page.zoomBy(0.5), zoomOut: () => page.zoomBy(-0.5), zoomReset: () => page.zoomBy(0),
+    option: () => {
+      const key = String(arg);
+      if (!appMenu.OPTION_KEYS.includes(key)) return;
+      appMenu.setOption(key, loadConfig()[key] === false); // đang tắt → bật
+      appMenu.scheduleMenu();
+    },
+  };
+  if (stay[action]) { stay[action](); return menuState(); }
+
+  const bounds = menuOpen() ? menuWin.getBounds() : null;
+  closeMenuPopup();
+  const run = menuActions(arg, bounds)[action];
+  if (run) setTimeout(run, 0);
+  return null;
+});
+
+module.exports = { ensureMenuWin, showMainMenu };
