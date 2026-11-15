@@ -1,5 +1,5 @@
 // Agent – <select> / ô đánh dấu / khung game. Chỉ đọc + focus; thay đổi giá trị luôn do phím / chuột thật từ main.
-const { clean, tag, describe, shown, place, rectOf } = require('./dom');
+const { clean, tag, describe, shown, place, rectOf, allRoots } = require('./dom');
 
 const err = (code, detail) => Object.assign(new Error(detail), { code });
 const norm = s => clean(s).toLowerCase();
@@ -65,7 +65,7 @@ function checkedOf(el) {
 const GAME = 'embed, object, canvas, iframe, ruffle-player, ruffle-object, ruffle-embed';
 function gameRect() {
   let best = null, area = 0;
-  for (const el of document.querySelectorAll(GAME)) {
+  for (const el of [].concat(...allRoots().map(r => Array.from(r.querySelectorAll(GAME))))) {
     if (!shown(el)) continue;
     const r = el.getBoundingClientRect();
     if (r.width * r.height > area) { area = r.width * r.height; best = el; }

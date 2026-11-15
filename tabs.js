@@ -95,8 +95,8 @@ function tabPrefs() {
     // page-preload.js: chèn Ruffle (chế độ Ruffle) + cầu nối cho trang Lịch sử
     preload: path.join(__dirname, 'page-preload.js'),
     additionalArguments: ['--wisp-history=' + HISTORY_URL, ...(MODE === 'ruffle' ? ['--flash-mode=ruffle'] : [])],
-    // Chế độ Ruffle: preload chạy trong mọi frame (kể cả iframe) để chèn Ruffle
-    ...(MODE === 'ruffle' ? { nodeIntegrationInSubFrames: true } : {}),
+    // preload chạy trong mọi frame (kể cả iframe): chèn Ruffle (chế độ Ruffle) + agent Ghosthand ở frame khác nguồn
+    nodeIntegrationInSubFrames: true,
   };
 }
 

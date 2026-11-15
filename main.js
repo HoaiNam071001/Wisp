@@ -4,6 +4,9 @@
 // File này chỉ lo khởi động; từng việc nằm ở module riêng (xem docs/plan/03-tach-main-js.md).
 const { app, BrowserWindow, session } = require('electron');
 const path = require('path');
+// Electron 11: sendInputEvent chỉ tới widget khung chính – iframe khác site chạy process riêng không nhận chuột / phím
+// của cổng Ghosthand. Tắt site isolation để iframe chạy chung process (docs/decisions.md, 2026-11-15).
+app.commandLine.appendSwitch('disable-site-isolation-trials');
 
 // Thứ tự quan trọng: thư mục dữ liệu → khoá một bản → chọn chế độ Flash (gắn switch trước app ready)
 require('./user-data').setupUserData();

@@ -12,10 +12,28 @@ const describe = el => {
   return t ? s + ' “' + t + '”' : s;
 };
 
-// document con cùng nguồn (iframe / frame); khác nguồn thì contentDocument null / ném lỗi → bỏ qua.
+// Agent của frame khác nguồn với khung cha (docs/plan/01): main gửi kèm gốc toạ độ của frame trong trang chính +
+// vùng nhìn thấy (clip) – toạ độ trả về luôn theo trang chính. Khung chính: gốc 0, clip = viewport.
+let base = { x: 0, y: 0, clip: null };
+const setBase = b => { base = b && typeof b.x === 'number' ? b : { x: 0, y: 0, clip: null }; };
+const view = () => base.clip || { x: 0, y: 0, w: innerWidth, h: innerHeight };
+
+// Cha theo cây phẳng (qua ranh shadow root): phần tử trong shadow DOM mở vẫn tính tổ tiên là host.
+const up = e => e.parentElement || (e.parentNode && e.parentNode.host) || null;
+const inside = (outer, el) => { for (let e = el; e; e = up(e)) if (e === outer) return true; return false; };
+// Shadow root mở trong root (document / shadow root), cả lồng nhau. Shadow đóng: trang giấu – bỏ qua.
+const shadowsIn = root => {
+  const out = [];
+  for (const el of root.querySelectorAll('*')) if (el.shadowRoot) out.push(el.shadowRoot, ...shadowsIn(el.shadowRoot));
+  return out;
+};
+const rootsOf = doc => [doc].concat(shadowsIn(doc));
+
+// document con cùng nguồn (iframe / frame, cả trong shadow DOM); khác nguồn thì contentDocument null / ném lỗi → bỏ
+// qua (frame đó có agent riêng).
 const childDocs = doc => {
   const out = [];
-  for (const f of doc.querySelectorAll('iframe, frame')) {
+  for (const r of rootsOf(doc)) for (const f of r.querySelectorAll('iframe, frame')) {
     try { if (f.contentDocument && f.contentDocument.documentElement) out.push({ frame: f, doc: f.contentDocument }); } catch (e) { /* khác nguồn */ }
   }
   return out;
@@ -26,6 +44,19 @@ const allDocs = () => {
   walk(document);
   return docs;
 };
+// Mọi chỗ tìm: document + shadow root mở của chúng.
+const allRoots = () => [].concat(...allDocs().map(rootsOf));
+// Đường tới frame từ trang chính theo chỉ số trong window.frames ("" = trang chính, "1.0") – đọc được cả khi khác nguồn.
+const pathOf = w => {
+  const p = [];
+  for (; w && w !== w.parent; w = w.parent) {
+    const fs = w.parent.frames;
+    let i = 0;
+    while (i < fs.length && fs[i] !== w) i++;
+    p.unshift(i);
+  }
+  return p.join('.');
+};
 
 // Vùng nội dung của frame trong viewport của document chứa nó (cộng viền + padding).
 const frameContent = f => {
@@ -34,9 +65,9 @@ const frameContent = f => {
   return { x: r.left + f.clientLeft + pl, y: r.top + f.clientTop + pt,
     w: f.clientWidth - pl - parseFloat(cs.paddingRight), h: f.clientHeight - pt - parseFloat(cs.paddingBottom) };
 };
-// Độ lệch toạ độ client của window w so với trang chính (cộng dồn qua frame lồng nhau).
+// Độ lệch toạ độ client của window w so với trang chính (cộng dồn qua frame lồng nhau + gốc của agent).
 const frameOffset = w => {
-  let x = 0, y = 0;
+  let x = base.x, y = base.y;
   for (let f = w.frameElement; f; f = f.ownerDocument.defaultView.frameElement) {
     const c = frameContent(f);
     x += c.x; y += c.y;
@@ -52,7 +83,7 @@ const ownText = el => {
 };
 const ariaLabel = el => {
   const ids = (el.getAttribute('aria-labelledby') || '').split(/\s+/).filter(Boolean);
-  if (ids.length) return ids.map(id => { const x = el.ownerDocument.getElementById(id); return x ? x.innerText : ''; }).join(' ');
+  if (ids.length) return ids.map(id => { const x = el.getRootNode().getElementById(id); return x ? x.innerText : ''; }).join(' ');
   return el.getAttribute('aria-label') || '';
 };
 // Vai trò ngầm định của thẻ (rút gọn theo HTML-ARIA; ô mật khẩu tính là textbox) – giống Ghosthand.
@@ -98,7 +129,7 @@ const shown = el => {
   if (r.width < 1 || r.height < 1) return false;
   const win = el.ownerDocument.defaultView;
   if (win.getComputedStyle(el).visibility !== 'visible') return false;
-  for (let e = el; e && e.nodeType === Node.ELEMENT_NODE; e = e.parentElement) {
+  for (let e = el; e; e = up(e)) {
     if (win.getComputedStyle(e).opacity === '0') return false;
   }
   return true;
@@ -107,7 +138,7 @@ const shown = el => {
 // Tâm bị khung cuộn tổ tiên cắt mất (elementFromPoint ra chính khung nên không bắt được là bị che).
 const clipped = (el, x, y) => {
   const win = el.ownerDocument.defaultView;
-  for (let p = el.parentElement; p && p !== el.ownerDocument.body && p !== el.ownerDocument.documentElement; p = p.parentElement) {
+  for (let p = up(el); p && p !== el.ownerDocument.body && p !== el.ownerDocument.documentElement; p = up(p)) {
     const cs = win.getComputedStyle(p);
     if (cs.overflowX === 'visible' && cs.overflowY === 'visible') continue;
     const r = p.getBoundingClientRect();
@@ -120,12 +151,23 @@ const place = el => {
   const r = el.getBoundingClientRect(), off = frameOffset(el.ownerDocument.defaultView);
   const box = { x: r.left + off.x, y: r.top + off.y, w: r.width, h: r.height };
   const cx = box.x + box.w / 2, cy = box.y + box.h / 2;
-  let inView = cx >= 0 && cy >= 0 && cx < innerWidth && cy < innerHeight && !clipped(el, cx - off.x, cy - off.y);
+  const v = view();
+  let inView = cx >= v.x && cy >= v.y && cx < v.x + v.w && cy < v.y + v.h && !clipped(el, cx - off.x, cy - off.y);
   for (let f = el.ownerDocument.defaultView.frameElement; f && inView; f = f.ownerDocument.defaultView.frameElement) {
     const c = frameContent(f), o = frameOffset(f.ownerDocument.defaultView);
     inView = cx >= c.x + o.x && cy >= c.y + o.y && cx < c.x + o.x + c.w && cy < c.y + o.y + c.h;
   }
   return { box, cx, cy, inView };
+};
+// Phần tử trên cùng tại điểm, đi xuống cả shadow root mở (elementFromPoint của document chỉ ra host).
+const topAt = (doc, x, y) => {
+  let t = doc.elementFromPoint(x, y);
+  while (t && t.shadowRoot) {
+    const inner = t.shadowRoot.elementFromPoint(x, y);
+    if (!inner || inner === t) break;
+    t = inner;
+  }
+  return t;
 };
 // Phần tử che điểm (x, y) của el: xét từ trang chính xuống từng tầng frame; '' = không bị che.
 const coverOf = (el, x, y) => {
@@ -133,14 +175,15 @@ const coverOf = (el, x, y) => {
   for (let f = el.ownerDocument.defaultView.frameElement; f; f = f.ownerDocument.defaultView.frameElement) chain.unshift(f);
   for (const want of chain) {
     const doc = want.ownerDocument, off = frameOffset(doc.defaultView);
-    const top = doc.elementFromPoint(x - off.x, y - off.y);
-    if (top && top !== want && !want.contains(top) && !top.contains(want)) return describe(top);
+    const top = topAt(doc, x - off.x, y - off.y);
+    if (top && top !== want && !inside(want, top) && !inside(top, want)) return describe(top);
   }
   return '';
 };
 const rectOf = box => ({ x: Math.round(box.x), y: Math.round(box.y), w: Math.round(box.w), h: Math.round(box.h) });
 
 module.exports = {
+  setBase, view, up, inside, allRoots, pathOf, frameContent,
   clean, tag, describe, allDocs, frameOffset, ownText, ariaLabel, IMPLICIT, accName, roleOf,
   usable, autoLike, cssPath, shown, place, coverOf, rectOf,
 };

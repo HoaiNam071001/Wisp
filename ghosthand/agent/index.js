@@ -1,11 +1,12 @@
-// Agent cổng Ghosthand trong preload của tab (khung chính). Main gửi 'gh:call' {id, fn, args} → trả 'gh:reply'.
+// Agent cổng Ghosthand trong preload của tab. Main gửi 'gh:call' {id, fn, args} → trả 'gh:reply'.
 // Chạy trong thế giới riêng: không gắn gì vào window của trang, không đổi DOM (trang không thấy dấu vết).
-// Iframe khác nguồn chưa hỗ trợ (docs/plan/01 – việc ⬜ iframe).
+// Khung chính lo mọi document cùng nguồn; frame khác nguồn với khung cha có agent riêng (báo main 'gh:frame'),
+// main ghép kết quả (ghosthand/page-call.js) và gửi kèm args._frame = gốc toạ độ + clip của frame trong trang chính.
 const { ipcRenderer } = require('electron');
 const { parseSelector } = require('../selector');
-const { clean, describe, place, coverOf, rectOf, shown } = require('./dom');
+const { setBase, inside, allRoots, pathOf, frameContent, frameOffset, view, clean, describe, place, coverOf, rectOf, shown } = require('./dom');
 const { findAll, firstMatch, pickClear } = require('./find');
-const { resolveRef, info } = require('./elements');
+const { PAGE, resolveRef, info } = require('./elements');
 const { outline } = require('./outline');
 const { readElement, pageText } = require('./read');
 const form = require('./form');
@@ -46,20 +47,26 @@ const FNS = {
     const el = target(args, true);
     if (!shown(el)) throw err('not_visible', describe(el) + ' đang ẩn');
     let p = place(el);
-    if (!p.inView) { el.scrollIntoView({ block: 'center', inline: 'center', behavior: 'instant' }); p = place(el); }
+    const scrolled = !p.inView;
+    if (scrolled) { el.scrollIntoView({ block: 'center', inline: 'center', behavior: 'instant' }); p = place(el); }
     const off = args.offset;
     const x = off ? p.box.x + off.x : p.cx, y = off ? p.box.y + off.y : p.cy;
-    return { ref: info(el, false).ref, x, y, rect: rectOf(p.box), inView: p.inView, covered: coverOf(el, x, y), url: location.href };
+    // scrolled: frame khác nguồn cuộn thì cả trang cha có thể cuộn theo → main tính lại gốc toạ độ rồi hỏi lại
+    return { ref: info(el, false).ref, x, y, rect: rectOf(p.box), inView: p.inView, covered: coverOf(el, x, y), scrolled, url: location.href };
   },
   // Ô đang nhận phím có phải el (hoặc nằm trong el, vd. ô trong combobox) không. Trang thay ô khi bấm vào (thanh tìm
   // kiếm Wikipedia, ô dựng lại bằng Vue / React) → el đã gỡ: nhận ô nhập đang focus nếu nó nằm ngay điểm vừa bấm (x, y).
   focused({ ref, x, y }) {
     let a = document.activeElement;
-    while (a && a.contentDocument && a.contentDocument.activeElement) a = a.contentDocument.activeElement;
+    for (;;) {
+      if (a && a.shadowRoot && a.shadowRoot.activeElement) a = a.shadowRoot.activeElement;
+      else if (a && a.contentDocument && a.contentDocument.activeElement) a = a.contentDocument.activeElement;
+      else break;
+    }
     const editable = !!a && (/^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName) || a.isContentEditable);
     let el = null;
     try { el = resolveRef(ref); } catch (e) { if (e.code !== 'stale_ref') throw e; }
-    let ok = !!a && !!el && (a === el || el.contains(a));
+    let ok = !!a && !!el && inside(el, a);
     if (!ok && !el && editable) {
       const r = place(a).box;
       ok = x >= r.x && x < r.x + r.w && y >= r.y && y < r.y + r.h;
@@ -98,20 +105,69 @@ const FNS = {
   selectResult({ ref, index }) { return form.selectResult(resolveRef(ref), index); },
   checked(args) { const el = target(args, false); return { ref: info(el, false).ref, on: form.checkedOf(el) }; },
   gameRect: form.gameRect,
+  // Ghép nhiều frame (page-call.js): selector đầu tiên có phần tử ở frame này; từng selector có khớp không.
+  firstIndex({ sels, visibleOnly = true }) {
+    if (visibleOnly) { const m = firstMatch(sels); return { index: m.index, hidden: m.hidden }; }
+    return { index: sels.findIndex(s => findAll(s).length > 0), hidden: 0 };
+  },
+  matchesAny({ sels }) { return sels.map(s => firstMatch([s]).index === 0); },
+  // Frame khác nguồn trong frame này: đường dẫn + vùng nội dung và phần nhìn thấy, theo toạ độ của frame này.
+  frames() {
+    const out = [];
+    for (const r of allRoots()) for (const f of r.querySelectorAll('iframe, frame')) {
+      let reachable = false;
+      try { reachable = !!f.contentDocument; } catch (e) { /* khác nguồn */ }
+      if (reachable || !f.contentWindow) continue;
+      const c = frameContent(f), o = frameOffset(f.ownerDocument.defaultView);
+      const box = { x: c.x + o.x, y: c.y + o.y, w: c.w, h: c.h };
+      out.push({ path: pathOf(f.contentWindow), box, clip: visiblePart(f, box) });
+    }
+    return { self: pathOf(window), page: PAGE, frames: out };
+  },
+  // Thẻ iframe của frame con (path) có bị phần tử khác của frame này che tại (x, y) không.
+  frameCover({ path, x, y }) {
+    const f = frameEl(path);
+    return { covered: f ? coverOf(f, x, y) : '' };
+  },
   quiet() { return { readyState: document.readyState, quietMs: Date.now() - lastMutation, url: location.href, title: document.title }; },
 };
+
+// Phần nhìn thấy của khung box (thẻ frame f): cắt theo vùng nhìn và các frame cùng nguồn chứa nó.
+function visiblePart(f, box) {
+  const cut = (a, b) => {
+    const x = Math.max(a.x, b.x), y = Math.max(a.y, b.y);
+    return { x, y, w: Math.max(0, Math.min(a.x + a.w, b.x + b.w) - x), h: Math.max(0, Math.min(a.y + a.h, b.y + b.h) - y) };
+  };
+  let r = cut(box, view());
+  for (let p = f.ownerDocument.defaultView.frameElement; p; p = p.ownerDocument.defaultView.frameElement) {
+    const c = frameContent(p), o = frameOffset(p.ownerDocument.defaultView);
+    r = cut(r, { x: c.x + o.x, y: c.y + o.y, w: c.w, h: c.h });
+  }
+  return r;
+}
+function frameEl(path) {
+  for (const r of allRoots()) for (const f of r.querySelectorAll('iframe, frame')) if (f.contentWindow && pathOf(f.contentWindow) === path) return f;
+  return null;
+}
 
 // Phần tử khớp nhưng đang ẩn (find visibleOnly = false).
 function hiddenOf(sel) { return findAll(sel).filter(el => !shown(el)); }
 
-function install() {
+// sub = frame con khác nguồn với khung cha: báo main để được gọi riêng (sendToFrame), báo lại khi frame bị gỡ / chuyển trang.
+function install(sub) {
   if (document.documentElement) watchMutations();
   else document.addEventListener('DOMContentLoaded', watchMutations, { once: true });
+  if (sub) {
+    ipcRenderer.send('gh:frame', { page: PAGE });
+    addEventListener('pagehide', () => ipcRenderer.send('gh:frame-gone', { page: PAGE }));
+  }
   ipcRenderer.on('gh:call', (_e, { id, fn, args }) => {
     let reply;
     try {
       if (!FNS[fn]) throw err('bad_args', 'agent không có ' + fn);
-      reply = { id, ok: true, result: FNS[fn](args || {}) };
+      const a = args || {};
+      setBase(a._frame);
+      reply = { id, ok: true, result: FNS[fn](a) };
     } catch (e) {
       reply = { id, ok: false, error: { code: e.code || 'internal', detail: clean(e.message) || 'lỗi trong trang' } };
     }

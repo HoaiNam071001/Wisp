@@ -3,14 +3,14 @@ const tabs = require('../../tabs');
 const { fail } = require('../protocol');
 const { keyEvents } = require('../keys');
 const { resolveTab, screenRect } = require('../target');
-const { callAgent } = require('../agent-call');
+const { callPage } = require('../page-call');
 const input = require('../input');
 
 const targetArgs = a => { const o = {}; for (const k of ['ref', 'sels', 'offset']) if (a[k] !== undefined) o[k] = a[k]; return o; };
 
 // Điểm bấm của đích: cuộn vào giữa nếu cần; bị che / ngoài khung nhìn → lỗi (không bấm nhầm phần tử khác).
 async function locate(t, a) {
-  const loc = await callAgent(t.view.webContents, 'locate', targetArgs(a));
+  const loc = await callPage(t.view.webContents, 'locate', targetArgs(a));
   if (!loc.inView) fail('not_visible', 'phần tử nằm ngoài khung nhìn, cuộn không tới được');
   if (loc.covered) fail('covered', `điểm bấm bị ${loc.covered} đè lên – đóng / bỏ phần đó trước`);
   return loc;
@@ -50,10 +50,10 @@ async function type(a) {
   focusIfActive(t);
   await input.click(w, loc.x, loc.y);
   await input.sleep(50);
-  const f = await callAgent(w, 'focused', { ref: loc.ref, x: loc.x, y: loc.y });
+  const f = await callPage(w, 'focused', { ref: loc.ref, x: loc.x, y: loc.y });
   if (!f.ok) fail('not_focused', `bấm vào rồi nhưng ô nhận phím là ${f.active} – chọn đúng ô nhập`);
   if (a.clear) {
-    const selected = await callAgent(w, 'selectText', { ref: f.ref });
+    const selected = await callPage(w, 'selectText', { ref: f.ref });
     if (!selected) w.selectAll();
     await input.pressKey(w, 'backspace');
   }
@@ -78,10 +78,10 @@ async function scroll(a) {
   const hasTarget = a.ref || a.sels;
   if (!a.dir) {
     if (!hasTarget) fail('bad_args', 'cần dir (up | down | left | right) hoặc ref / selector để cuộn tới');
-    const loc = await callAgent(w, 'locate', targetArgs(a));
+    const loc = await callPage(w, 'locate', targetArgs(a));
     return { ref: loc.ref, inView: loc.inView };
   }
-  const p = hasTarget ? await callAgent(w, 'locate', targetArgs(a)) : await callAgent(w, 'viewport', {});
+  const p = hasTarget ? await callPage(w, 'locate', targetArgs(a)) : await callPage(w, 'viewport', {});
   const n = a.amount || 600;
   const d = { up: [0, -n], down: [0, n], left: [-n, 0], right: [n, 0] }[a.dir];
   await input.wheel(w, p.x, p.y, d[0], d[1]);

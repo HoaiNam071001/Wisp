@@ -1,7 +1,7 @@
 // Lệnh nhóm chờ: waitFor (phần tử hiện / ẩn / bật) – hỏi agent lặp lại tới khi thoả hoặc hết giờ.
 const { GhError } = require('../protocol');
 const { resolveTab, screenRect } = require('../target');
-const { callAgent } = require('../agent-call');
+const { callPage } = require('../page-call');
 const { sleep } = require('../input');
 const tabCmds = require('./tabs');
 
@@ -9,7 +9,7 @@ async function waitFor({ tab, sels, selectors, state = 'visible', timeoutMs = 10
   const t = resolveTab(tab), start = Date.now();
   for (;;) {
     // trang đang chuyển thì agent chưa trả lời – coi như chưa thấy, hỏi lại
-    const r = await callAgent(t.view.webContents, 'check', { sels, state }, 2000).catch(e => {
+    const r = await callPage(t.view.webContents, 'check', { sels, state }, 2000).catch(e => {
       if (e.code === 'bad_args' || e.code === 'no_tab') throw e;
       return null;
     });

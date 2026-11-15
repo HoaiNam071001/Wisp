@@ -1,6 +1,6 @@
 // Agent – cây accessibility rút gọn cho AI (theo autoclicker/internal/web/outline.js): phần tử tương tác, tiêu đề,
-// ảnh có alt, vùng chính đang hiện, cả iframe cùng nguồn, theo thứ tự trang; mỗi dòng có ref + selector đã kiểm.
-const { clean, tag, allDocs, ariaLabel, accName, roleOf, usable, autoLike, cssPath, shown, place, rectOf } = require('./dom');
+// ảnh có alt, vùng chính đang hiện, cả iframe cùng nguồn + shadow DOM mở, theo thứ tự trang; mỗi dòng có ref + selector đã kiểm.
+const { clean, tag, allRoots, up, inside, view, ariaLabel, accName, roleOf, usable, autoLike, cssPath, shown, place, rectOf } = require('./dom');
 const { refOf } = require('./elements');
 
 const ACTIVE = new Set(['button', 'link', 'textbox', 'searchbox', 'checkbox', 'radio', 'switch', 'slider', 'spinbutton',
@@ -18,7 +18,7 @@ const norm = s => clean(s).toLowerCase();
 
 // Selector đã kiểm trong một lượt (không tìm lại cả trang cho từng dòng – O(n²) trên trang lớn): find.js lấy phần tử
 // hiện đầu tiên khớp, nên role[name] đúng khi không phần tử hiện cùng vai trò nào đứng trước có tên chứa tên này.
-// prev = tên (chuẩn hoá) các phần tử hiện cùng vai trò đứng trước; docs = mọi document (css kiểm bằng querySelectorAll).
+// prev = tên (chuẩn hoá) các phần tử hiện cùng vai trò đứng trước; docs = mọi root (css kiểm bằng querySelectorAll).
 function selectorOf(el, role, prev, docs) {
   const name = clean(accName(el));
   if (usable(name) && !prev.some(p => p.includes(norm(name)))) return `role=${role}[name="${name}"]`;
@@ -37,7 +37,7 @@ const ariaBool = (el, a) => { const v = el.getAttribute(a); return v === 'true' 
 function stateOf(el, role) {
   const s = {};
   if (el.disabled || el.getAttribute('aria-disabled') === 'true') s.disabled = true;
-  if (el.ownerDocument.activeElement === el && tag(el) !== 'BODY') s.focused = true;
+  if (el.getRootNode().activeElement === el && tag(el) !== 'BODY') s.focused = true;
   if (role === 'heading') s.level = +(el.getAttribute('aria-level') || tag(el).slice(1)) || 0;
   if (CHECKABLE.includes(role)) {
     s.checked = typeof el.checked === 'boolean' && !el.hasAttribute('aria-checked') ? String(el.checked) : ariaBool(el, 'aria-checked');
@@ -49,12 +49,13 @@ function stateOf(el, role) {
 
 // root = phần tử gốc (đã tìm theo ref / selector) hoặc null; visibleOnly = chỉ phần tử có tâm trong khung nhìn.
 function outline({ root, maxNodes = 300, visibleOnly = false }) {
-  const items = [], depth = new Map(), before = {}, docs = allDocs();
-  const parentOf = el => el.parentElement || el.ownerDocument.defaultView.frameElement;
+  const items = [], depth = new Map(), before = {}, docs = allRoots(), v = view();
+  const parentOf = el => up(el) || el.ownerDocument.defaultView.frameElement;
   let total = 0;
   for (const doc of docs) {
-    if (!doc.body) continue;
-    for (const el of doc.body.querySelectorAll('*')) {
+    const body = doc.nodeType === Node.DOCUMENT_NODE ? doc.body : doc;
+    if (!body) continue;
+    for (const el of body.querySelectorAll('*')) {
       if (SKIP.has(tag(el))) continue;
       const role = roleOf(el);
       if (!KEEP(role) || !shown(el)) continue;
@@ -62,10 +63,10 @@ function outline({ root, maxNodes = 300, visibleOnly = false }) {
       const prev = before[role] || (before[role] = []);
       const sel = BOXES.has(role) ? '' : selectorOf(el, role, prev, docs); // vùng ít khi bấm – không cần selector
       prev.push(norm(accName(el)));
-      if ((root && !root.contains(el)) || (role === 'option' && el.closest('select'))) continue;
+      if ((root && !inside(root, el)) || (role === 'option' && el.closest('select'))) continue;
       const { box, inView: center } = place(el);
       // vùng lớn: tâm hay nằm ngoài khung nhìn – tính là trong khi có phần chồng lên khung nhìn
-      const inView = BOXES.has(role) ? box.x < innerWidth && box.y < innerHeight && box.x + box.w > 0 && box.y + box.h > 0 : center;
+      const inView = BOXES.has(role) ? box.x < v.x + v.w && box.y < v.y + v.h && box.x + box.w > v.x && box.y + box.h > v.y : center;
       if (visibleOnly && !inView) continue;
       total++;
       if (items.length >= maxNodes) continue;

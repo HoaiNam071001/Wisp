@@ -1,6 +1,7 @@
 // Agent – tìm phần tử theo selector {by, value, exact, name} cùng cách so với autoclicker/internal/web/find.js
-// (chữ chứa, không phân biệt hoa thường / khoảng trắng; "…" = đúng cả chuỗi), cả trong iframe cùng nguồn.
-const { clean, tag, allDocs, ownText, ariaLabel, IMPLICIT, accName, shown, place, coverOf } = require('./dom');
+// (chữ chứa, không phân biệt hoa thường / khoảng trắng; "…" = đúng cả chuỗi), cả trong iframe cùng nguồn và shadow DOM mở.
+// Mỗi hàm by… nhận một root: document hoặc shadow root (shadow root không có body / evaluate).
+const { clean, tag, allRoots, inside, ownText, ariaLabel, IMPLICIT, accName, shown, place, coverOf } = require('./dom');
 
 const norm = s => clean(s).toLowerCase();
 const matches = (got, value, exact) => {
@@ -11,14 +12,16 @@ const matches = (got, value, exact) => {
 const directText = el => Array.from(el.childNodes).filter(n => n.nodeType === Node.TEXT_NODE).map(n => n.data).join(' ');
 const ownMatches = (el, sel) => matches(ownText(el), sel.value, sel.exact) || (sel.exact && matches(directText(el), sel.value, true));
 const SKIP = new Set(['SCRIPT', 'STYLE', 'NOSCRIPT', 'TEMPLATE', 'HEAD']);
-const all = doc => Array.from(doc.body ? doc.body.querySelectorAll('*') : []).filter(el => !SKIP.has(tag(el)));
+const isDoc = r => r.nodeType === Node.DOCUMENT_NODE;
+const bodyOf = r => (isDoc(r) ? r.body : r);
+const all = r => Array.from(bodyOf(r) ? bodyOf(r).querySelectorAll('*') : []).filter(el => !SKIP.has(tag(el)));
 const deepest = list => { const set = new Set(list); return list.filter(el => !Array.from(el.children).some(c => set.has(c))); };
 const inDocOrder = list => Array.from(new Set(list)).sort((a, b) => (a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING ? -1 : 1));
 
 // Nhanh: text node chứa chữ → phần tử cha (+ ô nhập theo value / placeholder); chữ bị tách qua nhiều thẻ mới quét hết.
 const byText = (sel, doc) => {
   const hits = [];
-  const w = doc.createTreeWalker(doc.body || doc.documentElement, NodeFilter.SHOW_TEXT);
+  const w = (isDoc(doc) ? doc : doc.ownerDocument).createTreeWalker(bodyOf(doc) || doc.documentElement, NodeFilter.SHOW_TEXT);
   for (let n; (n = w.nextNode());) {
     const p = n.parentElement;
     if (p && !SKIP.has(tag(p)) && matches(n.data, sel.value, false) && ownMatches(p, sel)) hits.push(p);
@@ -41,7 +44,7 @@ const fieldOf = lab => {
   const own = lab.closest('label');
   if (own && own.control) return own.control;
   const id = lab.id || (own && own.id);
-  const by = id && lab.ownerDocument.querySelector('[aria-labelledby~="' + CSS.escape(id) + '"]');
+  const by = id && lab.getRootNode().querySelector('[aria-labelledby~="' + CSS.escape(id) + '"]');
   if (by) return by;
   let box = own || lab;
   for (let up = 0; up < 4 && box.parentElement; up++) {
@@ -53,6 +56,7 @@ const fieldOf = lab => {
 };
 const byLabel = (sel, doc) => Array.from(new Set(byText(sel, doc).map(fieldOf).filter(Boolean)));
 const byXPath = (v, doc) => {
+  if (!isDoc(doc)) return []; // XPath không đi vào shadow root
   const r = doc.evaluate(v, doc, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
   const out = [];
   for (let i = 0; i < r.snapshotLength; i++) if (r.snapshotItem(i).nodeType === Node.ELEMENT_NODE) out.push(r.snapshotItem(i));
@@ -70,13 +74,13 @@ const findIn = (sel, doc) => {
   throw new Error('cách tìm không hợp lệ: ' + sel.by);
 };
 
-// Mọi phần tử khớp một selector (mọi document); css / xpath sai cú pháp → lỗi bad_args.
+// Mọi phần tử khớp một selector (mọi document + shadow root); css / xpath sai cú pháp → lỗi bad_args.
 function findAll(sel, scope) {
   let list;
-  try { list = [].concat(...allDocs().map(doc => findIn(sel, doc))); } catch (e) {
+  try { list = [].concat(...allRoots().map(r => findIn(sel, r))); } catch (e) {
     throw Object.assign(new Error(`selector ${sel.by}=${sel.value} lỗi: ${e.message}`), { code: 'bad_args' });
   }
-  return scope ? list.filter(el => scope.contains(el)) : list;
+  return scope ? list.filter(el => inside(scope, el)) : list;
 }
 
 // Selector đầu tiên có phần tử đang hiện → {index, list (đang hiện), hidden}; không có → index -1.

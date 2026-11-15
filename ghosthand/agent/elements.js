@@ -1,6 +1,6 @@
 // Agent – ref của phần tử + mô tả phần tử trả cho Ghosthand (selector bền đã kiểm).
 const { parseSelector, stableFirst } = require('../selector');
-const { clean, tag, allDocs, ownText, ariaLabel, accName, roleOf, usable, autoLike, cssPath, shown, place, rectOf } = require('./dom');
+const { clean, tag, pathOf, ownText, ariaLabel, accName, roleOf, usable, autoLike, cssPath, shown, place, rectOf } = require('./dom');
 const { firstMatch } = require('./find');
 
 // ref = "<mã lần tải trang>.<số>": preload chạy lại mỗi lần tải trang → mã mới → ref cũ thành stale_ref.
@@ -67,7 +67,7 @@ function info(el, withSelectors) {
   const p = place(el);
   const out = {
     ref: refOf(el), role: roleOf(el), name: clean(accName(el)).slice(0, 120), text: clean(ownText(el) || '').slice(0, 200),
-    rect: rectOf(p.box), inView: p.inView, visible: shown(el), frame: Math.max(0, allDocs().indexOf(el.ownerDocument)),
+    rect: rectOf(p.box), inView: p.inView, visible: shown(el), frame: pathOf(el.ownerDocument.defaultView),
   };
   if (withSelectors) {
     const sels = selectorsOf(el, 4);
@@ -77,4 +77,4 @@ function info(el, withSelectors) {
   return out;
 }
 
-module.exports = { refOf, resolveRef, info, selectorsOf };
+module.exports = { PAGE, refOf, resolveRef, info, selectorsOf };
