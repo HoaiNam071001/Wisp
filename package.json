@@ -1,13 +1,15 @@
 {
   "name": "wisp",
   "productName": "Wisp",
-  "version": "2.2.1",
-  "description": "Wisp — trình duyệt mở webgame Flash bằng Flash Player thật (Pepper Flash) trong Electron 11; dự phòng bằng Ruffle",
+  "version": "2.3.0",
+  "description": "Wisp — trình duyệt mở webgame Flash bằng Flash Player thật (Pepper Flash) trong Electron 11 (macOS, Windows); dự phòng bằng Ruffle",
   "main": "main.js",
   "scripts": {
     "start": "electron .",
     "dist": "electron-builder --mac dmg --x64",
-    "dist:personal": "electron-builder --mac dmg --x64 --config electron-builder.personal.js"
+    "dist:personal": "electron-builder --mac dmg --x64 --config electron-builder.personal.js",
+    "dist:win": "electron-builder --win nsis --x64",
+    "dist:win:personal": "electron-builder --win nsis --x64 --config electron-builder.personal.js"
   },
   "dependencies": {
     "@ruffle-rs/ruffle": "0.7.1",
@@ -32,6 +34,24 @@
       ],
       "identity": null
     },
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
+    },
+    "nsis": {
+      "oneClick": true,
+      "perMachine": false,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Wisp",
+      "artifactName": "${productName}-${version}-win-setup.${ext}"
+    },
     "files": [
       "main.js",
       "toolbar.html",
@@ -44,6 +64,8 @@
       "updater.js",
       "page-preload.js",
       "player.html",
+      "flash-win.js",
+      "platform-ui.js",
       "package.json",
       "node_modules/**/*"
     ],

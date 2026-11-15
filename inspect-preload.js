@@ -1,4 +1,5 @@
 const { contextBridge, ipcRenderer } = require('electron');
+require('./platform-ui');
 
 contextBridge.exposeInMainWorld('insp', {
   snapshot: () => ipcRenderer.invoke('inspect:snapshot'),

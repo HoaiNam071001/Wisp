@@ -1,4 +1,5 @@
 const { contextBridge, ipcRenderer } = require('electron');
+require('./platform-ui');
 
 contextBridge.exposeInMainWorld('nav', {
   go: (url) => ipcRenderer.send('nav', 'go', url),

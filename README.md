@@ -1,9 +1,43 @@
-# Wisp (macOS)
+# Wisp (macOS, Windows)
 
 App mở webgame Flash (vd. Bang Bang) bằng **Flash Player thật** (Pepper Flash / PPAPI) chạy trong **Electron 11.5.0 x64**. Flash thật mở được kết nối socket tới máy chủ game, điều mà Ruffle (bản 1) không làm được.
 Chế độ dự phòng **Ruffle** vẫn còn, dùng cho nội dung Flash đơn giản không cần socket.
 
 Bản 1 (Electron 45 + Ruffle) được lưu ở `v1-ruffle/`. Kế hoạch chi tiết: `plan.md`.
+
+## Tải và cài (cho người dùng)
+
+Tải bản mới nhất ở trang **[Releases](https://github.com/HoaiNam071001/Wisp/releases/latest)**:
+
+| Máy | File cần tải |
+|---|---|
+| Windows 10/11 (64-bit) | `Wisp-x.y.z-win-setup.exe` |
+| macOS (Intel, hoặc chip M đã cài Rosetta) | `Wisp-x.y.z.dmg` |
+
+### Windows
+1. Chạy `Wisp-x.y.z-win-setup.exe`. Nếu Windows báo *"Windows protected your PC"* → bấm **More info** → **Run anyway** (app chưa có chữ ký số).
+2. Cài xong Wisp tự mở; có lối tắt ở Desktop và Start Menu.
+3. Lần đầu mở, app hỏi cài Flash → bấm **Tải và cài tự động** (chờ khoảng 1 phút) → **Mở lại ngay**.
+
+### macOS
+1. Mở file `.dmg`, kéo **Wisp** vào **Applications**.
+2. Mở Terminal, chạy `xattr -cr /Applications/Wisp.app` (hoặc mở app, bị chặn thì vào **System Settings → Privacy & Security → Open Anyway**).
+3. Mac chip M chưa có Rosetta: `softwareupdate --install-rosetta`.
+4. Lần đầu mở, app hỏi cài Flash → bấm **Tải và cài tự động** → **Mở lại ngay**.
+
+### Flash Player
+App tự tải Flash. Nếu tải tự động lỗi, tải tay rồi chọn **Chọn file đã tải…** trong hộp thoại cài Flash (hoặc menu **Flash → Cài Flash Player…**):
+
+- Windows: [Adobe Flash Player (PPAPI) 32.0.0.465.exe](https://archive.org/download/adobe-flash-player-ppapi-32.0.0.465/Adobe%20Flash%20Player%20%28PPAPI%29%2032.0.0.465.exe) (~21 MB) — [trang archive.org](https://archive.org/details/adobe-flash-player-ppapi-32.0.0.465)
+- macOS: [install_flash_player_osx_ppapi.dmg](https://archive.org/download/adobe-flash-player-archive_202012/install_flash_player_osx_ppapi.dmg) (~15 MB) — [trang archive.org](https://archive.org/details/adobe-flash-player-archive_202012)
+
+Không cần chạy bộ cài của Adobe: chỉ cần chọn file vừa tải, app tự tách plugin ra và kiểm tra chữ ký Adobe.
+
+Sau khi cài, app tự báo khi có bản mới (nút **Cập nhật** màu cam trên thanh công cụ).
+
+---
+
+# Dành cho người phát triển
 
 ## 1. Cài đặt
 
@@ -160,6 +194,34 @@ Trên máy mới:
 - Domain đã thêm vào allowlist nằm trong `~/Library/Application Support/Wisp/config.json`. Muốn mang sang thì chép file này vào đúng chỗ đó trên máy mới **trước** khi mở app lần đầu (`cmn.vn`, `cf4vn.bar` thì có sẵn).
 - Kiểm tra: menu **Flash → Kiểm tra Flash Player** phải báo "Flash Player đã nạp ✓", plugin nằm trong `Application Support/Wisp/plugins`.
 
-## 7. Lưu ý bảo mật
+## 7. Windows
+
+Bản Windows (x64, Windows 10/11) dùng chung mã nguồn với bản macOS. Build ngay trên máy Mac (electron-builder tự tải Electron win32 và Wine để gắn thông tin vào file .exe):
+
+```bash
+npm run dist:win            # dist/Wisp-<version>-win-setup.exe, KHÔNG kèm plugin Flash
+npm run dist:win:personal   # dist/Wisp-<version>-win-personal-setup.exe, kèm plugins/pepflashplayer.dll
+```
+
+Bản cá nhân cần `plugins/pepflashplayer.dll` (bản **64-bit** pepflashplayer64 32.0.0.x, đổi tên). Không phát hành công khai bản `-personal`.
+
+**Cài**: chạy file `-win-setup.exe`. Bộ cài cài cho người dùng hiện tại vào `%LOCALAPPDATA%\Programs\Wisp`, không cần quyền admin, tạo lối tắt ở Desktop và Start Menu. App không có chữ ký số nên SmartScreen báo "Windows protected your PC" → **More info → Run anyway**.
+
+**Khác với macOS**:
+- Dữ liệu (cookie, `config.json`, lịch sử, plugin) nằm ở `%APPDATA%\Wisp\`. `mms.cfg` ở `%APPDATA%\Wisp\Pepper Data\Shockwave Flash\System\mms.cfg`.
+- Plugin: `%APPDATA%\Wisp\plugins\pepflashplayer.dll`. App tìm theo thứ tự: thư mục đó → plugin kèm trong app → `C:\Windows\System32\Macromed\Flash\pepflashplayer64_*.dll` (máy đã cài Flash PPAPI của Adobe).
+- **Tải và cài tự động**: tải bộ cài đầy đủ `Adobe Flash Player (PPAPI) 32.0.0.465.exe` (~21 MB) từ [archive.org](https://archive.org/details/adobe-flash-player-ppapi-32.0.0.465), kiểm tra MD5 `80b45a47f1055a1d1381b708f4c372e1`. App **không chạy bộ cài**: bộ cài giữ file trong tài nguyên RCDATA, nén cùng định dạng LZMA với payload macOS; bản x64 nằm trong một .exe x64 lồng bên trong (.exe x86 → RCDATA → .exe x64 → RCDATA → `pepflashplayer64.dll`). Việc tách chạy ở tiến trình riêng (`flash-win.js` bằng Node của Electron), mất khoảng 20–60 giây và vài GB RAM tạm thời.
+- **Chọn file đã tải**: bộ cài `.exe` PPAPI bản đầy đủ (bản cài online ~1 MB không dùng được), `.zip`, hoặc `pepflashplayer64_32_0_0_xxx.dll`.
+- Kiểm tra plugin: phải là DLL PPAPI 64-bit, chữ ký Authenticode hợp lệ của Adobe (`Get-AuthenticodeSignature` trong PowerShell). DLL 32.0.0.465 tách từ bộ cài trên có sha256 `c022429e…561a`, khớp thì không cần gọi PowerShell.
+- Phím tắt dùng Ctrl thay Cmd; thêm F11 toàn màn hình, Alt+← / Alt+→ quay lại / tiến tới, Ctrl+H lịch sử, Ctrl+Shift+Delete xoá lịch sử. Thanh menu ẩn, bấm Alt để hiện.
+- Socket TCP đọc bằng `netstat -ano` (mỗi 2s, mỗi 1s khi Bảng kiểm tra đang mở). Ping dùng `ping -n 1`.
+- "Chống App Nap" trên Windows là "Không cho máy ngủ" (giữ máy thức khi đang mở Wisp).
+- Mở file `.swf` khi Wisp đang chạy → mở thành tab mới trong cửa sổ đang mở (app chỉ chạy một bản).
+
+**Cập nhật**: release trên GitHub đính kèm thêm `Wisp-x.y.z-win-setup.exe` và `Wisp-x.y.z-win-setup.exe.sha256` (`shasum -a 256 Wisp-x.y.z-win-setup.exe > Wisp-x.y.z-win-setup.exe.sha256`). App tải bộ cài, so sha256 (bắt buộc), thoát, chạy bộ cài im lặng (`--updated /S --force-run`) rồi tự mở lại.
+
+Nếu Flash vẫn bị chặn trên Windows: chép `mms.cfg` vào `C:\Windows\System32\Macromed\Flash\mms.cfg` (cần quyền admin).
+
+## 8. Lưu ý bảo mật
 
 Electron 11 (Chromium 87) và Flash 32 đều không còn được vá lỗi. Chỉ dùng app này để chơi game, không dùng để duyệt web chung, không đăng nhập tài khoản quan trọng.

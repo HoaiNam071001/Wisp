@@ -8,6 +8,10 @@ const net = require('net');
 const { execFile, execFileSync, spawnSync } = require('child_process');
 const { pathToFileURL } = require('url');
 const updater = require('./updater');
+const flashWin = require('./flash-win');
+
+const IS_MAC = process.platform === 'darwin';
+const IS_WIN = process.platform === 'win32';
 
 // ====== ĐỔI ĐỊA CHỈ TRANG MẶC ĐỊNH Ở ĐÂY (hoặc bấm "★ Đặt làm trang chủ") ======
 const DEFAULT_URL = 'https://bangbang.cmn.vn/';
@@ -17,7 +21,8 @@ const DEFAULT_ALLOW = ['cmn.vn', 'cf4vn.bar'];
 // =================================================================================
 
 const TOOLBAR_HEIGHT = 80; // thanh tab (36) + thanh địa chỉ (44)
-const PLUGIN_NAME = 'PepperFlashPlayer.plugin';
+// macOS: thư mục PepperFlashPlayer.plugin; Windows: một file pepflashplayer.dll (bản 64-bit)
+const PLUGIN_NAME = IS_WIN ? flashWin.PLUGIN_FILE : 'PepperFlashPlayer.plugin';
 
 // ---------- thư mục dữ liệu: ~/Library/Application Support/Wisp ----------
 // Lần đầu chạy bản Wisp: chuyển nguyên thư mục cũ "Flash Browser 2" sang (giữ cookie, đăng nhập).
@@ -43,6 +48,10 @@ const PLUGIN_NAME = 'PepperFlashPlayer.plugin';
     }
   } catch {}
 }
+
+// Chỉ chạy một Wisp cho mỗi thư mục dữ liệu (khoá theo userData, nên bản dev có WISP_USER_DATA riêng vẫn chạy song song)
+const SECOND_INSTANCE = !app.requestSingleInstanceLock();
+if (SECOND_INSTANCE) app.quit();
 
 // ---------- cấu hình người dùng (userData/config.json) ----------
 function configPath() { return path.join(app.getPath('userData'), 'config.json'); }
@@ -74,7 +83,11 @@ function bundledPluginPath() {
 }
 
 function findFlashPlugin() {
-  const candidates = [
+  const candidates = IS_WIN ? [
+    userPluginPath(),
+    bundledPluginPath(),
+    ...flashWin.systemPlugins(),
+  ] : [
     userPluginPath(),
     bundledPluginPath(),
     path.join('/Library/Internet Plug-Ins/PepperFlashPlayer', PLUGIN_NAME),
@@ -84,7 +97,9 @@ function findFlashPlugin() {
 }
 
 // Kiểm tra plugin là bản thật của Adobe: chữ ký hợp lệ + đúng Team ID của Adobe + có bản x86_64
-function verifyFlashPlugin(p) {
+// (Windows: chữ ký Authenticode của Adobe + bản 64-bit, xem flash-win.js). Trả về Promise.
+async function verifyFlashPlugin(p) {
+  if (IS_WIN) return flashWin.verifyDll(p);
   if (path.basename(p) !== PLUGIN_NAME) return `Tên phải là ${PLUGIN_NAME}`;
   const bin = path.join(p, 'Contents', 'MacOS', 'PepperFlashPlayer');
   if (!fs.existsSync(bin)) return 'Không phải plugin Pepper Flash (thiếu Contents/MacOS/PepperFlashPlayer)';
@@ -98,10 +113,18 @@ function verifyFlashPlugin(p) {
 }
 
 // Chép plugin vào userData/plugins (ditto giữ nguyên symlink + chữ ký); chép ra chỗ tạm rồi đổi tên
-function installFlashPlugin(src) {
+function installFlashPlugin(src, version) {
   const dest = userPluginPath();
   const tmp = dest + '.tmp';
   fs.mkdirSync(path.dirname(dest), { recursive: true });
+  if (IS_WIN) {
+    fs.copyFileSync(src, tmp);
+    fs.renameSync(tmp, dest);
+    // ghi version cạnh plugin để lúc khởi động khỏi đọc cả file .dll 32 MB
+    const v = version || flashWin.versionOf(src);
+    if (v) fs.writeFileSync(dest.replace(/\.dll$/i, '.json'), JSON.stringify({ version: v }));
+    return dest;
+  }
   if (fs.existsSync(tmp)) fs.rmdirSync(tmp, { recursive: true });
   execFileSync('/usr/bin/ditto', [src, tmp]);
   if (fs.existsSync(dest)) fs.rmdirSync(dest, { recursive: true });
@@ -116,6 +139,7 @@ if (!fs.existsSync(userPluginPath()) && fs.existsSync(bundledPluginPath())) {
 
 // Đọc version của plugin (manifest.json hoặc Info.plist) để truyền cho ppapi-flash-version
 function readFlashVersion(pluginPath) {
+  if (IS_WIN) return flashWin.versionOf(pluginPath) || '32.0.0.465';
   try {
     const m = JSON.parse(fs.readFileSync(path.join(pluginPath, 'Contents/Resources/manifest.json'), 'utf8'));
     if (m.version) return m.version;
@@ -204,7 +228,7 @@ function normalizeUrl(input) {
   if (!u) return null;
   if (/^wisp:\/*history\/?$/i.test(u)) return HISTORY_URL;
   if (u.startsWith('~/')) u = path.join(app.getPath('home'), u.slice(2));
-  if (u.startsWith('/') && fs.existsSync(u)) u = pathToFileURL(u).href;
+  if ((u.startsWith('/') || (IS_WIN && /^[a-z]:[\\/]|^\\\\/i.test(u))) && fs.existsSync(u)) u = pathToFileURL(u).href;
   else if (!/^[a-z]+:/i.test(u)) u = (/^(localhost|[\d.]+)(:\d+)?(\/|$)/.test(u) ? 'http://' : 'https://') + u;
   // File .swf mở thẳng → bọc vào trang player.html để cả Flash thật lẫn Ruffle đều chạy
   if (/\.swf(\?|#|$)/i.test(u)) {
@@ -444,7 +468,7 @@ function createWindow() {
 
   // Cửa sổ chính chứa thanh tab + thanh công cụ; trang web nằm trong BrowserView bên dưới
   win = new BrowserWindow({
-    width: 1280, height: 820, title: 'Wisp', backgroundColor: '#2b2d31',
+    width: 1280, height: 820, title: 'Wisp', backgroundColor: '#2b2d31', autoHideMenuBar: !IS_MAC,
     webPreferences: { preload: path.join(__dirname, 'toolbar-preload.js'), contextIsolation: true, nodeIntegration: false, worldSafeExecuteJavaScript: true },
   });
   win.loadFile(path.join(__dirname, 'toolbar.html'));
@@ -691,7 +715,7 @@ function installRequestLog(ses) {
   });
 }
 
-// ----- socket TCP: lsof trên mọi tiến trình của app (Flash nối qua tiến trình network) -----
+// ----- socket TCP: lsof / netstat trên mọi tiến trình của app (Flash nối qua tiến trình network) -----
 function procTypes() {
   const m = new Map();
   // dùng số liệu của perfTick: gọi getAppMetrics ở đây sẽ làm sai % CPU
@@ -700,20 +724,54 @@ function procTypes() {
   return m;
 }
 
+// Các kết nối TCP (không tính LISTEN) của những tiến trình pids → [{ pid, fd, name: "local->remote", state }]
+// macOS: lsof; Windows: netstat -ano (không có fd, mỗi kết nối nhận diện bằng cặp địa chỉ)
+function readSockets(pids, cb) {
+  if (IS_WIN) {
+    execFile('netstat', ['-ano'], { timeout: 4000, windowsHide: true, maxBuffer: 16 << 20 }, (_err, out) => {
+      const want = new Set(pids);
+      const list = [];
+      for (const line of String(out || '').split(/\r?\n/)) {
+        const c = line.trim().split(/\s+/);
+        if (c.length < 5 || c[0].toUpperCase() !== 'TCP') continue;
+        // TCP  <local>  <remote>  <trạng thái>  <PID>
+        const pid = Number(c[4]);
+        if (!want.has(pid) || /:0$/.test(c[2])) continue; // remote :0 = đang LISTEN
+        list.push({ pid, fd: '', name: `${c[1]}->${c[2]}`, state: c[3] });
+      }
+      cb(list);
+    });
+    return;
+  }
+  execFile('lsof', ['-nP', '-a', '-iTCP', '-p', pids.join(','), '-F', 'pfnT'], { timeout: 4000 }, (_err, out) => {
+    // lsof thoát mã 1 khi không có kết nối nào → vẫn xử lý như danh sách rỗng
+    const list = [];
+    let pid = 0, cur = null;
+    const commit = () => { if (cur && cur.name && cur.name.includes('->')) list.push({ pid, ...cur }); cur = null; }; // bỏ socket đang LISTEN
+    for (const line of String(out || '').split('\n')) {
+      const t = line[0], v = line.slice(1);
+      if (t === 'p') { commit(); pid = Number(v); }
+      else if (t === 'f') { commit(); cur = { fd: v, name: '', state: '' }; }
+      else if (t === 'n' && cur) cur.name = v;
+      else if (t === 'T' && cur && v.startsWith('ST=')) cur.state = v.slice(3);
+    }
+    commit();
+    cb(list);
+  });
+}
+
 function pollSockets() {
   if (sockBusy) return;
   const types = procTypes();
   const pids = [...types.keys()];
   if (!pids.length) return;
   sockBusy = true;
-  execFile('lsof', ['-nP', '-a', '-iTCP', '-p', pids.join(','), '-F', 'pfnT'], { timeout: 4000 }, (_err, out) => {
+  readSockets(pids, (list) => {
     sockBusy = false;
-    // lsof thoát mã 1 khi không có kết nối nào → vẫn xử lý như danh sách rỗng
     const now = Date.now();
     const seen = new Set();
-    let pid = 0, cur = null;
-    const commit = () => {
-      if (!cur || !cur.name || !cur.name.includes('->')) return; // bỏ socket đang LISTEN
+    for (const cur of list) {
+      const pid = cur.pid;
       const key = `${pid}:${cur.fd}:${cur.name}`;
       seen.add(key);
       const [local, remote] = cur.name.split('->');
@@ -728,15 +786,7 @@ function pollSockets() {
       s.last = now;
       if (cur.state && s.states[s.states.length - 1] !== cur.state) s.states.push(cur.state);
       if (inspectorOpen()) dirty.sock.set(key, s);
-    };
-    for (const line of String(out || '').split('\n')) {
-      const t = line[0], v = line.slice(1);
-      if (t === 'p') { commit(); cur = null; pid = Number(v); }
-      else if (t === 'f') { commit(); cur = { fd: v, name: '', state: '' }; }
-      else if (t === 'n' && cur) cur.name = v;
-      else if (t === 'T' && cur && v.startsWith('ST=')) cur.state = v.slice(3);
     }
-    commit();
     for (const s of sockets.values()) {
       if (!s.end && !seen.has(s.key)) {
         s.end = now;
@@ -755,7 +805,8 @@ function pollSockets() {
 function startSocketWatch() {
   clearInterval(sockTimer);
   pollSockets();
-  sockTimer = setInterval(pollSockets, inspectorOpen() ? 400 : 2000);
+  // netstat trên Windows chậm hơn lsof (đọc cả máy) → 1s khi bảng đang mở
+  sockTimer = setInterval(pollSockets, inspectorOpen() ? (IS_WIN ? 1000 : 400) : 2000);
 }
 function stopSocketWatch() { startSocketWatch(); }
 
@@ -947,11 +998,19 @@ async function checkFlash() {
 // Adobe đã gỡ bản cài khỏi trang của họ; archive.org còn giữ bản cuối (32.0.0.465, PPAPI, macOS).
 // App không chạy bộ cài của Adobe: chỉ mở gói (.dmg → .app → .pkg → payload LZMA) để lấy
 // PepperFlashPlayer.plugin, kiểm tra chữ ký Adobe rồi chép vào userData/plugins.
-const FLASH_DOWNLOAD = {
+// Windows: bộ cài PPAPI bản đầy đủ (offline) 32.0.0.465; app tách pepflashplayer64 khỏi tài nguyên của .exe.
+const FLASH_DOWNLOAD = IS_WIN ? {
+  url: 'https://archive.org/download/adobe-flash-player-ppapi-32.0.0.465/Adobe%20Flash%20Player%20%28PPAPI%29%2032.0.0.465.exe',
+  page: 'https://archive.org/details/adobe-flash-player-ppapi-32.0.0.465',
+  md5: '80b45a47f1055a1d1381b708f4c372e1',
+  file: 'install_flash_player_32_ppapi.exe',
+  size: '~21 MB',
+} : {
   url: 'https://archive.org/download/adobe-flash-player-archive_202012/install_flash_player_osx_ppapi.dmg',
   page: 'https://archive.org/details/adobe-flash-player-archive_202012',
   md5: '01276b441efca664141d42dc9680a2be',
   file: 'install_flash_player_osx_ppapi.dmg',
+  size: '~15 MB',
 };
 const { promisify } = require('util');
 const execFileP = promisify(execFile);
@@ -969,8 +1028,10 @@ async function askForFlashPlugin() {
     type: FLASH_PATH ? 'question' : 'warning',
     message: FLASH_PATH ? `Cài lại / thay Flash Player (đang dùng ${FLASH_VERSION})` : 'Chưa có Flash Player',
     detail: (FLASH_PATH ? '' : 'App đang chạy tạm bằng Ruffle (không chơi được game online cần socket).\n\n') +
-      '• Tải và cài tự động: tải bản 32.0.0.465 (PPAPI) từ archive.org, ~15 MB, rồi tự cài.\n' +
-      '• Chọn file đã tải: file .dmg / .pkg / .zip của bộ cài Adobe, hoặc PepperFlashPlayer.plugin — app tự tách plugin ra và cài.\n\n' +
+      `• Tải và cài tự động: tải bản 32.0.0.465 (PPAPI) từ archive.org, ${FLASH_DOWNLOAD.size}, rồi tự cài.\n` +
+      (IS_WIN
+        ? '• Chọn file đã tải: bộ cài Adobe Flash Player PPAPI (.exe), file .zip, hoặc pepflashplayer64_32_0_0_xxx.dll — app tự tách plugin ra và cài.\n\n'
+        : '• Chọn file đã tải: file .dmg / .pkg / .zip của bộ cài Adobe, hoặc PepperFlashPlayer.plugin — app tự tách plugin ra và cài.\n\n') +
       'App chỉ nhận plugin có chữ ký hợp lệ của Adobe, và không chạy bộ cài của Adobe.',
     buttons: ['Tải và cài tự động', 'Chọn file đã tải…', 'Mở trang tải', 'Để sau'], defaultId: 0, cancelId: 3,
   });
@@ -1038,7 +1099,13 @@ async function downloadFlashPlugin() {
 }
 
 async function choosePluginFile() {
-  const r = await dialog.showOpenDialog(win, {
+  // Windows: hộp thoại không chọn được cả file lẫn thư mục cùng lúc → chỉ chọn file
+  const r = await dialog.showOpenDialog(win, IS_WIN ? {
+    title: 'Chọn bộ cài Flash Player (PPAPI) hoặc pepflashplayer64.dll',
+    defaultPath: app.getPath('downloads'),
+    properties: ['openFile'],
+    filters: [{ name: 'Flash Player', extensions: ['exe', 'dll', 'zip'] }],
+  } : {
     title: 'Chọn bộ cài Flash Player hoặc PepperFlashPlayer.plugin',
     message: 'Chọn file .dmg / .pkg / .zip của bộ cài Adobe Pepper Flash, hoặc PepperFlashPlayer.plugin',
     defaultPath: app.getPath('downloads'),
@@ -1058,9 +1125,14 @@ async function installFromFile(src) {
   let plugin = null;
   try {
     progress('Đang tìm Flash Player trong file…');
-    plugin = await findPluginIn(src, work, mounts, 0);
-    if (!plugin) throw new Error('Không tìm thấy PepperFlashPlayer.plugin trong file này.\nCần bộ cài "Adobe Flash Player for Opera and Chromium – PPAPI" cho macOS (install_flash_player_osx_ppapi.dmg).');
-    const err = verifyFlashPlugin(plugin);
+    plugin = IS_WIN ? await findPluginWin(src, work, 0) : await findPluginIn(src, work, mounts, 0);
+    if (!plugin) {
+      throw new Error(IS_WIN
+        ? 'Không tìm thấy pepflashplayer64.dll trong file này.\nCần bộ cài "Adobe Flash Player for Opera and Chromium – PPAPI" cho Windows (bản đầy đủ, ~21 MB; bản cài online ~1 MB không dùng được).'
+        : 'Không tìm thấy PepperFlashPlayer.plugin trong file này.\nCần bộ cài "Adobe Flash Player for Opera and Chromium – PPAPI" cho macOS (install_flash_player_osx_ppapi.dmg).');
+    }
+    progress('Đang kiểm tra chữ ký của Adobe…');
+    const err = await verifyFlashPlugin(plugin);
     if (err) throw new Error(err);
     if (path.resolve(plugin) !== path.resolve(userPluginPath())) installFlashPlugin(plugin);
   } catch (e) {
@@ -1083,6 +1155,62 @@ async function installFromFile(src) {
     buttons: ['Mở lại ngay', 'Để sau'], defaultId: 0, cancelId: 1,
   });
   if (response === 0) relaunch();
+}
+
+// Windows: tìm pepflashplayer64.dll trong file .dll / bộ cài .exe của Adobe / .zip / thư mục
+const WIN_DLL = /^pepflashplayer(64)?(_[\d_]+)?\.dll$/i; // không nhận pepflashplayer32_… (bản 32-bit)
+async function findPluginWin(p, work, depth) {
+  if (depth > 4 || !fs.existsSync(p)) return null;
+  const st = fs.statSync(p);
+  const ext = path.extname(p).toLowerCase();
+  if (st.isFile() && ext === '.dll') return p;
+  if (st.isFile() && ext === '.exe') {
+    progress('Đang tách Flash Player khỏi bộ cài (khoảng 20–60 giây)…');
+    if (winOk()) win.setProgressBar(2);
+    const out = path.join(fs.mkdtempSync(path.join(work, 'x')), PLUGIN_NAME);
+    const r = await extractWinInstaller(p, out);
+    if (r.error === 'notfound') return null;
+    if (r.error) throw new Error(r.error);
+    if (r.version) fs.writeFileSync(out.replace(/\.dll$/i, '.json'), JSON.stringify({ version: r.version }));
+    return out;
+  }
+  if (st.isFile() && ext === '.zip') {
+    const out = fs.mkdtempSync(path.join(work, 'x'));
+    await flashWin.unzip(p, out);
+    return findPluginWin(out, work, depth + 1);
+  }
+  if (!st.isDirectory()) return null;
+  const found = { dll: [], nested: [] };
+  const walk = (dir, d) => {
+    if (d > 6) return;
+    let list = [];
+    try { list = fs.readdirSync(dir, { withFileTypes: true }); } catch { return; }
+    for (const e of list) {
+      const f = path.join(dir, e.name);
+      if (e.isFile() && WIN_DLL.test(e.name)) found.dll.push(f);
+      else if (e.isFile() && /\.(exe|zip)$/i.test(e.name)) found.nested.push(f);
+      else if (e.isDirectory()) walk(f, d + 1);
+    }
+  };
+  walk(p, 0);
+  found.dll.sort((a, b) => /64/.test(path.basename(b)) - /64/.test(path.basename(a)));
+  for (const f of [...found.dll, ...found.nested]) {
+    const r = await findPluginWin(f, work, depth + 1);
+    if (r) return r;
+  }
+  return null;
+}
+
+// Tách DLL trong tiến trình riêng (flash-win.js chạy bằng Node của Electron): tốn vài GB RAM tạm thời
+function extractWinInstaller(src, dest) {
+  return new Promise((resolve) => {
+    execFile(process.execPath, [path.join(__dirname, 'flash-win.js'), src, dest],
+      { env: { ...process.env, ELECTRON_RUN_AS_NODE: '1' }, timeout: 5 * 60000, maxBuffer: 1 << 20, windowsHide: true },
+      (err, out) => {
+        try { return resolve(JSON.parse(String(out))); } catch {}
+        resolve({ error: 'Tách plugin lỗi: ' + (err ? err.message : 'không rõ') });
+      });
+  });
 }
 
 // Tìm PepperFlashPlayer.plugin: mở .dmg, giải nén .pkg / .zip, giải mã payload .lzma của Adobe
@@ -1145,45 +1273,30 @@ async function findPluginIn(p, work, mounts, depth) {
 // Payload của bộ cài Adobe: 11 byte đầu riêng (byte 7–10: kích thước sau giải nén, big-endian),
 // tiếp theo là luồng LZMA (5 byte thuộc tính + dữ liệu). Sau giải nén là cây thư mục:
 // mỗi mục = [loại][cờ: 0x80 = thư mục][độ dài tên][tên][kích thước nội dung, 4 byte big-endian][nội dung].
-function extractAdobeLzma(file, dest) {
-  const lzma = require('lzma');
-  const d = fs.readFileSync(file);
-  if (d.length < 32 || d[11] !== 0x5d) throw new Error('Payload Flash không đúng định dạng của Adobe');
-  const size = d.readUInt32BE(7);
-  const hdr = Buffer.alloc(13);
-  d.copy(hdr, 0, 11, 16);
-  hdr.writeUInt32LE(size, 5);
-  return new Promise((resolve, reject) => {
-    lzma.decompress(Buffer.concat([hdr, d.subarray(16)]), (res, err) => {
-      if (err) return reject(new Error('Giải nén LZMA lỗi: ' + err));
-      try {
-        const b = typeof res === 'string' ? Buffer.from(res, 'utf8') : Buffer.from(res);
-        if (b.length !== size) throw new Error(`Giải nén ra ${b.length} byte, cần ${size}`);
-        const writeTree = (pos, end, dir) => {
-          while (pos < end) {
-            const flag = b[pos + 1], nlen = b[pos + 2];
-            const name = b.toString('utf8', pos + 3, pos + 3 + nlen);
-            if (name.includes('/') || name === '..' || name === '.') throw new Error('Tên mục không hợp lệ: ' + name);
-            const len = b.readUInt32BE(pos + 3 + nlen);
-            const body = pos + 3 + nlen + 4;
-            if (body + len > end) throw new Error('Payload bị cắt cụt');
-            const target = name ? path.join(dir, name) : dir;
-            if (flag & 0x80) {
-              fs.mkdirSync(target, { recursive: true });
-              writeTree(body, body + len, target);
-            } else {
-              fs.writeFileSync(target, b.subarray(body, body + len));
-              // file chạy được nằm trong Contents/MacOS
-              fs.chmodSync(target, path.basename(dir) === 'MacOS' ? 0o755 : 0o644);
-            }
-            pos = body + len;
-          }
-        };
-        writeTree(0, b.length, dest);
-        resolve(dest);
-      } catch (e) { reject(e); }
-    });
-  });
+async function extractAdobeLzma(file, dest) {
+  const b = await flashWin.decodeAdobeLzma(fs.readFileSync(file));
+  const writeTree = (pos, end, dir) => {
+    while (pos < end) {
+      const flag = b[pos + 1], nlen = b[pos + 2];
+      const name = b.toString('utf8', pos + 3, pos + 3 + nlen);
+      if (name.includes('/') || name === '..' || name === '.') throw new Error('Tên mục không hợp lệ: ' + name);
+      const len = b.readUInt32BE(pos + 3 + nlen);
+      const body = pos + 3 + nlen + 4;
+      if (body + len > end) throw new Error('Payload bị cắt cụt');
+      const target = name ? path.join(dir, name) : dir;
+      if (flag & 0x80) {
+        fs.mkdirSync(target, { recursive: true });
+        writeTree(body, body + len, target);
+      } else {
+        fs.writeFileSync(target, b.subarray(body, body + len));
+        // file chạy được nằm trong Contents/MacOS
+        fs.chmodSync(target, path.basename(dir) === 'MacOS' ? 0o755 : 0o644);
+      }
+      pos = body + len;
+    }
+  };
+  writeTree(0, b.length, dest);
+  return dest;
 }
 
 async function openSwfFile() {
@@ -1250,8 +1363,8 @@ function recentHistory(n = 15) {
 function historySubmenu() {
   const recent = recentHistory();
   return [
-    { label: 'Hiện toàn bộ lịch sử', accelerator: 'Cmd+Y', click: openHistory },
-    { label: 'Xoá lịch sử…', accelerator: 'Shift+Cmd+Backspace', click: clearHistoryDialog },
+    { label: 'Hiện toàn bộ lịch sử', accelerator: IS_MAC ? 'Cmd+Y' : 'Ctrl+H', click: openHistory },
+    { label: 'Xoá lịch sử…', accelerator: IS_MAC ? 'Shift+Cmd+Backspace' : 'Ctrl+Shift+Delete', click: clearHistoryDialog },
     { type: 'separator' },
     { label: recent.length ? 'Xem gần đây' : 'Chưa có lịch sử', enabled: false },
     ...recent.map(h => ({ label: shorten(h.title || h.url), click: () => openUrl(h.url) })),
@@ -1269,7 +1382,7 @@ function flashSubmenu() {
     { label: 'Chế độ: Flash Player thật', type: 'radio', checked: wantedMode === 'flash', enabled: !!FLASH_PATH || wantedMode === 'flash', click: () => setMode('flash') },
     { label: 'Chế độ: Ruffle (dự phòng)', type: 'radio', checked: wantedMode === 'ruffle', click: () => setMode('ruffle') },
     { type: 'separator' },
-    { label: 'Cho phép Flash trên trang này', accelerator: 'Shift+Cmd+A', enabled: MODE === 'flash', click: allowCurrentSite },
+    { label: 'Cho phép Flash trên trang này', accelerator: 'Shift+CmdOrCtrl+A', enabled: MODE === 'flash', click: allowCurrentSite },
     { label: 'Sửa danh sách domain cho phép…', click: editAllowList },
     { label: 'Ghi log allowlist (gỡ lỗi)', type: 'checkbox', checked: !!cfg.flashDebug, click: (item) => { saveConfig({ flashDebug: item.checked }); writeMmsCfg(); askRelaunch(item.checked ? 'Đã bật log allowlist.' : 'Đã tắt log allowlist.'); } },
     { label: 'Mở thư mục mms.cfg', click: () => shell.showItemInFolder(mmsCfgPath()) },
@@ -1281,7 +1394,7 @@ function optionsSubmenu() {
   return [
     { label: 'Mở lại các tab lần trước khi mở app', type: 'checkbox', checked: cfg.restoreTabs !== false,
       click: (item) => { saveConfig({ restoreTabs: item.checked }); saveSession(true); } },
-    { label: 'Chống App Nap (game không bị chậm khi ẩn cửa sổ)', type: 'checkbox', checked: cfg.preventAppNap !== false,
+    { label: IS_MAC ? 'Chống App Nap (game không bị chậm khi ẩn cửa sổ)' : 'Không cho máy ngủ khi đang mở Wisp', type: 'checkbox', checked: cfg.preventAppNap !== false,
       click: (item) => { saveConfig({ preventAppNap: item.checked }); applyAppNap(); } },
     { label: 'Theo dõi ping máy chủ game', type: 'checkbox', checked: cfg.pingGame !== false,
       click: (item) => { saveConfig({ pingGame: item.checked }); if (!item.checked) pingTargets.clear(); } },
@@ -1390,25 +1503,34 @@ ipcMain.handle('menu:do', (e, action, arg) => {
 
 function buildMenu() {
   const w = () => wc();
+  const updateItem = { label: updater.state && updater.state().available ? `Cập nhật lên ${updater.state().available}…` : 'Kiểm tra cập nhật…',
+    click: () => (updater.state().available ? updater.promptUpdate(true) : updater.check({ manual: true })) };
   const menu = Menu.buildFromTemplate([
-    { label: app.name, submenu: [
+    ...(!IS_MAC ? [] : [{ label: app.name, submenu: [
       { role: 'about', label: 'Giới thiệu Wisp' },
-      { label: updater.state && updater.state().available ? `Cập nhật lên ${updater.state().available}…` : 'Kiểm tra cập nhật…',
-        click: () => (updater.state().available ? updater.promptUpdate(true) : updater.check({ manual: true })) },
+      updateItem,
       { type: 'separator' },
       { role: 'hide', label: 'Ẩn Wisp' },
       { role: 'hideOthers', label: 'Ẩn ứng dụng khác' },
       { type: 'separator' },
       { role: 'quit', label: 'Thoát Wisp' },
-    ]},
+    ]}]),
     { label: 'Tệp', submenu: [
-      { label: 'Tab mới', accelerator: 'Cmd+T', click: newTab },
-      { label: 'Mở file .swf…', accelerator: 'Cmd+O', click: openSwfFile },
+      { label: 'Tab mới', accelerator: 'CmdOrCtrl+T', click: newTab },
+      { label: 'Mở file .swf…', accelerator: 'CmdOrCtrl+O', click: openSwfFile },
       { type: 'separator' },
-      { label: 'Đóng tab', accelerator: 'Cmd+W', click: () => activeTab() && closeTab(activeId) },
-      { label: 'Mở lại tab vừa đóng', accelerator: 'Shift+Cmd+T', click: reopenClosedTab },
+      { label: 'Đóng tab', accelerator: 'CmdOrCtrl+W', click: () => activeTab() && closeTab(activeId) },
+      { label: 'Mở lại tab vừa đóng', accelerator: 'Shift+CmdOrCtrl+T', click: reopenClosedTab },
       { type: 'separator' },
-      { label: 'Chụp màn hình tab', accelerator: 'Shift+Cmd+S', click: screenshotTab },
+      { label: 'Chụp màn hình tab', accelerator: 'Shift+CmdOrCtrl+S', click: screenshotTab },
+      ...(IS_MAC ? [] : [
+        { type: 'separator' },
+        updateItem,
+        { label: `Giới thiệu Wisp ${app.getVersion()}`, click: () => dialog.showMessageBox(win, { type: 'info', message: `Wisp ${app.getVersion()}`,
+          detail: `Electron ${process.versions.electron} · Chromium ${process.versions.chrome} · ${process.arch}\nFlash: ${FLASH_VERSION || 'chưa cài'} (${MODE})` }) },
+        { type: 'separator' },
+        { role: 'quit', label: 'Thoát Wisp', accelerator: 'Alt+F4' },
+      ]),
     ]},
     { label: 'Sửa', submenu: [
       { role: 'undo', label: 'Hoàn tác' }, { role: 'redo', label: 'Làm lại' }, { type: 'separator' },
@@ -1416,33 +1538,33 @@ function buildMenu() {
       { role: 'selectAll', label: 'Chọn tất cả' },
     ]},
     { label: 'Trang', submenu: [
-      { label: 'Mở địa chỉ…', accelerator: 'Cmd+L', click: focusUrlBar },
-      { label: 'Quay lại', accelerator: 'Cmd+[', click: () => w() && w().canGoBack() && w().goBack() },
-      { label: 'Tiến tới', accelerator: 'Cmd+]', click: () => w() && w().canGoForward() && w().goForward() },
-      { label: 'Tải lại', accelerator: 'Cmd+R', click: () => w() && w().reload() },
-      { label: 'Tải lại không dùng cache', accelerator: 'Shift+Cmd+R', click: hardReload },
+      { label: 'Mở địa chỉ…', accelerator: 'CmdOrCtrl+L', click: focusUrlBar },
+      { label: 'Quay lại', accelerator: IS_MAC ? 'Cmd+[' : 'Alt+Left', click: () => w() && w().canGoBack() && w().goBack() },
+      { label: 'Tiến tới', accelerator: IS_MAC ? 'Cmd+]' : 'Alt+Right', click: () => w() && w().canGoForward() && w().goForward() },
+      { label: 'Tải lại', accelerator: 'CmdOrCtrl+R', click: () => w() && w().reload() },
+      { label: 'Tải lại không dùng cache', accelerator: 'Shift+CmdOrCtrl+R', click: hardReload },
       { label: 'Xoá cache và tải lại', click: clearCacheReload },
       { type: 'separator' },
-      { label: 'Toàn màn hình', accelerator: 'Ctrl+Cmd+F', click: toggleFullScreen },
-      { label: 'Phóng to', accelerator: 'Cmd+=', click: () => zoomBy(0.5) },
-      { label: 'Thu nhỏ', accelerator: 'Cmd+-', click: () => zoomBy(-0.5) },
-      { label: 'Cỡ gốc', accelerator: 'Cmd+0', click: () => zoomBy(0) },
+      { label: 'Toàn màn hình', accelerator: IS_MAC ? 'Ctrl+Cmd+F' : 'F11', click: toggleFullScreen },
+      { label: 'Phóng to', accelerator: 'CmdOrCtrl+=', click: () => zoomBy(0.5) },
+      { label: 'Thu nhỏ', accelerator: 'CmdOrCtrl+-', click: () => zoomBy(-0.5) },
+      { label: 'Cỡ gốc', accelerator: 'CmdOrCtrl+0', click: () => zoomBy(0) },
       { type: 'separator' },
-      { label: 'Bảng kiểm tra (hiệu năng, mạng, socket)', accelerator: 'Shift+Cmd+I', click: () => openInspector() },
-      { label: 'Công cụ nhà phát triển', accelerator: 'Alt+Cmd+I', click: () => w() && w().toggleDevTools() },
+      { label: 'Bảng kiểm tra (hiệu năng, mạng, socket)', accelerator: 'Shift+CmdOrCtrl+I', click: () => openInspector() },
+      { label: 'Công cụ nhà phát triển', accelerator: IS_MAC ? 'Alt+Cmd+I' : 'Ctrl+Alt+I', click: () => w() && w().toggleDevTools() },
     ]},
     { label: 'Flash', submenu: flashSubmenu() },
     { label: 'Lịch sử', submenu: historySubmenu() },
     { label: 'Tab', submenu: [
       { label: 'Tab tiếp theo', accelerator: 'Ctrl+Tab', click: () => cycleTab(1) },
       { label: 'Tab trước', accelerator: 'Ctrl+Shift+Tab', click: () => cycleTab(-1) },
-      { label: 'Tắt / bật tiếng tab', accelerator: 'Shift+Cmd+M', click: () => activeTab() && toggleMute(activeId) },
+      { label: 'Tắt / bật tiếng tab', accelerator: 'Shift+CmdOrCtrl+M', click: () => activeTab() && toggleMute(activeId) },
       { type: 'separator' },
       ...tabs.map((t, i) => ({
         label: shorten(tabInfo(t).title, 50), type: 'radio', checked: t.id === activeId,
-        accelerator: i < 8 ? `Cmd+${i + 1}` : undefined, click: () => activateTab(t.id),
+        accelerator: i < 8 ? `CmdOrCtrl+${i + 1}` : undefined, click: () => activateTab(t.id),
       })),
-      ...(tabs.length > 8 ? [{ label: 'Tab cuối', accelerator: 'Cmd+9', click: () => activateTab(tabs[tabs.length - 1].id) }] : []),
+      ...(tabs.length > 8 ? [{ label: 'Tab cuối', accelerator: 'CmdOrCtrl+9', click: () => activateTab(tabs[tabs.length - 1].id) }] : []),
     ]},
     { label: 'Tuỳ chọn', submenu: optionsSubmenu() },
     { role: 'windowMenu', label: 'Cửa sổ' },
@@ -1608,8 +1730,10 @@ function pingOnce(p) {
   };
   if (p.mode === 'icmp') {
     p.next = Date.now() + 2000;
-    execFile('/sbin/ping', ['-n', '-c', '1', '-W', '1500', p.host], { timeout: 3000 }, (_err, out) => {
-      const m = /time[=<]([\d.]+)\s*ms/.exec(String(out || ''));
+    const [cmd, args] = IS_WIN ? ['ping', ['-n', '1', '-w', '1500', p.host]] : ['/sbin/ping', ['-n', '-c', '1', '-W', '1500', p.host]];
+    execFile(cmd, args, { timeout: 3000, windowsHide: true }, (_err, out) => {
+      // Windows có thể in tiếng địa phương ("thời gian=12ms") → chỉ dựa vào "=12ms" / "<1ms"
+      const m = (IS_WIN ? /[=<]\s*([\d.]+)\s*ms\b/i : /time[=<]([\d.]+)\s*ms/).exec(String(out || ''));
       if (m) { p.icmpOk = true; p.fails = 0; return record(Math.round(Number(m[1]))); }
       if (!p.icmpOk && ++p.fails >= 2) {
         // máy chủ chặn ICMP → đo bằng thời gian mở kết nối TCP tới cổng game
@@ -1669,6 +1793,7 @@ function saveSession(force = false) {
 
 // ---------- khởi động ----------
 app.whenReady().then(() => {
+  if (SECOND_INSTANCE) return;
   // Một số trang chặn UA có chữ "Electron" → bỏ đi cho giống Chrome thường
   app.userAgentFallback = app.userAgentFallback.replace(/\s?(Electron|wisp|flash-browser)\/\S+/gi, '');
 
@@ -1695,6 +1820,8 @@ app.whenReady().then(() => {
         } else if (u.hostname === 'file') {
           // không gắn CORS: trang web bên ngoài không đọc trộm được file trên máy
           file = u.pathname === PLAYER_PATH ? path.join(__dirname, 'player.html') : decodeURIComponent(u.pathname);
+          // Windows: /C:/game.swf → C:/game.swf
+          if (IS_WIN && /^\/[a-z]:\//i.test(file)) file = file.slice(1);
         }
         if (!file || !fs.existsSync(file) || !fs.statSync(file).isFile()) return cb({ error: -6 });
         cb({ mimeType: MIME[path.extname(file).toLowerCase()] || 'application/octet-stream', headers, data: fs.readFileSync(file) });
@@ -1709,6 +1836,16 @@ app.whenReady().then(() => {
     notify: (st) => { if (winOk()) win.webContents.send('update', st); scheduleMenu(); },
   });
   if (process.env.WISP_INSPECT) openInspector();
+});
+
+// Windows / Linux: mở file .swf (hoặc chạy lại app) khi Wisp đang mở → Windows chạy tiến trình mới
+// với đường dẫn trong argv → tiến trình đó thoát (SECOND_INSTANCE), cửa sổ cũ mở file thành tab mới.
+app.on('second-instance', (_e, argv) => {
+  if (!winOk()) return;
+  if (win.isMinimized()) win.restore();
+  win.focus();
+  const arg = argv.slice(1).find(a => /^https?:|\.swf$/i.test(a));
+  if (arg) createTab(normalizeUrl(arg), { index: tabs.indexOf(activeTab()) + 1 });
 });
 
 // Mở file .swf bằng cách kéo thả vào icon app trên Dock / "Open With"

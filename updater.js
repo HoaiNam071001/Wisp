@@ -2,6 +2,8 @@
 // Không dùng electron-updater: trên macOS nó chỉ tự cài khi app có chữ ký Apple.
 // Quy trình: so tag bản mới nhất với app.getVersion() → tải Wisp-<ver>-mac.zip + .sha256 → kiểm tra
 // sha256 → giải nén (ditto) → kiểm tra Info.plist đúng version → app thoát, script nền thay Wisp.app rồi mở lại.
+// Windows: tải Wisp-<ver>-win-setup.exe + .sha256 → kiểm tra sha256 → app thoát, bộ cài NSIS chạy im lặng
+// (/S, cài cho người dùng hiện tại, không cần quyền admin) rồi tự mở lại app (--force-run).
 // Plugin Flash, cookie, config.json nằm ở userData nên không bị ảnh hưởng.
 const { app, dialog, shell } = require('electron');
 const path = require('path');
@@ -13,6 +15,9 @@ const { execFile, spawn } = require('child_process');
 const REPO = 'HoaiNam071001/Wisp';
 const CHECK_DELAY = 10 * 1000;
 const CHECK_EVERY = 6 * 3600 * 1000;
+const IS_WIN = process.platform === 'win32';
+// Tên file đính kèm trên GitHub Release cho từng hệ điều hành
+const ASSET = IS_WIN ? /-win-setup\.exe$/ : /-mac\.zip$/;
 
 let ctx = null;          // { getWin, toast, addLog, loadConfig, saveConfig, notify }
 let latest = null;       // { version, tag, notes, url, zip, sha }
@@ -84,8 +89,8 @@ async function check({ manual = false } = {}) {
     const r = await getJson(`https://api.github.com/repos/${REPO}/releases/latest`);
     if (r.draft || r.prerelease) throw new Error('Bản mới nhất là bản nháp / thử nghiệm');
     const version = String(r.tag_name || '').replace(/^v/, '');
-    const zip = (r.assets || []).find(a => /-mac\.zip$/.test(a.name));
-    const sha = (r.assets || []).find(a => /-mac\.zip\.sha256$/.test(a.name));
+    const zip = (r.assets || []).find(a => ASSET.test(a.name));
+    const sha = zip && (r.assets || []).find(a => a.name === zip.name + '.sha256');
     ctx.saveConfig({ updateLastCheck: Date.now() });
     if (version && cmpVer(version, app.getVersion()) > 0 && zip) {
       latest = { version, tag: r.tag_name, notes: r.body || '', url: r.html_url, zip: zip.browser_download_url, zipName: zip.name, size: zip.size,
@@ -131,6 +136,7 @@ async function promptUpdate(manual = false) {
 
 async function install() {
   if (!latest || busy) return;
+  if (IS_WIN) return installWin();
   const bundle = appBundle();
   if (!bundle) {
     dialog.showMessageBox(ctx.getWin(), { type: 'info', message: 'Đang chạy bản dev', detail: 'Chỉ bản đã đóng gói (Wisp.app) mới tự cập nhật được. Mở trang phát hành để tải tay.' });
@@ -188,6 +194,46 @@ async function install() {
     ].join('\n') + '\n', { mode: 0o755 });
     ctx.addLog('info', 'event', `Cập nhật lên ${latest.version}: khởi động lại để thay app`);
     spawn('/bin/sh', [script], { detached: true, stdio: 'ignore' }).unref();
+    app.quit();
+  } catch (e) {
+    busy = false;
+    if (win && !win.isDestroyed()) win.setProgressBar(-1);
+    ctx.notify(state());
+    try { fs.rmdirSync(work, { recursive: true }); } catch {}
+    ctx.addLog('error', 'event', 'Cập nhật lỗi: ' + e.message);
+    const { response } = await dialog.showMessageBox(ctx.getWin(), {
+      type: 'error', message: 'Cập nhật không thành công', detail: e.message, buttons: ['Tải tay trên GitHub', 'Đóng'], defaultId: 0, cancelId: 1,
+    });
+    if (response === 0) shell.openExternal(latest.url);
+  }
+}
+
+// Windows: tải bộ cài → kiểm tra sha256 → chạy bộ cài im lặng sau khi app thoát
+async function installWin() {
+  if (!app.isPackaged) {
+    dialog.showMessageBox(ctx.getWin(), { type: 'info', message: 'Đang chạy bản dev', detail: 'Chỉ bản đã cài (Wisp-…-win-setup.exe) mới tự cập nhật được. Mở trang phát hành để tải tay.' });
+    shell.openExternal(latest.url);
+    return;
+  }
+  busy = true;
+  ctx.notify(state());
+  const win = ctx.getWin();
+  const work = fs.mkdtempSync(path.join(app.getPath('temp'), 'wisp-update-'));
+  try {
+    const exe = path.join(work, latest.zipName);
+    ctx.toast(`Đang tải Wisp ${latest.version}…`);
+    let last = 0;
+    const sum = await download(latest.zip, exe, (f) => {
+      if (win && !win.isDestroyed()) win.setProgressBar(f);
+      const pct = Math.floor(f * 100);
+      if (pct >= last + 10) { last = pct; ctx.toast(`Đang tải Wisp ${latest.version}… ${pct}%`); }
+    });
+    if (!latest.sha) throw new Error('Bản phát hành thiếu file .sha256, không kiểm tra được bộ cài');
+    const want = (await getText(latest.sha)).trim().split(/\s+/)[0].toLowerCase();
+    if (want !== sum) throw new Error(`File tải về sai sha256 (${sum.slice(0, 12)}…, cần ${want.slice(0, 12)}…)`);
+    ctx.addLog('info', 'event', `Cập nhật lên ${latest.version}: chạy bộ cài rồi mở lại app`);
+    // --updated: bộ cài biết là cập nhật (chờ app cũ thoát, không hỏi lại); --force-run: cài xong mở app
+    spawn(exe, ['--updated', '/S', '--force-run'], { detached: true, stdio: 'ignore' }).unref();
     app.quit();
   } catch (e) {
     busy = false;

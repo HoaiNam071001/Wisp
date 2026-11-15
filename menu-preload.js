@@ -1,4 +1,5 @@
 const { contextBridge, ipcRenderer } = require('electron');
+require('./platform-ui');
 
 contextBridge.exposeInMainWorld('wmenu', {
   state: () => ipcRenderer.invoke('menu:state'),

@@ -3,3 +3,5 @@ dist/
 plugins/*.plugin
 plugins/*.app
 .DS_Store
+plugins/*.dll
+plugins/*.json
