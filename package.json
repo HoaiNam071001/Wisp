@@ -5,6 +5,8 @@
   "description": "Wisp — trình duyệt mở webgame Flash bằng Flash Player thật (Pepper Flash) trong Electron 11 (macOS, Windows); dự phòng bằng Ruffle",
   "main": "main.js",
   "scripts": {
+    "test": "node --test test/",
+    "check": "node scripts/check-syntax.js",
     "start": "electron .",
     "dist": "electron-builder --mac dmg --x64",
     "dist:personal": "electron-builder --mac dmg --x64 --config electron-builder.personal.js",
