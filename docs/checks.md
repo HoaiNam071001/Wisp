@@ -2,6 +2,13 @@
 
 Mới nhất ở trên, nhóm `## <NN> – <tên bước> · [link](plan/<NN>-<tên>.md)`. Người dùng báo đã thử → tick `[x]` + ghi `log.md`.
 
+## 01 – Cổng Wisp cho Ghosthand · [link](plan/01-cong-ghosthand.md)
+
+Chạy `npm run dev`, rồi ở terminal khác `node scripts/ghosthand-client.js 20 wiki`:
+- [x] 20/20 lần ok trên vi.wikipedia.org (Claude thử 2026-11-15).
+- [ ] Vào game Flash cf4vn.bar vẫn chạy như trước khi có cổng (agent nằm trong preload mọi trang).
+- [ ] Windows: cổng mở, `ghosthand.json` tạo trong `%APPDATA%\Wisp\`, script thử chạy được.
+
 ## 03 – Tách main.js · [link](plan/03-tach-main-js.md)
 
 Chạy `npm run dev` (dữ liệu `.dev-data/`), thử như bản 2.3.0:

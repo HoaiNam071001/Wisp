@@ -17,6 +17,7 @@ npm run dev                                                 # chạy dev: dữ l
 npm run dev -- inspect [url]                                # + mở Bảng kiểm tra, mở thẳng url (WISP_USER_DATA=… để đổi thư mục dữ liệu)
 npm test                                                    # node --test test/*.test.js (logic thuần)
 npm run check                                               # node --check mọi file .js (lỗi cú pháp)
+node scripts/ghosthand-client.js 20 wiki                    # thử cổng Ghosthand trên app dev đang chạy (google sau bước 04)
 npm run dist / dist:win / dist:personal                     # đóng gói (xem README mục 5)
 ```
 

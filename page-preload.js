@@ -2,11 +2,14 @@
 // - Chế độ Ruffle: chạy trong mọi frame (kể cả iframe) và chèn Ruffle vào trang.
 //   Electron 11 chưa có webFrameMain nên dùng preload + nodeIntegrationInSubFrames thay cho bản 1.
 // - Trang Lịch sử nội bộ (history.html): mở cầu nối window.wispHistory.
+// - Khung chính của mọi trang web: agent cổng Ghosthand (ghosthand/agent – chỉ nghe IPC, không gắn gì vào trang).
 const { webFrame, contextBridge, ipcRenderer } = require('electron');
 
 const argHistory = process.argv.find(a => a.startsWith('--wisp-history='));
 const HISTORY_URL = argHistory ? argHistory.slice('--wisp-history='.length) : '';
 const isHistoryPage = !!HISTORY_URL && process.isMainFrame && location.href.split(/[?#]/)[0] === HISTORY_URL;
+
+if (process.isMainFrame && !isHistoryPage) require('./ghosthand/agent').install();
 
 if (isHistoryPage) {
   contextBridge.exposeInMainWorld('wispHistory', {

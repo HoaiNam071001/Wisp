@@ -134,6 +134,10 @@ Nếu Flash vẫn bị chặn: bật **Flash → Ghi log allowlist** (thêm `All
 
 Dữ liệu nằm ở `~/Library/Application Support/Wisp/`. Lần đầu chạy, app tự chuyển thư mục cũ `Flash Browser 2/` sang (giữ đăng nhập); nếu chỉ có bản 1 thì chép trang chủ từ `Flash Browser/config.json` (cookie bản 1 do Electron 45 tạo, Chromium 87 không đọc được).
 
+### Cổng Ghosthand (đang làm – bước 01)
+
+Mỗi lần mở, Wisp mở cổng WebSocket chỉ trên `127.0.0.1` (cổng ngẫu nhiên, token mới) và ghi `ghosthand.json` (`port`, `token`, `pid`, `version`, `api`; chỉ người dùng này đọc được) vào thư mục dữ liệu. Ghosthand đọc file đó để nối, đọc trang và bấm / gõ bằng sự kiện thật. Không mở cổng CDP. Tắt cổng: thêm `"ghosthandPort": false` vào `config.json`. Lệnh và mã lỗi: `docs/plan/01-cong-ghosthand.md`. Thử: `npm run dev`, rồi ở terminal khác `node scripts/ghosthand-client.js 20 wiki`.
+
 ## 4b. Cập nhật app
 
 App tự kiểm tra bản mới trên GitHub Releases (10 giây sau khi mở, rồi mỗi 6 giờ). Có bản mới thì thanh công cụ hiện nút **Cập nhật x.y.z** màu cam (và chấm cam trên ⋮). Bấm → xem ghi chú phát hành → **Cập nhật ngay**: app tải `Wisp-x.y.z-mac.zip`, kiểm tra `sha256`, giải nén, thoát, thay `Wisp.app` rồi tự mở lại. Plugin Flash, đăng nhập, lịch sử, tab đang mở được giữ nguyên (nằm ở thư mục dữ liệu, không nằm trong app).

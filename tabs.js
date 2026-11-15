@@ -1,6 +1,7 @@
 // Cửa sổ chính + các tab. Mỗi tab là một BrowserView; chỉ tab đang xem nằm trong vùng nhìn thấy.
 // Không gọi ngược lên lịch sử / menu / Bảng kiểm tra – các module đó nghe tabs.events:
 //   'visit' (tab, url) · 'title' (tab, title) · 'changed' (vừa vẽ lại thanh tab) · 'window-closed'
+//   'opened' (tab mới, tab mở ra nó) – popup / target=_blank
 const { BrowserView, Menu, dialog } = require('electron');
 const path = require('path');
 const { EventEmitter } = require('events');
@@ -213,7 +214,7 @@ function wireTab(t) {
   // Popup (window.open / target=_blank / Cmd+bấm link) → mở tab mới ngay bên phải
   w.on('new-window', (e, url, _name, disposition) => {
     e.preventDefault();
-    createTab(url, { index: tabs.indexOf(t) + 1, activate: disposition !== 'background-tab' });
+    events.emit('opened', createTab(url, { index: tabs.indexOf(t) + 1, activate: disposition !== 'background-tab' }), t);
   });
 
   ['did-navigate-in-page', 'did-start-loading', 'did-stop-loading'].forEach(ev => w.on(ev, () => { if (isActive()) sendState(); sendTabs(); }));

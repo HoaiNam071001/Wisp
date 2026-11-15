@@ -1,0 +1,23 @@
+[
+  {"in": "text=Xem lịch sử", "want": {"by": "text", "value": "Xem lịch sử"}},
+  {"in": "Xem lịch sử", "want": {"by": "text", "value": "Xem lịch sử"}},
+  {"in": " text = \"Gửi\" ", "want": {"by": "text", "value": "Gửi", "exact": true}},
+  {"in": "ARIA=Đóng", "want": {"by": "aria", "value": "Đóng"}},
+  {"in": "aria-label=\"Messenger\"", "want": {"by": "aria", "value": "Messenger", "exact": true}},
+  {"in": "Aria-Label = Đóng", "want": {"by": "aria", "value": "Đóng"}},
+  {"in": "css=button[data-id=x]", "want": {"by": "css", "value": "button[data-id=x]"}},
+  {"in": "css=\"a\"", "want": {"by": "css", "value": "\"a\""}},
+  {"in": "xpath=//a[@href='x']", "want": {"by": "xpath", "value": "//a[@href='x']"}},
+  {"in": "a=b", "want": {"by": "text", "value": "a=b"}},
+  {"in": "role=button", "want": {"by": "role", "value": "button"}},
+  {"in": "role= Link [name=\"Xem lịch sử\"]", "want": {"by": "role", "value": "link", "name": "Xem lịch sử"}},
+  {"in": "role=checkbox[name=Nhớ tôi]", "want": {"by": "role", "value": "checkbox", "name": "Nhớ tôi"}},
+  {"in": "role=button[name=\"\"]", "want": {"by": "role", "value": "button"}},
+  {"in": "label=Ngày sinh", "want": {"by": "label", "value": "Ngày sinh"}},
+  {"in": "label=\"Ngày sinh\"", "want": {"by": "label", "value": "Ngày sinh", "exact": true}},
+  {"in": "role=nút bấm", "bad": true},
+  {"in": "role=button[title=x]", "bad": true},
+  {"in": "text=", "bad": true},
+  {"in": "text=\"\"", "bad": true},
+  {"in": "  ", "bad": true}
+]

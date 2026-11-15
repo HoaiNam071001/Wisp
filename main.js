@@ -27,6 +27,7 @@ const { registerRuffleScheme, serveRuffle } = require('./flash/ruffle');
 const { askForFlashPlugin } = require('./flash/install');
 const { buildMenu, scheduleMenu } = require('./app-menu');
 const { ensureMenuWin } = require('./menu-popup');
+const ghosthand = require('./ghosthand/server');
 require('./toolbar-ipc');
 
 const IS_MAC = process.platform === 'darwin';
@@ -73,6 +74,8 @@ app.whenReady().then(() => {
 
   applyAppNap();
   createWindow();
+  // Cổng cho Ghosthand (config ghosthandPort: false = tắt; mặc định bật)
+  if (loadConfig().ghosthandPort !== false) ghosthand.start();
   updater.init({
     getWin: tabs.getWin, toast: tabs.toast, addLog, loadConfig, saveConfig,
     notify: (st) => { const win = tabs.getWin(); if (win) win.webContents.send('update', st); scheduleMenu(); },
@@ -98,5 +101,5 @@ app.on('open-file', (e, file) => {
   else pendingFile = file;
 });
 
-app.on('before-quit', () => { saveHistoryNow(); if (loadConfig().restoreTabs !== false) tabs.saveSession(); });
+app.on('before-quit', () => { ghosthand.stop(); saveHistoryNow(); if (loadConfig().restoreTabs !== false) tabs.saveSession(); });
 app.on('window-all-closed', () => app.quit());

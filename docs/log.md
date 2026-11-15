@@ -8,3 +8,4 @@ Chỉ thêm dòng bằng `>>`: `- **YYYY-MM-DD** – <việc>. <kết quả ki�
 - **2026-11-15** – Bước 03 (đang làm): tách main.js (1886 → 102 dòng) thành module theo việc, test urls / allowlist; chờ người dùng thử tay (checks.md mục 03).
 - **2026-11-15** – Bước 03: Claude tự thử app dev (tab, menu ⋮ + zoom, lịch sử, Bảng kiểm tra, Flash nạp, khôi phục tab) – qua; còn game / Ruffle / Windows chờ người dùng.
 - **2026-11-15** – Bước 03: người dùng vào game cf4vn.bar trên bản dev mới – Flash, ping, âm thanh tab chạy.
+- **2026-11-15** – Bước 01 (đang làm): cổng Ghosthand – server WebSocket 127.0.0.1 + token (ghosthand.json 600), agent trong preload (chép cách tìm của Ghosthand), 20 lệnh tab / đọc / thao tác / chờ; test selector (dữ liệu chung Ghosthand) / protocol / keys / info-file; npm run check + test OK; scripts/ghosthand-client.js 20 wiki 20/20; Google bị CAPTCHA trên Chromium 87 → chờ bước 04.

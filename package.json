@@ -16,7 +16,8 @@
   },
   "dependencies": {
     "@ruffle-rs/ruffle": "0.7.1",
-    "lzma": "2.3.2"
+    "lzma": "2.3.2",
+    "ws": "7.5.10"
   },
   "devDependencies": {
     "electron": "11.5.0",
@@ -72,6 +73,7 @@
       "toolbar-ipc.js",
       "flash/**/*",
       "inspect/**/*",
+      "ghosthand/**/*",
       "toolbar.html",
       "toolbar-preload.js",
       "inspect.html",
