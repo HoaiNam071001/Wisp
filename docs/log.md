@@ -7,3 +7,4 @@ Chỉ thêm dòng bằng `>>`: `- **YYYY-MM-DD** – <việc>. <kết quả ki�
 - **2026-11-15** – Kế hoạch (người dùng yêu cầu): Wisp là một trình duyệt, một chế độ; Flash cấu hình theo trang (icon thanh địa chỉ + Cài đặt → Flash), trang Flash tự mở bằng engine Flash (Electron 11) đi kèm. Sửa decisions, bước 01/04/05/07/08, CLAUDE.md, skill.
 - **2026-11-15** – Bước 03 (đang làm): tách main.js (1886 → 102 dòng) thành module theo việc, test urls / allowlist; chờ người dùng thử tay (checks.md mục 03).
 - **2026-11-15** – Bước 03: Claude tự thử app dev (tab, menu ⋮ + zoom, lịch sử, Bảng kiểm tra, Flash nạp, khôi phục tab) – qua; còn game / Ruffle / Windows chờ người dùng.
+- **2026-11-15** – Bước 03: người dùng vào game cf4vn.bar trên bản dev mới – Flash, ping, âm thanh tab chạy.

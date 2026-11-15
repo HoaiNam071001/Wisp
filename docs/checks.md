@@ -14,7 +14,8 @@ Chạy `npm run dev` (dữ liệu `.dev-data/`), thử như bản 2.3.0:
 - [ ] Trang Lịch sử: mở, xoá một mục, xoá lịch sử.
 - [x] Bảng kiểm tra: hiệu năng (nhãn tiến trình đúng), Mạng (request + lỗi), Flash (navigator.plugins có Flash 32, mms.cfg) (Claude thử).
 - [ ] Bảng kiểm tra: socket TCP của game, thử TCP, ghi NetLog, lưu báo cáo.
-- [ ] Vào game Flash (cf4vn.bar, cần đăng nhập – Claude chỉ mở tới trang đăng nhập): vào trận, có ping máy chủ game trên thanh công cụ; "Cho phép Flash trên trang này".
+- [x] Vào game Flash cf4vn.bar (người dùng thử bản dev 2026-11-15): vào sảnh, ping 25 ms trên thanh công cụ, icon loa trên tab.
+- [ ] "Cho phép Flash trên trang này".
 - [x] Cmd+Q → mở lại: khôi phục đúng 2 tab + tab đang xem; menu hệ thống hiện đủ (Claude thử).
 - [ ] Chụp màn hình tab (Shift+Cmd+S).
 - [ ] Chế độ Ruffle: đổi sang Ruffle, mở lại app, mở file .swf (Cmd+O).
