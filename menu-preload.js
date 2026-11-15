@@ -6,4 +6,5 @@ contextBridge.exposeInMainWorld('wmenu', {
   run: (action, arg) => ipcRenderer.invoke('menu:do', action, arg),
   size: (h) => ipcRenderer.send('menu:size', h),
   close: () => ipcRenderer.send('menu:close'),
+  onOpen: (cb) => ipcRenderer.on('menu:open', () => cb()),
 });

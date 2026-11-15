@@ -232,6 +232,12 @@
   });
 
   wmenu.state().then(render);
+  // cửa sổ menu được dùng lại: mỗi lần mở lấy trạng thái mới, cuộn về đầu
+  wmenu.onOpen(() => {
+    $('card').scrollTop = 0;
+    if (document.activeElement) document.activeElement.blur();
+    wmenu.state().then(render);
+  });
 </script>
 </body>
 </html>

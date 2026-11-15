@@ -476,6 +476,8 @@ function createWindow() {
     webPreferences: { preload: path.join(__dirname, 'toolbar-preload.js'), contextIsolation: true, nodeIntegration: false, worldSafeExecuteJavaScript: true },
   });
   win.loadFile(path.join(__dirname, 'toolbar.html'));
+  // tạo sẵn cửa sổ menu ⋮ (ẩn) để bấm là hiện ngay
+  win.webContents.once('did-finish-load', () => setTimeout(ensureMenuWin, 300));
   win.on('resize', layout);
   // Nhớ tab trước khi cửa sổ đóng (sau 'closed' danh sách tab đã bị xoá)
   win.on('close', () => { if (loadConfig().restoreTabs !== false) saveSession(); });
@@ -1411,28 +1413,45 @@ const MENU_W = 340;
 let menuWin = null;
 let menuClosedAt = 0;
 
-function menuOpen() { return menuWin && !menuWin.isDestroyed(); }
-function closeMenuPopup() { if (menuOpen()) menuWin.close(); }
+let menuWanted = false; // đã bấm ⋮, chờ menu vẽ xong nội dung mới hiện
+
+// Cửa sổ menu được tạo sẵn một lần rồi chỉ ẩn / hiện: tạo cửa sổ mới mỗi lần bấm mất vài giây.
+function menuAlive() { return menuWin && !menuWin.isDestroyed(); }
+function menuOpen() { return menuAlive() && (menuWin.isVisible() || menuWanted); }
+function closeMenuPopup() {
+  if (!menuOpen()) return;
+  menuWanted = false;
+  menuWin.hide();
+  menuClosedAt = Date.now();
+  if (winOk()) win.webContents.send('menu-closed');
+}
+
+function ensureMenuWin() {
+  if (menuAlive() || !winOk()) return;
+  menuWin = new BrowserWindow({
+    parent: win, width: MENU_W, height: 120,
+    frame: false, transparent: true, resizable: false, movable: false, minimizable: false, maximizable: false,
+    fullscreenable: false, skipTaskbar: true, hasShadow: false, show: false, backgroundColor: '#00000000',
+    webPreferences: { preload: path.join(__dirname, 'menu-preload.js'), contextIsolation: true, nodeIntegration: false, worldSafeExecuteJavaScript: true,
+                      backgroundThrottling: false },
+  });
+  menuWin.loadFile(path.join(__dirname, 'menu.html'));
+  menuWin.on('blur', closeMenuPopup);
+  menuWin.on('closed', () => { menuWin = null; menuWanted = false; });
+}
 
 function showMainMenu(x, y) {
   if (!winOk()) return;
   if (menuOpen()) { closeMenuPopup(); return; }
   // bấm ⋮ lúc menu đang mở: menu tự đóng vì mất focus ngay trước cú bấm → đừng mở lại
   if (Date.now() - menuClosedAt < 250) return;
+  const fresh = !menuAlive();
+  ensureMenuWin();
   const cb = win.getContentBounds();
-  menuWin = new BrowserWindow({
-    parent: win, x: Math.round(cb.x + x - MENU_W), y: Math.round(cb.y + y), width: MENU_W, height: 120,
-    frame: false, transparent: true, resizable: false, movable: false, minimizable: false, maximizable: false,
-    fullscreenable: false, skipTaskbar: true, hasShadow: false, show: false, backgroundColor: '#00000000',
-    webPreferences: { preload: path.join(__dirname, 'menu-preload.js'), contextIsolation: true, nodeIntegration: false, worldSafeExecuteJavaScript: true },
-  });
-  menuWin.loadFile(path.join(__dirname, 'menu.html'));
-  menuWin.on('blur', closeMenuPopup);
-  menuWin.on('closed', () => {
-    menuWin = null;
-    menuClosedAt = Date.now();
-    if (winOk()) win.webContents.send('menu-closed');
-  });
+  menuWin.setBounds({ x: Math.round(cb.x + x - MENU_W), y: Math.round(cb.y + y), width: MENU_W, height: menuWin.getBounds().height });
+  menuWanted = true;
+  // cửa sổ mới tự lấy trạng thái khi tải xong; cửa sổ có sẵn thì báo vẽ lại → menu:size sẽ hiện nó
+  if (!fresh) menuWin.webContents.send('menu:open');
 }
 
 function menuState() {
@@ -1450,7 +1469,7 @@ function menuState() {
   };
 }
 
-function fromMenu(e) { return menuOpen() && e.sender === menuWin.webContents; }
+function fromMenu(e) { return menuAlive() && e.sender === menuWin.webContents; }
 ipcMain.handle('menu:state', (e) => fromMenu(e) ? menuState() : null);
 ipcMain.on('menu:size', (e, h) => {
   if (!fromMenu(e) || !winOk()) return;
@@ -1459,7 +1478,7 @@ ipcMain.on('menu:size', (e, h) => {
   const area = screen.getDisplayMatching(b).workArea;
   const height = Math.max(80, Math.min(Math.ceil(h), area.y + area.height - b.y - 8));
   menuWin.setBounds({ x: b.x, y: b.y, width: MENU_W, height });
-  if (!menuWin.isVisible()) { menuWin.show(); menuWin.focus(); }
+  if (menuWanted && !menuWin.isVisible()) { menuWanted = false; menuWin.show(); menuWin.focus(); }
 });
 ipcMain.on('menu:close', (e) => { if (fromMenu(e)) closeMenuPopup(); });
 ipcMain.handle('menu:do', (e, action, arg) => {
@@ -1797,6 +1816,10 @@ function saveSession(force = false) {
 
 // ---------- khởi động ----------
 app.whenReady().then(() => {
+  // Chạy dev: Dock hiện icon app thay vì icon Electron (bản đóng gói đã có icon riêng)
+  if (process.platform === 'darwin' && !app.isPackaged) {
+    try { app.dock.setIcon(path.join(__dirname, 'build', 'icon.png')); } catch (_) {}
+  }
   if (SECOND_INSTANCE) return;
   // Một số trang chặn UA có chữ "Electron" → bỏ đi cho giống Chrome thường
   app.userAgentFallback = app.userAgentFallback.replace(/\s?(Electron|wisp|flash-browser)\/\S+/gi, '');
