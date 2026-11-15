@@ -11,10 +11,10 @@ description: Chạy Wisp bản dev vừa sửa rồi tự thử trên app thật
 
 - Chạy nền, dữ liệu riêng (không đụng `Wisp.app` người dùng đang dùng / đăng nhập của họ):
   ```bash
-  WISP_USER_DATA=/tmp/wisp-dev env -u ELECTRON_RUN_AS_NODE npm start      # thêm WISP_INSPECT=1 khi cần Bảng kiểm tra
+  WISP_USER_DATA=/tmp/wisp-dev npm run dev -- inspect [url]      # bỏ inspect nếu không cần Bảng kiểm tra
   ```
-  (Bash `run_in_background`; mở thẳng một URL: `FLASH_URL=<url>`.)
-- Đọc output đầu: lỗi `require`, cú pháp, `getPath of undefined` (quên `env -u`) → sửa trước.
+  (Bash `run_in_background`; `/tmp/wisp-dev` để không đụng cả `.dev-data/` người dùng đang dùng thử.)
+- Đọc output đầu: lỗi `require`, cú pháp, `getPath of undefined` (chạy `npm start` mà quên `env -u`) → sửa trước.
 - Sửa mã main / preload → tắt app (đúng tiến trình dev vừa mở) rồi chạy lại; chỉ sửa trang HTML → tải lại cửa sổ.
 
 ## 2. Thử đúng phần vừa sửa

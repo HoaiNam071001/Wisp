@@ -54,14 +54,14 @@ Kiểm tra Electron đúng bản x64: `file node_modules/electron/dist/Electron.
 ### Chạy dev
 
 ```bash
-npm start
+npm run dev                                   # dữ liệu riêng ở .dev-data/, chạy song song được với Wisp.app đã cài
+npm run dev -- inspect                        # mở kèm Bảng kiểm tra
+npm run dev -- inspect https://cf4vn.bar/     # mở thẳng một địa chỉ (hoặc file .swf)
 ```
 
-Đang mở sẵn `Wisp.app` bản đã cài thì chạy bản dev với thư mục dữ liệu riêng để hai bản không dùng chung cookie / đăng nhập:
+`npm run dev` (`scripts/dev.js`) tự bỏ biến `ELECTRON_RUN_AS_NODE` và đặt `WISP_USER_DATA` = `.dev-data/` trong repo (đã gitignore, không bị đóng gói), nên không đụng cookie / đăng nhập / `config.json` của bản đã cài. Muốn dữ liệu trống để thử: `rm -rf .dev-data` hoặc `WISP_USER_DATA=/tmp/wisp-dev npm run dev`. Muốn thử trên dữ liệu thật: tắt Wisp.app rồi `cp -R ~/Library/Application\ Support/Wisp .dev-data` (chép, không trỏ thẳng vào thư mục thật).
 
-```bash
-WISP_USER_DATA=/tmp/wisp-dev WISP_INSPECT=1 FLASH_URL=https://cf4vn.bar/ npm start
-```
+`npm start` chạy thẳng Electron, dùng chung thư mục dữ liệu với bản đã cài (và thoát ngay nếu bản cài đang mở). Biến môi trường dùng được với cả hai lệnh:
 
 | Biến | Tác dụng |
 |---|---|
@@ -69,7 +69,7 @@ WISP_USER_DATA=/tmp/wisp-dev WISP_INSPECT=1 FLASH_URL=https://cf4vn.bar/ npm sta
 | `WISP_INSPECT=1` | Tự mở Bảng kiểm tra khi khởi động |
 | `FLASH_URL` | Mở thẳng địa chỉ này thay cho trang chủ (cũng nhận đường dẫn file `.swf`) |
 
-- Báo lỗi `Cannot read property 'getPath' of undefined` → terminal (hay gặp trong VS Code) đang có biến `ELECTRON_RUN_AS_NODE`. Thêm `env -u ELECTRON_RUN_AS_NODE` vào đầu lệnh, vd. `env -u ELECTRON_RUN_AS_NODE npm start`.
+- Báo lỗi `Cannot read property 'getPath' of undefined` → terminal (hay gặp trong VS Code) đang có biến `ELECTRON_RUN_AS_NODE`. Dùng `npm run dev` (tự bỏ biến), hoặc thêm `env -u ELECTRON_RUN_AS_NODE` vào đầu lệnh `npm start`.
 - App không tự tải lại khi sửa code: tắt app rồi chạy lại lệnh. Trang web thì Cmd+R là đủ.
 - Đóng gói: `npm run dist` → `dist/Wisp-<version>.dmg` (xem mục 5).
 

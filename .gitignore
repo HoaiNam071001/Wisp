@@ -5,3 +5,4 @@ plugins/*.app
 .DS_Store
 plugins/*.dll
 plugins/*.json
+.dev-data/

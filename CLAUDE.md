@@ -13,8 +13,8 @@ Trình duyệt Electron mở webgame Flash bằng Flash Player thật (Pepper Fl
 ## Lệnh
 
 ```bash
-env -u ELECTRON_RUN_AS_NODE npm start                       # chạy dev (terminal VS Code có ELECTRON_RUN_AS_NODE)
-WISP_USER_DATA=/tmp/wisp-dev WISP_INSPECT=1 env -u ELECTRON_RUN_AS_NODE npm start   # dữ liệu riêng, mở Bảng kiểm tra
+npm run dev                                                 # chạy dev: dữ liệu riêng .dev-data/, tự bỏ ELECTRON_RUN_AS_NODE
+npm run dev -- inspect [url]                                # + mở Bảng kiểm tra, mở thẳng url (WISP_USER_DATA=… để đổi thư mục dữ liệu)
 npm test                                                    # node --test test/*.test.js (logic thuần)
 npm run check                                               # node --check mọi file .js (lỗi cú pháp)
 npm run dist / dist:win / dist:personal                     # đóng gói (xem README mục 5)
