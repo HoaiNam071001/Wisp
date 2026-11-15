@@ -10,6 +10,7 @@ const { checkFlash } = require('./flash/actions');
 const { askForFlashPlugin } = require('./flash/install');
 const { openInspector } = require('./inspect/window');
 const { showMainMenu } = require('./menu-popup');
+const ghosthand = require('./ghosthand/server');
 
 function fromToolbar(e) { const win = tabs.getWin(); return !!win && e.sender === win.webContents; }
 
@@ -28,6 +29,7 @@ ipcMain.on('nav', (_e, action, arg) => {
   else if (action === 'flash') { if (MODE !== 'flash') askForFlashPlugin(); else checkFlash(); }
 });
 ipcMain.on('menu', (e, x, y) => { if (fromToolbar(e)) showMainMenu(x, y); });
+ipcMain.on('ghosthand-disconnect', (e) => { if (fromToolbar(e)) ghosthand.disconnect(); });
 ipcMain.on('open-inspector', (e, tab) => { if (fromToolbar(e)) openInspector(tab); });
 ipcMain.on('tab', (e, action, id) => {
   if (!fromToolbar(e)) return;
@@ -40,5 +42,5 @@ ipcMain.on('tab', (e, action, id) => {
 ipcMain.on('ready', () => {
   tabs.sendState(); tabs.sendTabs();
   const win = tabs.getWin();
-  if (win) win.webContents.send('update', updater.state());
+  if (win) { win.webContents.send('update', updater.state()); win.webContents.send('ghosthand', ghosthand.state()); }
 });

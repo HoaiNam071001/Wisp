@@ -1,7 +1,7 @@
 // Agent – cây accessibility rút gọn cho AI (theo autoclicker/internal/web/outline.js): phần tử tương tác, tiêu đề,
 // ảnh có alt, vùng chính đang hiện, cả iframe cùng nguồn, theo thứ tự trang; mỗi dòng có ref + selector đã kiểm.
-const { clean, tag, allDocs, ariaLabel, accName, roleOf, shown, place, rectOf } = require('./dom');
-const { refOf, selectorsOf } = require('./elements');
+const { clean, tag, allDocs, ariaLabel, accName, roleOf, usable, autoLike, cssPath, shown, place, rectOf } = require('./dom');
+const { refOf } = require('./elements');
 
 const ACTIVE = new Set(['button', 'link', 'textbox', 'searchbox', 'checkbox', 'radio', 'switch', 'slider', 'spinbutton',
   'combobox', 'tab', 'menuitem', 'menuitemcheckbox', 'menuitemradio', 'option', 'treeitem']);
@@ -14,6 +14,24 @@ const SKIP = new Set(['SCRIPT', 'STYLE', 'NOSCRIPT', 'TEMPLATE', 'HEAD']);
 
 // vùng (main / nav…) chỉ lấy tên ghi rõ – tên theo chữ bên trong là cả trang
 const nameOf = (el, role) => clean(BOXES.has(role) ? ariaLabel(el) || el.getAttribute('title') : accName(el));
+const norm = s => clean(s).toLowerCase();
+
+// Selector đã kiểm trong một lượt (không tìm lại cả trang cho từng dòng – O(n²) trên trang lớn): find.js lấy phần tử
+// hiện đầu tiên khớp, nên role[name] đúng khi không phần tử hiện cùng vai trò nào đứng trước có tên chứa tên này.
+// prev = tên (chuẩn hoá) các phần tử hiện cùng vai trò đứng trước; docs = mọi document (css kiểm bằng querySelectorAll).
+function selectorOf(el, role, prev, docs) {
+  const name = clean(accName(el));
+  if (usable(name) && !prev.some(p => p.includes(norm(name)))) return `role=${role}[name="${name}"]`;
+  const firstShown = css => { try { return docs.map(d => Array.from(d.querySelectorAll(css))).reduce((a, b) => a.concat(b), []).find(shown); } catch (e) { return null; } };
+  if (el.id && !autoLike(el.id) && firstShown('#' + CSS.escape(el.id)) === el) return 'css=#' + CSS.escape(el.id);
+  for (const a of ['data-testid', 'data-test', 'data-qa', 'name']) {
+    const v = el.getAttribute(a), css = `${tag(el).toLowerCase()}[${a}="${v}"]`;
+    if (usable(v) && firstShown(css) === el) return 'css=' + css;
+  }
+  if (!prev.length) return 'role=' + role;
+  return 'css=' + cssPath(el);
+}
+
 const ariaBool = (el, a) => { const v = el.getAttribute(a); return v === 'true' || v === 'false' || v === 'mixed' ? v : ''; };
 
 function stateOf(el, role) {
@@ -31,16 +49,20 @@ function stateOf(el, role) {
 
 // root = phần tử gốc (đã tìm theo ref / selector) hoặc null; visibleOnly = chỉ phần tử có tâm trong khung nhìn.
 function outline({ root, maxNodes = 300, visibleOnly = false }) {
-  const items = [], depth = new Map();
+  const items = [], depth = new Map(), before = {}, docs = allDocs();
   const parentOf = el => el.parentElement || el.ownerDocument.defaultView.frameElement;
   let total = 0;
-  for (const doc of allDocs()) {
+  for (const doc of docs) {
     if (!doc.body) continue;
     for (const el of doc.body.querySelectorAll('*')) {
       if (SKIP.has(tag(el))) continue;
       const role = roleOf(el);
-      if (!KEEP(role) || (root && !root.contains(el)) || !shown(el)) continue;
-      if (role === 'option' && el.closest('select')) continue;
+      if (!KEEP(role) || !shown(el)) continue;
+      // tên đứng trước tính cả phần tử bị lọc (root / visibleOnly / option của <select>) – find.js vẫn đếm chúng
+      const prev = before[role] || (before[role] = []);
+      const sel = BOXES.has(role) ? '' : selectorOf(el, role, prev, docs); // vùng ít khi bấm – không cần selector
+      prev.push(norm(accName(el)));
+      if ((root && !root.contains(el)) || (role === 'option' && el.closest('select'))) continue;
       const { box, inView: center } = place(el);
       // vùng lớn: tâm hay nằm ngoài khung nhìn – tính là trong khi có phần chồng lên khung nhìn
       const inView = BOXES.has(role) ? box.x < innerWidth && box.y < innerHeight && box.x + box.w > 0 && box.y + box.h > 0 : center;
@@ -55,8 +77,7 @@ function outline({ root, maxNodes = 300, visibleOnly = false }) {
         if (el.type === 'password') item.state.secret = true;
         else item.value = clean(el.value != null ? String(el.value) : el.innerText).slice(0, 100);
       }
-      // vùng không cần selector (ít khi bấm) – đỡ chậm trên trang lớn
-      if (!BOXES.has(role)) item.selector = selectorsOf(el, 1)[0];
+      if (sel) item.selector = sel;
       items.push(item);
     }
   }

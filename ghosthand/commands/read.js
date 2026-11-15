@@ -25,6 +25,12 @@ module.exports = {
     const t = resolveTab(a.tab);
     return callAgent(t.view.webContents, 'pageText', pick(a, ['maxChars']));
   },
+  // Khung game trên màn hình (Ghosthand OCR / bấm chuột thật đúng vùng). Bước 04: trang Flash ở engine riêng → đổi cách lấy.
+  async frameRect(a) {
+    const t = resolveTab(a.tab);
+    const r = await callAgent(t.view.webContents, 'gameRect', {});
+    return { tag: r.tag, rect: r.rect, screenRect: screenRect(t, r.rect) };
+  },
   // PNG base64 phần đang thấy của trang, hoặc khung một phần tử (ref / selector).
   async screenshot(a) {
     if (a.fullPage) fail('bad_args', 'fullPage chưa hỗ trợ – chụp phần đang thấy hoặc một phần tử');

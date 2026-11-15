@@ -14,6 +14,7 @@ const { loadConfig, homeUrl } = require('./config');
 const { pingSummary } = require('./ping');
 const { openInspector } = require('./inspect/window');
 const appMenu = require('./app-menu');
+const ghosthand = require('./ghosthand/server');
 
 const MENU_W = 340;
 let menuWin = null;
@@ -74,7 +75,9 @@ function menuState() {
     recent: history.recentHistory(4).map(h => ({ title: h.title || h.url, url: h.url, host: hostOf(h.url) })),
     ping: pingSummary(),
     mode: MODE, wantedMode, hasPlugin: !!FLASH_PATH, version: FLASH_VERSION,
-    options: { restoreTabs: cfg.restoreTabs !== false, preventAppNap: cfg.preventAppNap !== false, pingGame: cfg.pingGame !== false },
+    options: { restoreTabs: cfg.restoreTabs !== false, preventAppNap: cfg.preventAppNap !== false, pingGame: cfg.pingGame !== false,
+               ghosthandPort: cfg.ghosthandPort !== false },
+    ghosthand: ghosthand.state(),
     update: updater.state(),
   };
 }

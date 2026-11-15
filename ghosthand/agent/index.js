@@ -8,6 +8,7 @@ const { findAll, firstMatch, pickClear } = require('./find');
 const { resolveRef, info } = require('./elements');
 const { outline } = require('./outline');
 const { readElement, pageText } = require('./read');
+const form = require('./form');
 
 const err = (code, detail) => Object.assign(new Error(detail), { code });
 const REF_RE = /^[a-z0-9]{6}\.\d+$/;
@@ -93,6 +94,10 @@ const FNS = {
   rect(args) { const el = target(args, false); return { rect: rectOf(place(el).box) }; },
   // Điểm giữa khung nhìn (lăn chuột khi không có đích).
   viewport() { return { x: innerWidth / 2, y: innerHeight / 2, w: innerWidth, h: innerHeight }; },
+  selectPrep(args) { const el = target(args, false); return Object.assign({ ref: info(el, false).ref }, form.selectPrep(el, args)); },
+  selectResult({ ref, index }) { return form.selectResult(resolveRef(ref), index); },
+  checked(args) { const el = target(args, false); return { ref: info(el, false).ref, on: form.checkedOf(el) }; },
+  gameRect: form.gameRect,
   quiet() { return { readyState: document.readyState, quietMs: Date.now() - lastMutation, url: location.href, title: document.title }; },
 };
 

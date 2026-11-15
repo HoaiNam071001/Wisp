@@ -148,6 +148,7 @@
   <button class="opt" data-opt="restoreTabs"><span class="tx"><b>Mở lại các tab lần trước</b><small>Khi mở app, mở lại đúng các tab đang dùng</small></span><span class="sw"></span></button>
   <button class="opt" data-opt="preventAppNap"><span class="tx"><b>Chống App Nap</b><small>Game không bị chậm khi cửa sổ bị che / thu nhỏ</small></span><span class="sw"></span></button>
   <button class="opt" data-opt="pingGame"><span class="tx"><b>Theo dõi ping máy chủ game</b><small>Hiện ping trên thanh công cụ, cảnh báo khi mạng chập chờn</small></span><span class="sw"></span></button>
+  <button class="opt" data-opt="ghosthandPort"><span class="tx"><b>Cổng Ghosthand</b><small id="gh-sub">Cho Ghosthand đọc trang, bấm / gõ thay bạn</small></span><span class="sw"></span></button>
 
   <div class="sep"></div>
   <button class="item" data-do="update" id="upd"><span class="ic c-brand"><svg viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-2.6-6.4"/><path d="M21 3v6h-6"/><path d="M12 8v5l3 2"/></svg></span><span class="lb" id="upd-lb">Kiểm tra cập nhật</span><span class="pill" id="upd-pill"></span></button>
@@ -204,6 +205,9 @@
     $('install-pill').style.cssText = s.hasPlugin ? '' : 'color:#ffb08f;background:rgba(255,106,61,.18)';
 
     document.querySelectorAll('.opt').forEach(o => o.classList.toggle('on', !!s.options[o.dataset.opt]));
+    const gh = s.ghosthand || {};
+    $('gh-sub').textContent = !gh.on ? 'Cho Ghosthand đọc trang, bấm / gõ thay bạn'
+      : gh.clients ? 'Ghosthand đang nối – tắt để ngắt ngay' : 'Đang bật – chờ Ghosthand nối';
     const u = s.update || {};
     $('upd').classList.toggle('install', true);
     $('upd').classList.toggle('need', !!u.available);

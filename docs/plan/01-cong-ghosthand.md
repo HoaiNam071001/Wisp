@@ -11,7 +11,7 @@ Làm trên Electron 11 hiện tại (tab thường) để chốt API sớm; lên
 **Kết nối**
 - ✅ Server trong tiến trình chính, chỉ nghe `127.0.0.1`, cổng ngẫu nhiên. Mỗi lần mở app tạo token mới, ghi `userData/ghosthand.json`: `{"port": 51234, "token": "…", "pid": 123, "version": "3.0.0", "api": 1}` (quyền file 600). Ghosthand đọc file này để nối.
 - ✅ Giao thức: **WebSocket JSON** (một kết nối, nhiều lệnh, Wisp đẩy sự kiện được) – `{"id":1,"cmd":"find","args":{…}}` → `{"id":1,"ok":true,"result":{…}}` / `{"id":1,"ok":false,"error":{"code":"not_found","detail":"…"}}`. Token gửi ở header `Authorization: Bearer <token>` khi bắt tay; sai token / có header `Origin` (trang web trong trình duyệt) → 401. Thư viện `ws@7` (chạy được Node 12). Lệnh của một kết nối chạy lần lượt. Bật / tắt tạm bằng `config.json` → `ghosthandPort: false` (mặc định bật).
-- ⬜ Cài đặt (menu ⋮ → Cài đặt – chưa có trang Cài đặt): bật / tắt cổng Ghosthand (mặc định bật), chấm trạng thái "Ghosthand đang nối" trên toolbar, nút ngắt.
+- ✅ Cài đặt: công tắc **Cổng Ghosthand** trong nhóm *Tuỳ chọn* của menu ⋮ (+ menu hệ thống *Tuỳ chọn*), dòng phụ nói trạng thái (tắt / chờ nối / đang nối); khoá `ghosthandPort` (mặc định bật). Chip tím **Ghosthand** trên toolbar khi có kết nối, bấm = ngắt. Ngắt / tắt cổng đóng WebSocket với mã **4000** → Ghosthand (bước 02) không tự nối lại.
 
 **Lệnh** (mọi lệnh có `tab` tuỳ chọn: id / URL / tiêu đề chứa; trống = tab đang xem)
 
@@ -45,9 +45,13 @@ Làm trên Electron 11 hiện tại (tab thường) để chốt API sớm; lên
 
 **Đã làm (2026-11-15):** `tabs`, `open`, `navigate`, `back`, `forward`, `reload`, `close`, `activate`, `waitLoad`, `outline`, `find` (trả `{selectorIndex, found[], more}`), `read`, `pageText`, `screenshot` (phần đang thấy / một phần tử), `click`, `type`, `keys`, `scroll`, `hover`, `waitFor`. Đã thử trên app dev: các lệnh trên, `covered`, `stale_ref`, `not_found`, `no_tab`, token sai / có Origin → 401, `file://` bị chặn.
 
+- ✅ `select` (chỉ `<select>` thật): focus + gõ đoạn đầu ngắn nhất của nhãn theo cách typeahead của Chromium tìm (1 ký tự: từ sau lựa chọn hiện tại, nhiều ký tự: từ chính nó), chờ phiên typeahead cũ hết (~1,1 s) trước lần gõ sau; không bấm mở (menu gốc của hệ điều hành) và không gán `value` bằng JS. Trang nhận `change` có `isTrusted: true`. Danh sách tự dựng → `bad_args` gợi ý dùng `click`.
+- ✅ `check {on}`: đọc `checked` / `aria-checked`, khác thì bấm thật, kiểm lại.
+- ✅ `settle` (= `waitLoad idle`), `frameRect` (embed / object / canvas / iframe / Ruffle lớn nhất → `rect` + `screenRect`).
+- ✅ `subscribe {events}` (thay cả danh sách; `[]` = bỏ): đẩy `{"event": …, "data": …}` – `navigate`, `popup` (`tab`, `opener`, `url`), `download`, `dialog`. Hộp thoại JS: `webContents.debugger` chỉ domain Page, chỉ gắn khi có client subscribe `dialog`; `dialog {accept, text}` trả lời; lệnh chạm trang khi hộp đang mở → `timeout` nói rõ có hộp thoại. Electron không hỗ trợ `prompt()` (trang nhận lỗi) – chỉ `alert` / `confirm` / `beforeunload`.
+- ✅ `outline` một lượt (đếm tên cùng vai trò đứng trước như `outline.js` của Ghosthand): Wikipedia 417 node 1,6 s → 162 ms; 810 selector trên Wikipedia / GitHub / Hacker News tìm lại đúng phần tử.
+- ✅ Thao tác trên tab không xem: `type` / `click` vào tab nền chạy (`isTrusted: true`), `screenRect.offscreen = true`.
+
 **Còn lại**
-- ⬜ Lệnh `select`, `check`, `settle`, `frameRect`, `subscribe` + `dialog`.
-- ⬜ `screenshot fullPage`.
-- ⬜ Thao tác trên tab không xem (BrowserView ngoài vùng nhìn): chưa thử click / gõ.
-- ⬜ `outline` nhanh hơn trên trang lớn: kiểm từng selector ứng viên bằng tìm cả trang (300 node / Wikipedia ≈ 1,6 s) → đếm tên trùng một lượt như `outline.js` của Ghosthand.
+- ⬜ `screenshot fullPage` (Electron 11 `capturePage` chỉ chụp phần đang thấy; cuộn rồi ghép thì trang thấy cuộn) → làm ở bước 04 bằng API của Electron mới.
 - ⬜ Chạy `scripts/ghosthand-client.js 20 google` sau bước 04.

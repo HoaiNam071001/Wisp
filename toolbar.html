@@ -84,6 +84,16 @@
   #perf .sep1 { width: 1px; height: 12px; background: var(--border); }
   #perf.idle #pf-ping, #perf.idle .sep1 { display: none; }
 
+  /* chip "Ghosthand" – chỉ hiện khi Ghosthand đang nối; bấm để ngắt */
+  #gh { display: none; height: 26px; align-items: center; gap: 6px; padding: 0 10px; margin-left: 6px; border-radius: 13px;
+        background: rgba(163,113,247,.16); color: #cdb4ff; font-size: 11.5px; font-weight: 600; white-space: nowrap; }
+  #gh.show { display: flex; }
+  #gh:hover { background: rgba(163,113,247,.28); }
+  #gh .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--purple); box-shadow: 0 0 0 3px rgba(163,113,247,.25); }
+  #gh .x { display: none; width: 12px; height: 12px; }
+  #gh:hover .x { display: block; }
+  #gh:hover .dot { display: none; }
+
   #more { margin-left: 2px; position: relative; }
   #more.dot::after { content: ''; position: absolute; top: 6px; right: 6px; width: 7px; height: 7px; border-radius: 50%;
                      background: var(--brand); box-shadow: 0 0 0 2px var(--bar); }
@@ -122,6 +132,7 @@
     <button id="perf" title="Hiệu năng — bấm để xem chi tiết">
       <span class="dot" id="pf-dot"></span><span id="pf-ping">—</span><span class="sep1"></span><span class="cpu" id="pf-cpu">CPU —</span>
     </button>
+    <button id="gh" title="Ghosthand đang điều khiển Wisp – bấm để ngắt"><span class="dot"></span><svg class="i x" viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg>Ghosthand</button>
     <button id="upd" title="Có bản Wisp mới — bấm để xem và cập nhật"><svg class="i" viewBox="0 0 24 24"><path d="M12 3v12M7 10l5 5 5-5"/><path d="M4 17v3h16v-3"/></svg><span id="upd-t">Cập nhật</span></button>
     <button class="nb" id="more" title="Menu: lịch sử, chụp màn hình, hiệu năng, Flash, tuỳ chọn…">
       <svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="5" r="1.2"/><circle cx="12" cy="12" r="1.2"/><circle cx="12" cy="19" r="1.2"/></svg>
@@ -288,6 +299,10 @@
     $('reload').title = s.loading ? 'Dừng tải' : 'Tải lại (Cmd+R)';
     flashDot = s.mode !== 'flash' && s.wantedFlash; refreshDot();
   });
+  // ---- chip Ghosthand: hiện khi có kết nối, bấm để ngắt ----
+  nav.onGhosthand((g) => $('gh').classList.toggle('show', !!g.clients));
+  $('gh').onclick = () => nav.ghosthandDisconnect();
+
   nav.ready();
 </script>
 </body>

@@ -24,5 +24,7 @@ contextBridge.exposeInMainWorld('nav', {
   tabMenu: (id) => ipcRenderer.send('tab', 'menu', id),
   onState: (cb) => ipcRenderer.on('state', (_e, s) => cb(s)),
   onTabs: (cb) => ipcRenderer.on('tabs', (_e, t) => cb(t)),
+  onGhosthand: (cb) => ipcRenderer.on('ghosthand', (_e, s) => cb(s)),
+  ghosthandDisconnect: () => ipcRenderer.send('ghosthand-disconnect'),
   ready: () => ipcRenderer.send('ready'),
 });

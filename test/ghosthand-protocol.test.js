@@ -36,6 +36,16 @@ test('checkArgs: trần đối số, offset phải là số', () => {
   assert.strictEqual(codeOf(() => checkArgs('find', { selectors: Array(21).fill('a') })), 'bad_args');
 });
 
+test('checkArgs: select / check / subscribe / dialog', () => {
+  assert.strictEqual(codeOf(() => checkArgs('select', { selector: 'a' })), 'bad_args');             // thiếu value / label
+  assert.strictEqual(codeOf(() => checkArgs('select', { selector: 'a', value: 'x', label: 'y' })), 'bad_args');
+  assert.strictEqual(codeOf(() => checkArgs('select', { selector: 'a', label: 'Hà Nội' })), 'không lỗi');
+  assert.strictEqual(codeOf(() => checkArgs('check', { ref: 'r' })), 'bad_args');                    // thiếu on
+  assert.strictEqual(codeOf(() => checkArgs('subscribe', { events: ['navigate', 'bay'] })), 'bad_args');
+  assert.strictEqual(codeOf(() => checkArgs('subscribe', { events: [] })), 'không lỗi');              // [] = bỏ hết
+  assert.strictEqual(codeOf(() => checkArgs('dialog', { accept: true, text: 'ok' })), 'không lỗi');
+});
+
 test('webUrlOnly: chỉ http(s)', () => {
   assert.strictEqual(webUrlOnly('https://a.vn/'), 'https://a.vn/');
   assert.strictEqual(webUrlOnly('HTTP://localhost:8080'), 'HTTP://localhost:8080');

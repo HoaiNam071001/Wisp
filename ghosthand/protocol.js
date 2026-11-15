@@ -30,7 +30,14 @@ const SPEC = {
   scroll: { target: '', dir: ['up', 'down', 'left', 'right'], amount: 'number' },
   hover: { target: '!' },
   waitFor: { selectors: 'string[]!', state: ['visible', 'hidden', 'enabled'], timeoutMs: 'number' },
+  select: { target: '!', value: 'string', label: 'string' },
+  check: { target: '!', on: 'boolean!' },
+  settle: { timeoutMs: 'number' },
+  frameRect: {},
+  subscribe: { events: 'string[]!' },
+  dialog: { accept: 'boolean!', text: 'string' },
 };
+const EVENTS = ['navigate', 'popup', 'download', 'dialog'];
 
 function typeOk(type, v) {
   if (Array.isArray(type)) return type.includes(v);
@@ -42,7 +49,7 @@ function typeOk(type, v) {
 
 // Trần của đối số: lệnh không chạy mãi / trả về quá lớn (gõ 4MB chữ từng ký tự, chờ 1 ngày…).
 const MAX_NUM = { timeoutMs: 120000, maxNodes: 2000, maxChars: 500000, amount: 20000, count: 3 };
-const MAX_LEN = { text: 10000, url: 8192, selectors: 20, keys: 50, mods: 4 };
+const MAX_LEN = { text: 10000, url: 8192, selectors: 20, keys: 50, mods: 4, value: 1000, label: 1000 };
 
 function checkLimits(args) {
   for (const [k, max] of Object.entries(MAX_NUM)) {
@@ -92,6 +99,11 @@ function checkArgs(cmd, args) {
     if (k !== 'target' && typeof t === 'string' && t.endsWith('!') && args[k] === undefined) fail('bad_args', `thiếu “${k}”`);
   }
   checkLimits(args);
+  if (cmd === 'select' && (args.value === undefined) === (args.label === undefined)) fail('bad_args', 'ghi một trong value / label');
+  if (cmd === 'subscribe') {
+    const bad = args.events.filter(e => !EVENTS.includes(e));
+    if (bad.length) fail('bad_args', `sự kiện không có: ${bad.join(', ')} – có: ${EVENTS.join(', ')}`);
+  }
   const out = Object.assign({}, args);
   if (spec.selectors) out.sels = parseSelectors(args.selectors);
   if ('target' in spec) {
@@ -125,4 +137,4 @@ function errorReply(id, err) {
   return JSON.stringify({ id: id === undefined ? null : id, ok: false, error: { code, detail } });
 }
 
-module.exports = { API, CODES, SPEC, GhError, fail, checkArgs, webUrlOnly, parseRequest, parseSelectors, okReply, errorReply };
+module.exports = { API, CODES, SPEC, EVENTS, GhError, fail, checkArgs, webUrlOnly, parseRequest, parseSelectors, okReply, errorReply };

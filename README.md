@@ -136,7 +136,7 @@ Dữ liệu nằm ở `~/Library/Application Support/Wisp/`. Lần đầu chạy
 
 ### Cổng Ghosthand (đang làm – bước 01)
 
-Mỗi lần mở, Wisp mở cổng WebSocket chỉ trên `127.0.0.1` (cổng ngẫu nhiên, token mới) và ghi `ghosthand.json` (`port`, `token`, `pid`, `version`, `api`; chỉ người dùng này đọc được) vào thư mục dữ liệu. Ghosthand đọc file đó để nối, đọc trang và bấm / gõ bằng sự kiện thật. Không mở cổng CDP. Tắt cổng: thêm `"ghosthandPort": false` vào `config.json`. Lệnh và mã lỗi: `docs/plan/01-cong-ghosthand.md`. Thử: `npm run dev`, rồi ở terminal khác `node scripts/ghosthand-client.js 20 wiki`.
+Mỗi lần mở, Wisp mở cổng WebSocket chỉ trên `127.0.0.1` (cổng ngẫu nhiên, token mới) và ghi `ghosthand.json` (`port`, `token`, `pid`, `version`, `api`; chỉ người dùng này đọc được) vào thư mục dữ liệu. Ghosthand đọc file đó để nối, đọc trang và bấm / gõ bằng sự kiện thật. Không mở cổng CDP. Bật / tắt: menu ⋮ → *Tuỳ chọn* → **Cổng Ghosthand** (lưu `ghosthandPort` trong `config.json`). Khi Ghosthand đang nối, thanh công cụ hiện chip tím **Ghosthand** – bấm để ngắt. Lệnh và mã lỗi: `docs/plan/01-cong-ghosthand.md`. Thử: `npm run dev`, rồi ở terminal khác `node scripts/ghosthand-client.js 20 wiki`.
 
 ## 4b. Cập nhật app
 

@@ -16,9 +16,10 @@ const { applyAppNap } = require('./perf');
 const { clearPings } = require('./ping');
 const { openInspector } = require('./inspect/window');
 const { shorten } = require('./util');
+const ghosthand = require('./ghosthand/server');
 
 const IS_MAC = process.platform === 'darwin';
-const OPTION_KEYS = ['restoreTabs', 'preventAppNap', 'pingGame'];
+const OPTION_KEYS = ['restoreTabs', 'preventAppNap', 'pingGame', 'ghosthandPort'];
 
 let menuTimer = null;
 function scheduleMenu() {
@@ -35,6 +36,7 @@ function setOption(key, on) {
   if (key === 'preventAppNap') applyAppNap();
   if (key === 'restoreTabs') tabs.saveSession(true);
   if (key === 'pingGame' && !on) clearPings();
+  if (key === 'ghosthandPort') { if (on) ghosthand.start(); else ghosthand.stop(); }
 }
 
 function updateItem() {
@@ -78,6 +80,7 @@ function optionsSubmenu() {
     item('restoreTabs', 'Mở lại các tab lần trước khi mở app'),
     item('preventAppNap', IS_MAC ? 'Chống App Nap (game không bị chậm khi ẩn cửa sổ)' : 'Không cho máy ngủ khi đang mở Wisp'),
     item('pingGame', 'Theo dõi ping máy chủ game'),
+    item('ghosthandPort', 'Cổng Ghosthand (cho Ghosthand điều khiển trang)'),
   ];
 }
 

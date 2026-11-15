@@ -3,6 +3,7 @@ const { GhError } = require('../protocol');
 const { resolveTab, screenRect } = require('../target');
 const { callAgent } = require('../agent-call');
 const { sleep } = require('../input');
+const tabCmds = require('./tabs');
 
 async function waitFor({ tab, sels, selectors, state = 'visible', timeoutMs = 10000 }) {
   const t = resolveTab(tab), start = Date.now();
@@ -21,4 +22,7 @@ async function waitFor({ tab, sels, selectors, state = 'visible', timeoutMs = 10
   }
 }
 
-module.exports = { waitFor };
+// Chờ trang yên: hết tải + DOM đứng yên 500ms (sau thao tác làm trang tự cập nhật).
+function settle({ tab, timeoutMs = 10000 }) { return tabCmds.waitLoad({ tab, until: 'idle', timeoutMs }); }
+
+module.exports = { waitFor, settle };
