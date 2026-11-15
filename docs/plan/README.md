@@ -33,6 +33,6 @@ Nguyên tắc:
 
 ## Rủi ro
 - Ghép hai bản Electron trong một gói: dung lượng tăng (~2×); Electron 11 trên macOS mới có thể lỗi → vẫn giữ được bản 2.x cho Game nếu cần.
-- Google có thể vẫn chặn đăng nhập trong Electron → dùng trình duyệt hệ thống cho bước đăng nhập (4.2).
+- Google có thể vẫn chặn đăng nhập trong Electron → dùng trình duyệt hệ thống cho bước đăng nhập (bước 05).
 - Cổng local: chỉ `127.0.0.1` + token + quyền file 600; app khác trên máy đọc được file token thì vẫn nối được → chấp nhận (cùng người dùng), có nút tắt cổng.
 - Trang đổi DOM thường xuyên → luôn trả nhiều selector, Ghosthand thử lần lượt (như `Selectors` hiện có).
