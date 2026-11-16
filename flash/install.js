@@ -7,6 +7,7 @@ const fs = require('fs');
 const https = require('https');
 const crypto = require('crypto');
 const tabs = require('../tabs');
+const tasks = require('../progress-tasks');
 const { saveConfig } = require('../config');
 const { addLog } = require('../inspect/store');
 const { FLASH_PATH, FLASH_VERSION } = require('./mode');
@@ -30,13 +31,13 @@ const FLASH_DOWNLOAD = IS_WIN ? {
 };
 let flashInstalling = false;
 
+// fraction bỏ trống = chưa biết bao nhiêu (vòng tiến độ quay); extract.js dùng số > 1 cho kiểu này
 function progress(text, fraction) {
-  const win = tabs.getWin();
-  if (!win) return;
+  if (!tabs.getWin()) return;
   tabs.toast(text);
-  win.setProgressBar(fraction == null ? -1 : fraction);
+  tasks.set('flash-install', text, fraction > 1 ? null : fraction);
 }
-function clearProgress() { const win = tabs.getWin(); if (win) win.setProgressBar(-1); }
+function clearProgress() { tasks.finish('flash-install'); }
 
 async function askForFlashPlugin() {
   const win = tabs.getWin();

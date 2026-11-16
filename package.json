@@ -66,6 +66,7 @@
       "tabs.js",
       "history.js",
       "perf.js",
+      "progress-tasks.js",
       "ping.js",
       "page-actions.js",
       "app-menu.js",

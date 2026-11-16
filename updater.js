@@ -11,8 +11,10 @@ const fs = require('fs');
 const https = require('https');
 const crypto = require('crypto');
 const { execFile, spawn } = require('child_process');
+const tasks = require('./progress-tasks');
 
 const REPO = 'HoaiNam071001/Wisp';
+const TASK = 'wisp-update';
 const CHECK_DELAY = 10 * 1000;
 const CHECK_EVERY = 6 * 3600 * 1000;
 const IS_WIN = process.platform === 'win32';
@@ -150,14 +152,14 @@ async function install() {
   }
   busy = true;
   ctx.notify(state());
-  const win = ctx.getWin();
   const work = fs.mkdtempSync(path.join(app.getPath('temp'), 'wisp-update-'));
   try {
     const zip = path.join(work, latest.zipName);
     ctx.toast(`Đang tải Wisp ${latest.version}…`);
+    tasks.set(TASK, `Đang tải Wisp ${latest.version}`, 0);
     let last = 0;
     const sum = await download(latest.zip, zip, (f) => {
-      if (win && !win.isDestroyed()) win.setProgressBar(f);
+      tasks.set(TASK, `Đang tải Wisp ${latest.version}`, f);
       const pct = Math.floor(f * 100);
       if (pct >= last + 10) { last = pct; ctx.toast(`Đang tải Wisp ${latest.version}… ${pct}%`); }
     });
@@ -166,7 +168,7 @@ async function install() {
       if (want !== sum) throw new Error(`File tải về sai sha256 (${sum.slice(0, 12)}…, cần ${want.slice(0, 12)}…)`);
     }
     ctx.toast('Đang giải nén…');
-    if (win && !win.isDestroyed()) win.setProgressBar(2); // thanh tiến độ không xác định
+    tasks.set(TASK, 'Đang giải nén Wisp', null);
     const out = path.join(work, 'x');
     await new Promise((res, rej) => execFile('/usr/bin/ditto', ['-x', '-k', zip, out], (e) => e ? rej(e) : res()));
     const newApp = fs.readdirSync(out).map(n => path.join(out, n)).find(p => p.endsWith('.app'));
@@ -197,7 +199,7 @@ async function install() {
     app.quit();
   } catch (e) {
     busy = false;
-    if (win && !win.isDestroyed()) win.setProgressBar(-1);
+    tasks.finish(TASK);
     ctx.notify(state());
     try { fs.rmdirSync(work, { recursive: true }); } catch {}
     ctx.addLog('error', 'event', 'Cập nhật lỗi: ' + e.message);
@@ -217,14 +219,14 @@ async function installWin() {
   }
   busy = true;
   ctx.notify(state());
-  const win = ctx.getWin();
   const work = fs.mkdtempSync(path.join(app.getPath('temp'), 'wisp-update-'));
   try {
     const exe = path.join(work, latest.zipName);
     ctx.toast(`Đang tải Wisp ${latest.version}…`);
+    tasks.set(TASK, `Đang tải Wisp ${latest.version}`, 0);
     let last = 0;
     const sum = await download(latest.zip, exe, (f) => {
-      if (win && !win.isDestroyed()) win.setProgressBar(f);
+      tasks.set(TASK, `Đang tải Wisp ${latest.version}`, f);
       const pct = Math.floor(f * 100);
       if (pct >= last + 10) { last = pct; ctx.toast(`Đang tải Wisp ${latest.version}… ${pct}%`); }
     });
@@ -237,7 +239,7 @@ async function installWin() {
     app.quit();
   } catch (e) {
     busy = false;
-    if (win && !win.isDestroyed()) win.setProgressBar(-1);
+    tasks.finish(TASK);
     ctx.notify(state());
     try { fs.rmdirSync(work, { recursive: true }); } catch {}
     ctx.addLog('error', 'event', 'Cập nhật lỗi: ' + e.message);

@@ -17,6 +17,7 @@ contextBridge.exposeInMainWorld('nav', {
   history: () => ipcRenderer.send('nav', 'history'),
   flash: () => ipcRenderer.send('nav', 'flash'),
   update: () => ipcRenderer.send('nav', 'update'),
+  onTasks: (cb) => ipcRenderer.on('tasks', (_e, s) => cb(s)),
   onUpdate: (cb) => ipcRenderer.on('update', (_e, s) => cb(s)),
   newTab: () => ipcRenderer.send('tab', 'new'),
   closeTab: (id) => ipcRenderer.send('tab', 'close', id),

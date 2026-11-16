@@ -11,6 +11,15 @@ const { askForFlashPlugin } = require('./flash/install');
 const { openInspector } = require('./inspect/window');
 const { showMainMenu } = require('./menu-popup');
 const ghosthand = require('./ghosthand/server');
+const tasks = require('./progress-tasks');
+
+// Vòng tiến độ ở thanh công cụ + thanh tiến độ trên Dock / taskbar (fraction null = chưa biết → quay, 2 = không xác định)
+tasks.events.on('changed', (sum) => {
+  const win = tabs.getWin();
+  if (!win) return;
+  win.webContents.send('tasks', sum);
+  win.setProgressBar(!sum ? -1 : sum.fraction == null ? 2 : sum.fraction);
+});
 
 function fromToolbar(e) { const win = tabs.getWin(); return !!win && e.sender === win.webContents; }
 
@@ -42,5 +51,5 @@ ipcMain.on('tab', (e, action, id) => {
 ipcMain.on('ready', () => {
   tabs.sendState(); tabs.sendTabs();
   const win = tabs.getWin();
-  if (win) { win.webContents.send('update', updater.state()); win.webContents.send('ghosthand', ghosthand.state()); }
+  if (win) { win.webContents.send('update', updater.state()); win.webContents.send('ghosthand', ghosthand.state()); win.webContents.send('tasks', tasks.summary()); }
 });
