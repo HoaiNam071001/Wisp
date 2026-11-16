@@ -5,6 +5,7 @@ const fs = require('fs');
 const updater = require('./updater');
 const tabs = require('./tabs');
 const history = require('./history');
+const keyremap = require('./keyremap-main');
 const page = require('./page-actions');
 const flash = require('./flash/actions');
 const { askForFlashPlugin, choosePluginFile } = require('./flash/install');
@@ -81,6 +82,8 @@ function optionsSubmenu() {
     item('preventAppNap', IS_MAC ? 'Chống App Nap (game không bị chậm khi ẩn cửa sổ)' : 'Không cho máy ngủ khi đang mở Wisp'),
     item('pingGame', 'Theo dõi ping máy chủ game'),
     item('ghosthandPort', 'Cổng Ghosthand (cho Ghosthand điều khiển trang)'),
+    { type: 'separator' },
+    { label: 'Đổi phím…', click: keyremap.openKeysWindow },
   ];
 }
 

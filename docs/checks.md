@@ -40,3 +40,4 @@ Chạy `npm run dev` (dữ liệu `.dev-data/`), thử như bản 2.3.0:
 - [ ] Chụp màn hình tab (Shift+Cmd+S).
 - [ ] Chế độ Ruffle: đổi sang Ruffle, mở lại app, mở file .swf (Cmd+O).
 - [ ] Windows (`npm run dist:win`): cài plugin từ bộ cài .exe, socket / ping trong Bảng kiểm tra.
+- ⬜ **Đổi phím (bước 09):** menu ⋮ → Đổi phím… → Thêm: nhấn phím game cần (vd S), rồi phím thay (vd B). Vào game Flash bấm B phải ra S (giữ / nhả đúng, không lọt thêm chữ b); ô chat trong game gõ B ra S; thanh địa chỉ vẫn gõ B bình thường; tắt công tắc trả như cũ; thử trong iframe khác nguồn và Windows.

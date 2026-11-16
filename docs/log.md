@@ -13,3 +13,5 @@ Chỉ thêm dòng bằng `>>`: `- **YYYY-MM-DD** – <việc>. <kết quả ki�
 - **2026-11-15** – Bước 01: iframe khác nguồn (agent mỗi frame, page-call ghép, frame-layout có test), shadow DOM mở, popup = tab; tắt site isolation Electron 11. npm run check + npm test OK; thử trang iframe lồng 3 tầng + shadow trên app dev OK, wiki 5/5 ok; chưa thử tay game Flash.
 - **2026-11-15** – Bước 02: cổng Wisp thêm find scope/brief/covered/hidden, focused, type không đích, sự kiện dialog closed; Ghosthand (bước 62) backend internal/wisp + Cài đặt Trình duyệt. npm run check + npm test OK; 11/11 mẫu web sân thử chạy trên Wisp dev; chưa thử tay trong app Ghosthand.
 - **2026-11-15** – Phát hành Wisp 2.3.0 (tag v2.3.0 từ main): mac zip + sha256, dmg, Windows setup.exe + sha256 (build trên mac). Bản đóng gói chạy thử: cổng mở, ghosthand-client 3/3 ok.
+- **2026-11-16** – Kế hoạch (người dùng yêu cầu): bước 09 đổi phím (key remap) toàn cục, cấu hình trong Cài đặt, không đổi ở thanh địa chỉ.
+- **2026-11-16** – Bước 09 đổi phím: keyremap.js (thuần + test), keyremap-main.js, cửa sổ keys.html; chờ thử tay với bàn phím thật.

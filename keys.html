@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<title>Đổi phím</title>
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'unsafe-inline'; script-src 'unsafe-inline'">
+<style>
+  :root {
+    --bg: #f6f6f7; --card: #fff; --hover: #eef0f3; --border: #dcdee3; --text: #1d1e21; --muted: #5f636b;
+    --brand: #ff6a3d; --brand-text: #fff; --red: #d92d20; --cap: #eceef2; --ok: #1a7f37;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #1b1c1f; --card: #232428; --hover: #2c2e33; --border: #33363c; --text: #e8e9eb; --muted: #9da0a8;
+            --red: #f85149; --cap: #34373d; --ok: #3fb950; }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; padding: 20px; background: var(--bg); color: var(--text); font: 14px system-ui, -apple-system, sans-serif; }
+  h1 { margin: 0 0 4px; font-size: 18px; }
+  p.sub { margin: 0 0 16px; color: var(--muted); font-size: 13px; line-height: 1.45; }
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 12px; margin-bottom: 14px; }
+  label.sw { display: flex; align-items: center; gap: 10px; cursor: pointer; }
+  button { font: inherit; cursor: pointer; border: 1px solid var(--border); background: var(--card); color: var(--text); border-radius: 8px; padding: 6px 12px; }
+  button:hover { background: var(--hover); }
+  button.primary { background: var(--brand); border-color: var(--brand); color: var(--brand-text); }
+  .row { display: flex; align-items: center; gap: 10px; padding: 8px 4px; border-bottom: 1px solid var(--border); }
+  .row:last-child { border-bottom: 0; }
+  kbd { display: inline-block; min-width: 34px; text-align: center; padding: 4px 9px; border-radius: 6px; background: var(--cap);
+        border: 1px solid var(--border); font: 600 13px ui-monospace, monospace; }
+  .arrow { color: var(--muted); }
+  .row .gap { flex: 1; }
+  .empty { color: var(--muted); padding: 10px 4px; }
+  #capture { text-align: center; padding: 16px 12px; }
+  #capture .big { font-size: 15px; margin-bottom: 10px; }
+  #vk { display: flex; flex-direction: column; gap: 6px; margin: 14px 0; }
+  #vk .vr { display: flex; gap: 6px; }
+  #vk button { flex: 1 1 0; min-width: 0; height: 38px; padding: 0; font: 600 13px ui-monospace, monospace; background: var(--cap); }
+  #vk button.w15 { flex-grow: 1.5; }
+  #vk button.w2 { flex-grow: 2; }
+  #vk button.w5 { flex-grow: 5; }
+  #vk button:hover { background: var(--hover); border-color: var(--brand); }
+  #vk button:active { background: var(--brand); border-color: var(--brand); color: var(--brand-text); }
+  .step { display: inline-block; font-size: 12px; color: var(--muted); border: 1px solid var(--border); border-radius: 10px; padding: 1px 9px; margin-bottom: 8px; }
+  #msg { min-height: 18px; font-size: 13px; color: var(--red); margin-top: 8px; }
+  #msg.ok { color: var(--ok); }
+  [hidden] { display: none !important; }
+</style>
+</head>
+<body>
+  <h1>Đổi phím</h1>
+  <p class="sub">Phím bị hỏng? Chọn phím hỏng và phím thay thế: khi bấm phím thay thế, trang / game hiểu là phím hỏng. Chỉ áp dụng trong nội dung trang, thanh địa chỉ giữ nguyên.</p>
+
+  <div class="card"><label class="sw"><input type="checkbox" id="enabled"> <span>Bật đổi phím</span></label></div>
+
+  <div class="card">
+    <div id="list"></div>
+    <div id="capture" hidden>
+      <div class="step" id="step"></div>
+      <div class="big" id="prompt"></div>
+      <div id="vk"></div>
+      <button id="cancel">Huỷ</button>
+    </div>
+    <div style="margin-top:8px"><button class="primary" id="add">Thêm</button></div>
+    <div id="msg"></div>
+  </div>
+
+<script>
+  // Thứ tự: nhấn phím bị hỏng (từ) → nhấn phím sẽ bấm thay (bấm gì). Lưu ngay mỗi lần đổi.
+  const $ = (id) => document.getElementById(id);
+  const LABELS = { ' ': 'Space', ArrowLeft: '←', ArrowRight: '→', ArrowUp: '↑', ArrowDown: '↓', Escape: 'Esc', Backspace: '⌫' };
+  const label = (k) => LABELS[k] || (k.length === 1 ? k.toUpperCase() : k);
+  const norm = (k) => (k.length === 1 ? k.toLowerCase() : k);
+  const MODIFIERS = ['Shift', 'Control', 'Alt', 'Meta', 'CapsLock', 'Dead', 'Process', 'Unidentified'];
+  let cfg = { enabled: false, map: {} };
+  let step = 0, broken = null; // 0 = không bắt phím · 1 = chờ phím hỏng · 2 = chờ phím thay thế
+
+  function msg(text, ok) { $('msg').textContent = text || ''; $('msg').className = ok ? 'ok' : ''; }
+  async function save() {
+    const saved = await window.wkeys.set(cfg);
+    if (saved) cfg = saved;
+    render();
+  }
+
+  function render() {
+    $('enabled').checked = cfg.enabled;
+    const list = $('list');
+    list.textContent = '';
+    const entries = Object.entries(cfg.map);
+    if (!entries.length) { const d = document.createElement('div'); d.className = 'empty'; d.textContent = 'Chưa có phím nào được đổi.'; list.append(d); }
+    for (const [from, to] of entries) {
+      const row = document.createElement('div'); row.className = 'row';
+      const a = document.createElement('kbd'); a.textContent = label(from);
+      const ar = document.createElement('span'); ar.className = 'arrow'; ar.textContent = 'bấm → game nhận';
+      const b = document.createElement('kbd'); b.textContent = label(to);
+      const gap = document.createElement('span'); gap.className = 'gap';
+      const del = document.createElement('button'); del.textContent = 'Xoá';
+      del.onclick = () => { delete cfg.map[from]; msg(''); save(); };
+      row.append(a, ar, b, gap, del);
+      list.append(row);
+    }
+    $('capture').hidden = step === 0;
+    $('add').hidden = step !== 0;
+    $('step').textContent = step === 1 ? 'Bước 1/2' : step === 2 ? 'Bước 2/2' : '';
+    $('prompt').textContent = step === 1 ? 'Chọn phím BỊ HỎNG (phím game cần)…' : step === 2 ? `Chọn phím sẽ bấm THAY cho ${label(broken)}…` : '';
+  }
+
+  // map[phím bấm thật] = phím game sẽ nhận
+  function choose(k) {
+    if (step === 1) { broken = k; step = 2; msg(''); return render(); }
+    if (k === broken) { msg('Hai phím giống nhau – chọn phím khác để thay thế.'); return; }
+    cfg.map[k] = broken;
+    cfg.enabled = true;
+    step = 0; broken = null;
+    msg('Đã thêm.', true);
+    save();
+  }
+  // Chọn bằng bàn phím thật hoặc bàn phím ảo (phím hỏng thì không bấm được nên cần bàn phím ảo)
+  window.addEventListener('keydown', (e) => {
+    if (!step || MODIFIERS.includes(e.key)) return;
+    e.preventDefault();
+    choose(norm(e.key));
+  });
+  const ROWS = [
+    ['Escape', ...'1234567890-='.split(''), 'Backspace'],
+    ['Tab', ...'qwertyuiop[]\\'.split('')],
+    [...'asdfghjkl;\''.split(''), 'Enter'],
+    [...'zxcvbnm,./'.split('')],
+    [' ', 'ArrowLeft', 'ArrowUp', 'ArrowDown', 'ArrowRight'],
+  ];
+  for (const keys of ROWS) {
+    const r = document.createElement('div'); r.className = 'vr';
+    for (const k of keys) {
+      const b = document.createElement('button');
+      b.textContent = label(k);
+      if (k === ' ') b.className = 'w5';
+      else if (k.length > 1) b.className = k === 'Enter' || k === 'Backspace' ? 'w2' : 'w15';
+      b.onclick = () => choose(k);
+      r.append(b);
+    }
+    $('vk').append(r);
+  }
+  $('add').onclick = () => { step = 1; msg(''); render(); };
+  $('cancel').onclick = () => { step = 0; broken = null; msg(''); render(); };
+  $('enabled').onchange = () => { cfg.enabled = $('enabled').checked; save(); };
+  window.wkeys.get().then((c) => { if (c) cfg = c; render(); });
+</script>
+</body>
+</html>

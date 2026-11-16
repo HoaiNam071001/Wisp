@@ -1,7 +1,7 @@
 // Cửa sổ chính + các tab. Mỗi tab là một BrowserView; chỉ tab đang xem nằm trong vùng nhìn thấy.
 // Không gọi ngược lên lịch sử / menu / Bảng kiểm tra – các module đó nghe tabs.events:
 //   'visit' (tab, url) · 'title' (tab, title) · 'changed' (vừa vẽ lại thanh tab) · 'window-closed'
-//   'opened' (tab mới, tab mở ra nó, url) – popup / target=_blank
+//   'opened' (tab mới, tab mở ra nó, url) – popup / target=_blank · 'created' (tab vừa tạo, trước khi tải trang)
 const { BrowserView, Menu, dialog } = require('electron');
 const path = require('path');
 const { EventEmitter } = require('events');
@@ -107,6 +107,7 @@ function createTab(url, { activate = true, index = tabs.length } = {}) {
   // Game ở tab khác vẫn chạy bình thường (không bị Chromium hãm timer khi tab ẩn)
   view.webContents.setBackgroundThrottling(false);
   wireTab(t);
+  events.emit('created', t);
   if (winOk()) win.addBrowserView(view);
   view.webContents.loadURL(url).catch(() => {});
   if (activate) activateTab(t.id); else { layout(); sendTabs(); }

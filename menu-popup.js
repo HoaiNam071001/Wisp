@@ -6,6 +6,7 @@ const path = require('path');
 const updater = require('./updater');
 const tabs = require('./tabs');
 const history = require('./history');
+const keyremap = require('./keyremap-main');
 const page = require('./page-actions');
 const flash = require('./flash/actions');
 const { askForFlashPlugin } = require('./flash/install');
@@ -104,6 +105,7 @@ function menuActions(arg, bounds) {
     modeFlash: () => flash.setMode('flash'), modeRuffle: () => flash.setMode('ruffle'),
     flashMore: () => popupFlashMore(bounds),
     openSwf: page.openSwfFile,
+    keys: keyremap.openKeysWindow,
     update: appMenu.checkUpdate,
   };
 }
