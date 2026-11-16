@@ -27,7 +27,7 @@ tabs.events.on('created', (t) => attach(t.view.webContents));
 function openKeysWindow() {
   if (keysWin && !keysWin.isDestroyed()) { keysWin.show(); keysWin.focus(); return; }
   keysWin = new BrowserWindow({
-    width: 560, height: 640, minWidth: 400, minHeight: 420, title: 'Đổi phím', parent: tabs.getWin() || undefined,
+    width: 560, height: 640, minWidth: 400, minHeight: 420, title: 'Đổi phím',
     webPreferences: { preload: path.join(__dirname, 'keys-preload.js'), contextIsolation: true, nodeIntegration: false, worldSafeExecuteJavaScript: true },
   });
   keysWin.setMenuBarVisibility(false);
