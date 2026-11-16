@@ -146,6 +146,29 @@ Kiểm tra bằng tay: menu **Wisp → Kiểm tra cập nhật…** hoặc **⋮
 
 Phát hành bản mới (để app nhận được): release trên GitHub phải đính kèm `Wisp-x.y.z-mac.zip` và `Wisp-x.y.z-mac.zip.sha256` (`shasum -a 256 Wisp-x.y.z-mac.zip > Wisp-x.y.z-mac.zip.sha256`), tag dạng `vx.y.z`, không phải bản nháp / pre-release.
 
+### Phát hành bằng một lệnh
+
+Yêu cầu: `gh` đã đăng nhập (`gh auth status`), cây git sạch (đã commit hết).
+
+```bash
+npm run release              # z: 2.4.2 → 2.4.3 (sửa lỗi nhỏ)
+npm run release y            # y: 2.4.2 → 2.5.0 (tính năng mới)
+npm run release x            # x: 2.4.2 → 3.0.0 (thay đổi lớn)
+npm run release 3.1.0        # ghi thẳng số phiên bản
+```
+
+Cờ thêm (đặt sau `--`):
+
+```bash
+npm run release y -- --win                  # kèm bộ cài Windows (Wisp-x.y.z-win-setup.exe)
+npm run release -- --notes "Sửa lỗi A, B"   # ghi chú hiện trong hộp "Cập nhật" của app
+npm run release -- --dry                    # chỉ đóng gói thử, không commit / push / tạo release
+```
+
+Lệnh làm lần lượt: tăng `version` → `npm run check` + `npm test` → `npm run dist` → tạo `Wisp-x.y.z-mac.zip` + `.sha256` → commit `Phát hành x.y.z`, tag `vx.y.z`, push → tạo GitHub release đính kèm dmg, zip, sha256 (và exe nếu có `--win`). App của người dùng tự nhận bản mới sau đó.
+
+Lưu ý: `--dry` vẫn đổi `version` trong `package.json` – bỏ bằng `git checkout package.json package-lock.json`. Lỗi giữa chừng (trước bước commit) thì `git checkout package.json package-lock.json`, sửa lỗi rồi chạy lại – lệnh chỉ chạy khi cây git sạch. Bản `-personal` (kèm plugin Flash) không nằm trong lệnh này và không phát hành công khai.
+
 ## 5. Đóng gói `.dmg`
 
 ```bash
