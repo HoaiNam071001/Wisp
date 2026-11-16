@@ -17,3 +17,4 @@ Chỉ thêm dòng bằng `>>`: `- **YYYY-MM-DD** – <việc>. <kết quả ki�
 - **2026-11-16** – Bước 09 đổi phím: keyremap.js (thuần + test), keyremap-main.js, cửa sổ keys.html; chờ thử tay với bàn phím thật.
 - **2026-11-16** – Phát hành 2.4.0 (đổi phím, bước 09): dmg + mac.zip + win-setup.exe kèm sha256.
 - **2026-11-16** – Bước 10 vòng tròn tiến độ việc nền (người dùng yêu cầu): progress-tasks.js + nút #task trên thanh công cụ.
+- **2026-11-16** – Phát hành 2.4.1 (sửa cửa sổ Đổi phím + vòng tiến độ, bước 10): dmg + mac.zip + win-setup.exe kèm sha256.
