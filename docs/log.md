@@ -15,3 +15,4 @@ Chỉ thêm dòng bằng `>>`: `- **YYYY-MM-DD** – <việc>. <kết quả ki�
 - **2026-11-15** – Phát hành Wisp 2.3.0 (tag v2.3.0 từ main): mac zip + sha256, dmg, Windows setup.exe + sha256 (build trên mac). Bản đóng gói chạy thử: cổng mở, ghosthand-client 3/3 ok.
 - **2026-11-16** – Kế hoạch (người dùng yêu cầu): bước 09 đổi phím (key remap) toàn cục, cấu hình trong Cài đặt, không đổi ở thanh địa chỉ.
 - **2026-11-16** – Bước 09 đổi phím: keyremap.js (thuần + test), keyremap-main.js, cửa sổ keys.html; chờ thử tay với bàn phím thật.
+- **2026-11-16** – Phát hành 2.4.0 (đổi phím, bước 09): dmg + mac.zip + win-setup.exe kèm sha256.
