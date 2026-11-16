@@ -2,7 +2,7 @@
 const { app } = require('electron');
 const path = require('path');
 const fs = require('fs');
-const { mergeDomains } = require('./flash/allowlist');
+const siteConfig = require('./flash/site-config');
 
 // ====== ĐỔI ĐỊA CHỈ TRANG MẶC ĐỊNH Ở ĐÂY (hoặc bấm "★ Đặt làm trang chủ") ======
 const DEFAULT_URL = 'https://bangbang.cmn.vn/';
@@ -23,7 +23,15 @@ function saveConfig(patch) {
   } catch (e) { console.error('Không lưu được config:', e); }
   return cfg;
 }
-function allowDomains() { return mergeDomains(DEFAULT_ALLOW, loadConfig().allowDomains); }
+// flashSites (bước 04) suy từ config 2.x khi chưa có khoá riêng
+function flashSites() { return siteConfig.migrate(loadConfig(), DEFAULT_ALLOW); }
+// Ghi flashSites + phản chiếu allowDomains để bản 2.x quay lại vẫn thấy danh sách
+function saveFlashSites(sites) {
+  const list = siteConfig.normalize(sites);
+  saveConfig({ flashSites: list, allowDomains: siteConfig.allowDomainsOf(list) });
+  return list;
+}
+function allowDomains() { return siteConfig.allowDomainsOf(flashSites()); }
 function homeUrl() { return loadConfig().url || DEFAULT_URL; }
 
-module.exports = { configPath, loadConfig, saveConfig, allowDomains, homeUrl };
+module.exports = { configPath, loadConfig, saveConfig, allowDomains, flashSites, saveFlashSites, homeUrl };

@@ -73,6 +73,7 @@
       "menu-popup.js",
       "toolbar-ipc.js",
       "flash/**/*",
+      "flash-engine/**/*",
       "inspect/**/*",
       "ghosthand/**/*",
       "toolbar.html",

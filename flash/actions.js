@@ -1,10 +1,11 @@
 // Các thao tác trong menu Flash: đổi chế độ, allowlist, kiểm tra Flash, khởi động lại.
 const { app, dialog, shell } = require('electron');
 const tabs = require('../tabs');
-const { configPath, saveConfig, allowDomains } = require('../config');
+const { configPath, saveConfig, allowDomains, flashSites, saveFlashSites } = require('../config');
 const { MODE, FLASH_PATH, FLASH_VERSION, wantedMode } = require('./mode');
 const { mmsCfgPath, writeMmsCfg } = require('./mms-cfg');
 const { baseDomain } = require('./allowlist');
+const siteConfig = require('./site-config');
 const { seenSwfHosts } = require('../inspect/store');
 const { displayUrl } = require('../app-urls');
 
@@ -39,18 +40,19 @@ async function allowCurrentSite() {
     dialog.showMessageBox(tabs.getWin(), { message: 'Các domain của trang này đã có trong danh sách cho phép.', detail: current.join('\n') });
     return;
   }
-  saveConfig({ allowDomains: [...current, ...added] });
+  const engine = wantedMode === 'ruffle' ? 'ruffle' : 'flash';
+  saveFlashSites(added.reduce((sites, h) => siteConfig.setSite(sites, h, engine), flashSites()));
   writeMmsCfg();
   askRelaunch('Đã cho phép Flash trên: ' + added.join(', '));
 }
 
 async function editAllowList() {
-  // Mở config.json để sửa tay "allowDomains"
-  saveConfig({ allowDomains: allowDomains() });
+  // Mở config.json để sửa tay "flashSites"
+  saveFlashSites(flashSites());
   await shell.openPath(configPath());
   dialog.showMessageBox(tabs.getWin(), {
-    message: 'Sửa mục "allowDomains" trong config.json rồi lưu, sau đó mở lại app.',
-    detail: 'Mỗi domain gốc một dòng, vd. "cmn.vn" (tự gồm cả các subdomain).',
+    message: 'Sửa mục "flashSites" trong config.json rồi lưu, sau đó mở lại app.',
+    detail: 'Mỗi mục {"domain": "cmn.vn", "engine": "flash" | "ruffle"} (tự gồm cả các subdomain).',
   });
 }
 
