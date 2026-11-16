@@ -22,7 +22,8 @@
 - ⬜ **Gộp:** `sync-merge.js` + test (thêm cả hai máy, sửa cùng mục, xoá ở máy này – sửa ở máy kia).
 - ⬜ **Đồng bộ cấu hình + dấu trang + lịch sử:** kéo khi khởi động, đẩy sau thay đổi (debounce ~30 s), không chặn main; lỗi mạng thì thử lại nền.
 - ⬜ **Cookie game:** `sync-crypt.js` + test; chọn domain; nhập mật khẩu lần đầu / máy mới; nạp qua `session.cookies.set` trước khi mở trang. Cần chốt sau bước 04: phiên của engine Electron mới hay Electron 11 (hai `userData` khác nhau).
-- ⬜ **UI:** mục *Tài khoản* trong Cài đặt: Đăng nhập / email / Đăng xuất, chọn loại dữ liệu đồng bộ, "Đồng bộ ngay", giờ lần cuối, lỗi + cách khắc phục. Chữ tiếng Việt, theme tối.
+- ⬜ **Nút tài khoản kiểu Chrome** *(người dùng yêu cầu 2026-11-16)*: hình tròn avatar (chữ cái đầu của tên / ảnh Google) ở góc phải thanh công cụ, ngay cạnh nút ⋮ (sau ★ dấu trang), giống Chrome. Chưa đăng nhập: icon người xám → bấm ra *Đăng nhập*; đã đăng nhập: bấm mở popup nhỏ (avatar, tên, email, trạng thái đồng bộ, *Đồng bộ ngay*, *Đăng xuất*). Popup mở tức thì như menu ⋮ (không chặn main); đặt cạnh vòng tiến độ bước 10 không chồng nhau. Sửa `toolbar.html` + preload.
+- ⬜ **UI cài đặt:** mục *Tài khoản* trong Cài đặt: Đăng nhập / email / Đăng xuất, chọn loại dữ liệu đồng bộ, "Đồng bộ ngay", giờ lần cuối, lỗi + cách khắc phục. Chữ tiếng Việt, theme tối.
 - ⬜ **Đa nền tảng + đóng gói:** thêm file mới vào `build.files`; thử macOS và Windows (loopback bị tường lửa hỏi quyền?).
 - ⬜ **Quyền riêng tư:** Đăng xuất = xoá token cục bộ + nút "Xoá dữ liệu đồng bộ trên Drive". Ghi vào README.
 
