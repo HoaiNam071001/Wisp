@@ -14,6 +14,9 @@ const isHistoryPage = !!HISTORY_URL && process.isMainFrame && location.href.spli
 const crossToParent = () => { try { return !window.parent.document; } catch (e) { return true; } };
 if (!isHistoryPage && (process.isMainFrame || crossToParent())) require('./ghosthand/agent').install(!process.isMainFrame);
 
+const argQuality = process.argv.find(a => a.startsWith('--flash-quality='));
+if (argQuality && !isHistoryPage) require('./flash/quality-patch').install(argQuality.slice('--flash-quality='.length));
+
 if (isHistoryPage) {
   contextBridge.exposeInMainWorld('wispHistory', {
     list: () => ipcRenderer.invoke('history:list'),

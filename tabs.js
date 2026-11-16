@@ -7,6 +7,7 @@ const path = require('path');
 const { EventEmitter } = require('events');
 const { loadConfig, saveConfig, homeUrl } = require('./config');
 const { MODE, FLASH_VERSION, wantedMode } = require('./flash/mode');
+const { normalizeQuality } = require('./flash/quality');
 const { HISTORY_URL, displayUrl, isHistoryUrl, normalizeUrl } = require('./app-urls');
 const { addLog } = require('./inspect/store');
 
@@ -87,6 +88,7 @@ function layout() {
 }
 
 function tabPrefs() {
+  const quality = normalizeQuality(loadConfig().flashQuality);
   return {
     plugins: MODE === 'flash',
     contextIsolation: true,
@@ -94,7 +96,8 @@ function tabPrefs() {
     worldSafeExecuteJavaScript: true,
     // page-preload.js: chèn Ruffle (chế độ Ruffle) + cầu nối cho trang Lịch sử
     preload: path.join(__dirname, 'page-preload.js'),
-    additionalArguments: ['--wisp-history=' + HISTORY_URL, ...(MODE === 'ruffle' ? ['--flash-mode=ruffle'] : [])],
+    additionalArguments: ['--wisp-history=' + HISTORY_URL, ...(MODE === 'ruffle' ? ['--flash-mode=ruffle'] : []),
+      ...(quality ? ['--flash-quality=' + quality] : [])],
     // preload chạy trong mọi frame (kể cả iframe): chèn Ruffle (chế độ Ruffle) + agent Ghosthand ở frame khác nguồn
     nodeIntegrationInSubFrames: true,
   };

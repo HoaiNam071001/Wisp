@@ -13,6 +13,7 @@ const { MODE, FLASH_PATH, FLASH_VERSION, wantedMode } = require('./flash/mode');
 const { userPluginPath } = require('./flash/plugin');
 const { mmsCfgPath, writeMmsCfg } = require('./flash/mms-cfg');
 const { loadConfig, saveConfig } = require('./config');
+const { QUALITIES, normalizeQuality } = require('./flash/quality');
 const { applyAppNap } = require('./perf');
 const { clearPings } = require('./ping');
 const { openInspector } = require('./inspect/window');
@@ -56,6 +57,16 @@ function historySubmenu() {
   ];
 }
 
+// Hạ chất lượng giúp game nhẹ hơn trên cửa sổ lớn; chỉ áp cho tab mở sau khi đổi (đã tạo plugin thì không đổi được)
+function qualitySubmenu() {
+  const cur = normalizeQuality(loadConfig().flashQuality);
+  const set = (v) => { saveConfig({ flashQuality: v }); scheduleMenu(); };
+  return [
+    { label: 'Theo game (mặc định)', type: 'radio', checked: !cur, click: () => set(null) },
+    ...QUALITIES.map(q => ({ label: q.label, type: 'radio', checked: cur === q.value, click: () => set(q.value) })),
+  ];
+}
+
 function flashSubmenu() {
   const cfg = loadConfig();
   return [
@@ -66,6 +77,8 @@ function flashSubmenu() {
     { type: 'separator' },
     { label: 'Chế độ: Flash Player thật', type: 'radio', checked: wantedMode === 'flash', enabled: !!FLASH_PATH || wantedMode === 'flash', click: () => flash.setMode('flash') },
     { label: 'Chế độ: Ruffle (dự phòng)', type: 'radio', checked: wantedMode === 'ruffle', click: () => flash.setMode('ruffle') },
+    { type: 'separator' },
+    { label: 'Chất lượng vẽ Flash (cho tab mới)', submenu: qualitySubmenu() },
     { type: 'separator' },
     { label: 'Cho phép Flash trên trang này', accelerator: 'Shift+CmdOrCtrl+A', enabled: MODE === 'flash', click: flash.allowCurrentSite },
     { label: 'Sửa danh sách domain cho phép…', click: flash.editAllowList },

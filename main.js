@@ -7,6 +7,12 @@ const path = require('path');
 // Electron 11: sendInputEvent chỉ tới widget khung chính – iframe khác site chạy process riêng không nhận chuột / phím
 // của cổng Ghosthand. Tắt site isolation để iframe chạy chung process (docs/decisions.md, 2026-11-15).
 app.commandLine.appendSwitch('disable-site-isolation-trials');
+// Hiệu năng game: Chromium 87 hay chặn GPU trên máy cũ / Rosetta → Flash vẽ bằng CPU. Bật GPU raster, không hãm tiến trình nền.
+// WISP_NO_PERF_FLAGS=1 để tắt khi cần so sánh FPS.
+if (!process.env.WISP_NO_PERF_FLAGS) {
+  for (const sw of ['ignore-gpu-blocklist', 'enable-gpu-rasterization', 'enable-zero-copy',
+    'disable-renderer-backgrounding', 'disable-background-timer-throttling']) app.commandLine.appendSwitch(sw);
+}
 
 // Thứ tự quan trọng: thư mục dữ liệu → khoá một bản → chọn chế độ Flash (gắn switch trước app ready)
 require('./user-data').setupUserData();

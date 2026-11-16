@@ -20,3 +20,5 @@ Chỉ thêm dòng bằng `>>`: `- **YYYY-MM-DD** – <việc>. <kết quả ki�
 - **2026-11-16** – Phát hành 2.4.1 (sửa cửa sổ Đổi phím + vòng tiến độ, bước 10): dmg + mac.zip + win-setup.exe kèm sha256.
 - **2026-11-16** – Kế hoạch (người dùng yêu cầu): bước 11 đăng nhập Google + đồng bộ qua Drive appDataFolder (cấu hình, dấu trang, lịch sử, cookie game mã hoá), đăng nhập qua trình duyệt hệ thống.
 - **2026-11-16** – Kế hoạch (người dùng yêu cầu): nút tài khoản đồng bộ là avatar tròn góc phải thanh công cụ như Chrome (bước 11).
+2026-11-16 hiệu năng: cờ GPU/không hãm nền (main.js), tuỳ chọn chất lượng vẽ Flash (flash/quality*.js), chờ thử tay
+- **2026-11-16** – Phát hành 2.4.2 (hiệu năng: cờ GPU, không hãm tiến trình nền, tuỳ chọn chất lượng vẽ Flash): dmg + mac.zip + win-setup.exe kèm sha256.
