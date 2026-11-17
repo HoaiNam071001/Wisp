@@ -28,3 +28,4 @@ Chỉ thêm dòng bằng `>>`: `- **YYYY-MM-DD** – <việc>. <kết quả ki�
 - **2026-11-17** – Bước 04: tab trang Flash hiện trang chờ có nút mở game; tab ↔ cửa sổ Flash đóng theo nhau
 - **2026-11-17** – Menu chuột phải trong tab (page-menu.js) gồm chuyển Flash theo trang
 - **2026-11-17** – Bỏ nút Flash trên thanh địa chỉ (đổi Flash qua chuột phải / Cài đặt Flash)
+- **2026-11-17** – Bỏ ô CPU / ping trên thanh địa chỉ (bảng Hiệu năng vẫn ở Bảng kiểm tra)

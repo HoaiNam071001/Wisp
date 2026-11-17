@@ -101,8 +101,6 @@ function perfTick() {
     addLog('warning', 'perf', `Mất ${ping.loss}% gói ping tới máy chủ game ${ping.host} — mạng chập chờn, game dễ bị lag / rớt kết nối.`);
   }
 
-  const win = tabs.getWin();
-  if (win) win.webContents.send('perf', { ...point, ping });
   const insp = inspector();
   if (insp) insp.send('inspect:perf', perfPayload());
 }

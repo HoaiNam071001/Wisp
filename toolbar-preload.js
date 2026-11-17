@@ -11,7 +11,6 @@ contextBridge.exposeInMainWorld('nav', {
   inspect: (tab) => ipcRenderer.send('open-inspector', tab),
   menu: (x, y) => ipcRenderer.send('menu', x, y),
   muteTab: (id) => ipcRenderer.send('tab', 'mute', id),
-  onPerf: (cb) => ipcRenderer.on('perf', (_e, p) => cb(p)),
   onToast: (cb) => ipcRenderer.on('toast', (_e, t) => cb(t)),
   onMenuClosed: (cb) => ipcRenderer.on('menu-closed', () => cb()),
   history: () => ipcRenderer.send('nav', 'history'),
