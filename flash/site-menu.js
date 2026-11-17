@@ -30,19 +30,24 @@ function apply(host, engine) {
   tabs.sendState();
 }
 
-function popup(x, y) {
-  const host = currentHost();
-  const win = tabs.getWin();
-  if (!host || !win) return;
+// Mục menu chọn engine Flash cho host (dùng cho nút tia chớp và menu chuột phải)
+function menuItems(host) {
   const cur = choiceFor(host);
   const radio = (label, engine, extra) => ({ label, type: 'radio', checked: cur === engine, click: () => apply(host, engine), ...extra });
-  Menu.buildFromTemplate([
-    { label: 'Flash cho ' + baseDomain(host), enabled: false },
+  return [
     radio('Tắt', 'off'),
     radio('Flash thật (cửa sổ riêng)', 'flash', FLASH_PATH ? {} : { enabled: false }),
     radio('Ruffle (giả lập, game online cần socket không chạy)', 'ruffle'),
     ...(FLASH_PATH ? [] : [{ type: 'separator' }, { label: 'Cài Flash Player…', click: askForFlashPlugin }]),
-  ]).popup({ window: win, x: Math.round(x), y: Math.round(y) });
+  ];
+}
+
+function popup(x, y) {
+  const host = currentHost();
+  const win = tabs.getWin();
+  if (!host || !win) return;
+  Menu.buildFromTemplate([{ label: 'Flash cho ' + baseDomain(host), enabled: false }, ...menuItems(host)])
+    .popup({ window: win, x: Math.round(x), y: Math.round(y) });
 }
 
 // Chọn từ thanh của cửa sổ engine Flash: đổi cấu hình, đóng cửa sổ Flash, mở lại trang ở cửa sổ chính
@@ -55,4 +60,4 @@ function applyFromEngine(url, engine) {
   tabs.openNextToActive(url);
 }
 
-module.exports = { applyFromEngine, popup, choiceFor, currentHost };
+module.exports = { applyFromEngine, menuItems, popup, choiceFor, currentHost };

@@ -89,6 +89,7 @@
       "progress-tasks.js",
       "ping.js",
       "page-actions.js",
+      "page-menu.js",
       "app-menu.js",
       "menu-popup.js",
       "toolbar-ipc.js",
