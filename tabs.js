@@ -5,7 +5,8 @@
 const { WebContentsView, Menu } = require('electron');
 const path = require('path');
 const { EventEmitter } = require('events');
-const { loadConfig, saveConfig, homeUrl } = require('./config');
+const { loadConfig, saveConfig, homeUrl, flashSites } = require('./config');
+const { siteFor } = require('./flash/site-config');
 const { MODE, FLASH_VERSION, wantedMode } = require('./flash/mode');
 const { normalizeQuality } = require('./flash/quality');
 const { HISTORY_URL, displayUrl, isHistoryUrl, normalizeUrl } = require('./app-urls');
@@ -34,6 +35,14 @@ function wc() {
 function canReopen() { return closedTabs.length > 0; }
 function toast(text) { if (winOk()) win.webContents.send('toast', text); }
 
+// Cấu hình Flash của trang đang xem: 'off' | 'flash' | 'ruffle'
+function siteFlashOf(url) {
+  try {
+    const s = siteFor(flashSites(), new URL(displayUrl(url)).hostname);
+    return s ? s.engine : 'off';
+  } catch { return 'off'; }
+}
+
 function sendState() {
   if (!winOk() || !wc()) return;
   const w = wc();
@@ -42,6 +51,7 @@ function sendState() {
     canBack: w.navigationHistory.canGoBack(),
     canForward: w.navigationHistory.canGoForward(),
     loading: w.isLoading(),
+    siteFlash: siteFlashOf(w.getURL()),
     mode: MODE,
     version: FLASH_VERSION,
     wantedFlash: wantedMode === 'flash',

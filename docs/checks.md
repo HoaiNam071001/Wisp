@@ -47,3 +47,4 @@ Chạy `npm run dev` (dữ liệu `.dev-data/`), thử như bản 2.3.0:
 - [ ] 04: bấm / gõ trong iframe khác site ở tab web bằng cổng Ghosthand (đã bỏ `disable-site-isolation-trials`)
 - [ ] 04: bản đóng gói `npm run dist` (macOS) mở cf4vn.bar ở engine Flash (dev đã thử 2026-11-17); Windows chưa thử
 - [ ] 04: chạy lệnh thử engine Flash (docs/plan/04) với plugin thật, cửa sổ hiện game cf4vn.bar và vào được game
+- [ ] 04 (2026-11-17): mở cf4vn.bar → bấm nút tia chớp cạnh ô địa chỉ → chọn Flash thật → cửa sổ engine Flash mở game; chọn Tắt → tab tải lại bình thường
