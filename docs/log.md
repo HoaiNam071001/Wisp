@@ -35,3 +35,4 @@ Chỉ thêm dòng bằng `>>`: `- **YYYY-MM-DD** – <việc>. <kết quả ki�
 - **2026-11-17** – Menu chuột phải gọn: "Flash cho <domain>" + menu con → một mục đánh dấu "Chạy bằng Flash". check + test OK; chưa thử tay.
 2026-11-17 04: Ghosthand nối engine Flash (tabs engine, frameRect, flash_page)
 2026-11-17 04: screenshot fullPage, chip Cần Flash (.swf), thử arm64
+2026-11-17 05: UA Chrome, popup giữ opener, quyền theo domain, tải file

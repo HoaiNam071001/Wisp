@@ -11,6 +11,7 @@ const { normalizeQuality } = require('./flash/quality');
 const { HISTORY_URL, LAUNCHER_URL, displayUrl, isHistoryUrl, normalizeUrl, launcherUrlFor } = require('./app-urls');
 const { addLog } = require('./inspect/store');
 const flashRouter = require('./flash-engine/router');
+const { popupFor } = require('./popup-policy');
 
 const TOOLBAR_HEIGHT = 80; // thanh tab (36) + thanh địa chỉ (44)
 const CLOSED_MAX = 25;
@@ -228,10 +229,18 @@ function wireTab(t) {
   w.on('leave-html-full-screen', () => { t.htmlFull = false; if (isActive()) layout(); });
 
   // Popup (window.open / target=_blank / Cmd+bấm link) → mở tab mới ngay bên phải
-  w.setWindowOpenHandler(({ url, disposition }) => {
+  w.setWindowOpenHandler(({ url, disposition, features }) => {
+    const pop = popupFor({ url, disposition, features });
+    if (pop.popup) return { action: 'allow', overrideBrowserWindowOptions: {
+      width: pop.width, height: pop.height, autoHideMenuBar: true,
+      webPreferences: { sandbox: false }, // cùng mức sandbox với tab (tabPrefs) thì popup mới giữ window.opener
+    } };
     events.emit('opened', createTab(url, { index: tabs.indexOf(t) + 1, activate: disposition !== 'background-tab' }), t, url);
     return { action: 'deny' };
   });
+
+  // Cửa sổ popup không tự mở thêm cửa sổ khác
+  w.on('did-create-window', (child) => child.webContents.setWindowOpenHandler(() => ({ action: 'deny' })));
 
   ['did-navigate-in-page', 'did-start-loading', 'did-stop-loading'].forEach(ev => w.on(ev, () => { if (isActive()) sendState(); sendTabs(); }));
   // Bấm link / chuyển hướng sang trang Flash thật → trang chờ Flash trong tab này

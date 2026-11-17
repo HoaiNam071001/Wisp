@@ -19,6 +19,7 @@ const SECOND_INSTANCE = !app.requestSingleInstanceLock();
 if (SECOND_INSTANCE) app.quit();
 const { FLASH_PATH } = require('./flash/mode');
 const flashRouter = require('./flash-engine/router');
+const { chromeUserAgent } = require('./ua');
 const siteMenu = require('./flash/site-menu');
 require('./flash/launcher');
 require('./flash/swf-hint');
@@ -74,10 +75,12 @@ app.whenReady().then(() => {
     try { app.dock.setIcon(path.join(__dirname, 'build', 'icon.png')); } catch (_) {}
   }
   if (SECOND_INSTANCE) return;
-  // Một số trang chặn UA có chữ "Electron" → bỏ đi cho giống Chrome thường
-  app.userAgentFallback = app.userAgentFallback.replace(/\s?(Electron|wisp|flash-browser)\/\S+/gi, '');
+  // Một số trang chặn UA có chữ "Electron" / lệch UA Chrome thật → chỉnh cho giống Chrome thường (ua.js)
+  app.userAgentFallback = chromeUserAgent(app.userAgentFallback);
 
   installRequestLog(session.defaultSession);
+  require('./permissions').install(session.defaultSession);
+  require('./downloads').install(session.defaultSession);
 
   applyAppNap();
   // Trang Flash đi ra ngoài trang đã cấu hình → mở ở cửa sổ chính
