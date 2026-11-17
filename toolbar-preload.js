@@ -8,7 +8,6 @@ contextBridge.exposeInMainWorld('nav', {
   reload: () => ipcRenderer.send('nav', 'reload'),
   home: () => ipcRenderer.send('nav', 'home'),
   setHome: () => ipcRenderer.send('nav', 'sethome'),
-  inspect: (tab) => ipcRenderer.send('open-inspector', tab),
   menu: (x, y) => ipcRenderer.send('menu', x, y),
   muteTab: (id) => ipcRenderer.send('tab', 'mute', id),
   onToast: (cb) => ipcRenderer.on('toast', (_e, t) => cb(t)),

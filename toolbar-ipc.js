@@ -35,7 +35,6 @@ ipcMain.on('nav', (_e, action, arg) => {
 });
 ipcMain.on('menu', (e, x, y) => { if (fromToolbar(e)) showMainMenu(x, y); });
 ipcMain.on('ghosthand-disconnect', (e) => { if (fromToolbar(e)) ghosthand.disconnect(); });
-ipcMain.on('open-inspector', (e, tab) => { if (fromToolbar(e)) openInspector(tab); });
 ipcMain.on('tab', (e, action, id) => {
   if (!fromToolbar(e)) return;
   if (action === 'new') tabs.newTab();
