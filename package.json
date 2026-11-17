@@ -93,6 +93,7 @@
       "perf.js",
       "progress-tasks.js",
       "ping.js",
+      "browsing-data.js",
       "page-actions.js",
       "page-menu.js",
       "app-menu.js",
