@@ -1,5 +1,5 @@
-// Wisp — trình duyệt Electron mới; trang cấu hình Flash mở bằng engine Flash (Electron 11 + Pepper Flash, flash-engine/),
-// hoặc Ruffle (giả lập Flash bằng WebAssembly) ngay trong tab. Electron 12+ đã bỏ Pepper Flash nên engine Flash ở Electron 11.x (x64).
+// Wisp — trình duyệt Electron mới; trang cấu hình Flash mở bằng engine Flash (Electron 11 + Pepper Flash, flash-engine/).
+// Electron 12+ đã bỏ Pepper Flash nên engine Flash ở Electron 11.x (x64).
 // File này chỉ lo khởi động; từng việc nằm ở module riêng (xem docs/plan/03-tach-main-js.md).
 const { app, BrowserWindow, session } = require('electron');
 const path = require('path');
@@ -17,7 +17,7 @@ require('./user-data').setupUserData();
 // Chỉ chạy một Wisp cho mỗi thư mục dữ liệu (khoá theo userData, nên bản dev có WISP_USER_DATA riêng vẫn chạy song song)
 const SECOND_INSTANCE = !app.requestSingleInstanceLock();
 if (SECOND_INSTANCE) app.quit();
-const { FLASH_PATH, wantedMode } = require('./flash/mode');
+const { FLASH_PATH } = require('./flash/mode');
 const flashRouter = require('./flash-engine/router');
 const siteMenu = require('./flash/site-menu');
 require('./flash/launcher');
@@ -33,7 +33,6 @@ const { installRequestLog } = require('./inspect/request-log');
 const { startSocketWatch } = require('./inspect/sockets');
 const { openInspector } = require('./inspect/window');
 const { startPerf, applyAppNap } = require('./perf');
-const { registerRuffleScheme, serveRuffle } = require('./flash/ruffle');
 const { askForFlashPlugin } = require('./flash/install');
 const { buildMenu, scheduleMenu } = require('./app-menu');
 const { ensureMenuWin } = require('./menu-popup');
@@ -43,7 +42,6 @@ require('./toolbar-ipc');
 const IS_MAC = process.platform === 'darwin';
 let pendingFile = null; // file .swf mở trước khi app sẵn sàng (macOS "Open With")
 
-registerRuffleScheme();
 
 function createWindow() {
   const argUrl = process.argv.slice(1).find(a => /^https?:|\.swf$/i.test(a));
@@ -66,7 +64,7 @@ function createWindow() {
   startPerf();
   startSocketWatch();
 
-  if (wantedMode === 'flash' && !FLASH_PATH) setTimeout(askForFlashPlugin, 800);
+  if (!FLASH_PATH) setTimeout(askForFlashPlugin, 800);
 }
 
 app.whenReady().then(() => {
@@ -79,7 +77,6 @@ app.whenReady().then(() => {
   app.userAgentFallback = app.userAgentFallback.replace(/\s?(Electron|wisp|flash-browser)\/\S+/gi, '');
 
   installRequestLog(session.defaultSession);
-  serveRuffle();
 
   applyAppNap();
   // Trang Flash đi ra ngoài trang đã cấu hình → mở ở cửa sổ chính

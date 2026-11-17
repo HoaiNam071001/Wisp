@@ -1,10 +1,10 @@
-// npm run check: node --check mọi file .js của app (bỏ node_modules, dist, v1-ruffle) – bắt lỗi cú pháp trước khi chạy Electron.
+// npm run check: node --check mọi file .js của app (bỏ node_modules, dist) – bắt lỗi cú pháp trước khi chạy Electron.
 const { execFileSync } = require('child_process');
 const fs = require('fs');
 const path = require('path');
 
 const root = path.join(__dirname, '..');
-const skip = new Set(['node_modules', 'dist', 'v1-ruffle', 'plugins', '.git', 'build', '.dev-data']);
+const skip = new Set(['node_modules', 'dist', 'plugins', '.git', 'build', '.dev-data']);
 const files = [];
 (function walk(dir) {
   for (const e of fs.readdirSync(dir, { withFileTypes: true })) {

@@ -31,3 +31,5 @@ Chỉ thêm dòng bằng `>>`: `- **YYYY-MM-DD** – <việc>. <kết quả ki�
 - **2026-11-17** – Bỏ ô CPU / ping trên thanh địa chỉ (bảng Hiệu năng vẫn ở Bảng kiểm tra)
 - **2026-11-17** – Engine Flash: đóng cửa sổ Flash không đóng tab chủ; bỏ nút Ruffle / Tắt Flash khỏi thanh cửa sổ Flash; trang chờ Flash thêm nút "Mở như web thường". check + test OK; chưa thử tay (docs/checks.md).
 - **2026-11-17** – Chốt bỏ việc Ruffle trong engine Flash (docs/decisions.md, bước 04). Chỉ sửa tài liệu.
+- **2026-11-17** – Bỏ hẳn Ruffle: xoá flash/ruffle.js, ruffle://, @ruffle-rs/ruffle, v1-ruffle/, chế độ Flash / Ruffle (MODE / wantedMode) và lựa chọn Ruffle ở menu / Cài đặt; engine chỉ còn web | flash; config cũ engine ruffle → flash. npm run check + npm test OK; chưa thử tay.
+- **2026-11-17** – Menu chuột phải gọn: "Flash cho <domain>" + menu con → một mục đánh dấu "Chạy bằng Flash". check + test OK; chưa thử tay.

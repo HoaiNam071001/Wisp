@@ -1,9 +1,8 @@
 # Wisp (macOS, Windows)
 
-App mở webgame Flash (vd. Bang Bang) bằng **Flash Player thật** (Pepper Flash / PPAPI) chạy trong engine **Electron 11.5.0 x64** đi kèm (vỏ app và mọi trang web thường chạy Electron 45; trang cấu hình Flash mở ở cửa sổ engine Flash riêng). Flash thật mở được kết nối socket tới máy chủ game, điều mà Ruffle (bản 1) không làm được.
-Chế độ dự phòng **Ruffle** vẫn còn, dùng cho nội dung Flash đơn giản không cần socket.
+App mở webgame Flash (vd. Bang Bang) bằng **Flash Player thật** (Pepper Flash / PPAPI) chạy trong engine **Electron 11.5.0 x64** đi kèm (vỏ app và mọi trang web thường chạy Electron 45; trang cấu hình Flash mở ở cửa sổ engine Flash riêng). Flash thật mở được kết nối socket tới máy chủ game.
 
-Bản 1 (Electron 45 + Ruffle) được lưu ở `v1-ruffle/`. Kế hoạch chi tiết: `plan.md`.
+Kế hoạch chi tiết: `plan.md`.
 
 ## Tải và cài (cho người dùng)
 
@@ -78,7 +77,7 @@ npm run dev -- inspect https://cf4vn.bar/     # mở thẳng một địa chỉ 
 Bản phát hành **không** kèm plugin của Adobe. Plugin (`PepperFlashPlayer.plugin`, PPAPI, x64, bản 32.0.0.x) được cài riêng vào
 `~/Library/Application Support/Wisp/plugins/`, nên cập nhật hay cài lại `Wisp.app` không làm mất plugin.
 
-Cách cài (chưa có plugin thì app tự hỏi khi mở; hoặc bấm nhãn **RUFFLE · CÀI FLASH** trên thanh công cụ, **⋮ → Tải và cài Flash Player**, menu **Flash → Cài Flash Player…**):
+Cách cài (chưa có plugin thì app tự hỏi khi mở; hoặc **⋮ → Tải và cài Flash Player**, menu **Flash → Cài Flash Player…**):
 
 - **Tải và cài tự động**: app tải bộ cài `install_flash_player_osx_ppapi.dmg` (32.0.0.465, ~15 MB) từ [archive.org](https://archive.org/details/adobe-flash-player-archive_202012) — Adobe đã gỡ bản cài khỏi trang của họ — kiểm tra MD5 `01276b441efca664141d42dc9680a2be`, rồi cài như bên dưới.
 - **Chọn file đã tải**: chọn file `.dmg` / `.pkg` / `.zip` / `.app` của bộ cài Adobe Pepper Flash (PPAPI), hoặc chính `PepperFlashPlayer.plugin`.
@@ -92,7 +91,7 @@ App **không chạy bộ cài của Adobe**: nó tự mở gói (`hdiutil attach
 
 App tìm plugin theo thứ tự: `userData/plugins/` → plugin kèm trong app / `plugins/` khi chạy dev → `/Library/Internet Plug-Ins/PepperFlashPlayer/` → `~/Library/Internet Plug-Ins/PepperFlashPlayer/`.
 
-Version được đọc tự động từ `Info.plist` / `manifest.json` của plugin. Chưa có plugin thì app báo lỗi và chạy tạm bằng Ruffle.
+Version được đọc tự động từ `Info.plist` / `manifest.json` của plugin. Chưa có plugin thì trang Flash không chạy được, app hỏi cài.
 ⚠️ Chỉ lấy plugin từ nguồn tin cậy. Flash không còn được vá lỗi và hay bị phát tán kèm mã độc.
 
 ## 3. Allowlist (`mms.cfg`): mở khoá kill switch của Flash 32
@@ -111,8 +110,6 @@ Nếu Flash vẫn bị chặn: bật **Flash → Ghi log allowlist** (thêm `All
 ## 4. Cách dùng
 
 - **Flash → Kiểm tra Flash Player**: xem `navigator.plugins`, version, kiến trúc, đường dẫn `mms.cfg`.
-- **Flash → Chế độ: Flash Player thật / Ruffle**: đổi chế độ (app khởi động lại).
-- Huy hiệu trên thanh công cụ: xanh `FLASH 32.0.0.x` là Flash thật, cam `RUFFLE` là đang giả lập.
 - Gõ địa chỉ rồi Enter (Cmd+L). Mặc định mở `DEFAULT_URL` trong `config.js`; đổi bằng **⋮ → Đặt trang này làm trang chủ**.
 - Mở file `.swf`: Cmd+O, gõ đường dẫn (`~/Downloads/game.swf`), hoặc kéo file vào icon app.
 - **Tab**: Cmd+T tab mới, Cmd+W đóng (hoặc chuột giữa), Shift+Cmd+T mở lại tab vừa đóng, Ctrl+Tab / Cmd+1…9 chuyển tab, chuột phải vào tab để nhân bản / đóng tab khác. Popup và link mở cửa sổ mới mở thành tab mới. Tab đang phát tiếng có 🔊, bấm để tắt tiếng (Shift+Cmd+M).

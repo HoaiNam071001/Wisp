@@ -2,7 +2,6 @@
 const { Menu, clipboard } = require('electron');
 const tabs = require('./tabs');
 const siteMenu = require('./flash/site-menu');
-const { baseDomain } = require('./flash/allowlist');
 const { displayUrl, isLauncherUrl } = require('./app-urls');
 const { openInspector } = require('./inspect/window');
 const { shorten } = require('./util');
@@ -61,7 +60,7 @@ function template(t, w, p) {
   ];
   if (isWeb(url)) {
     const host = hostOf(url);
-    items.push({ type: 'separator' }, { label: 'Flash cho ' + baseDomain(host), submenu: siteMenu.menuItems(host) });
+    items.push({ type: 'separator' }, siteMenu.menuItem(host));
     if (!isLauncherUrl(w.getURL())) items.push({ label: 'Sao chép địa chỉ trang', click: () => clipboard.writeText(url) });
   }
   items.push(

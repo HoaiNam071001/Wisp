@@ -50,7 +50,7 @@ Làm trên Electron 11 hiện tại (tab thường) để chốt API sớm; lên
 
 - ✅ `select` (chỉ `<select>` thật): focus + gõ đoạn đầu ngắn nhất của nhãn theo cách typeahead của Chromium tìm (1 ký tự: từ sau lựa chọn hiện tại, nhiều ký tự: từ chính nó), chờ phiên typeahead cũ hết (~1,1 s) trước lần gõ sau; không bấm mở (menu gốc của hệ điều hành) và không gán `value` bằng JS. Trang nhận `change` có `isTrusted: true`. Danh sách tự dựng → `bad_args` gợi ý dùng `click`.
 - ✅ `check {on}`: đọc `checked` / `aria-checked`, khác thì bấm thật, kiểm lại.
-- ✅ `settle` (= `waitLoad idle`), `frameRect` (embed / object / canvas / iframe / Ruffle lớn nhất → `rect` + `screenRect`).
+- ✅ `settle` (= `waitLoad idle`), `frameRect` (embed / object / canvas / iframe lớn nhất → `rect` + `screenRect`).
 - ✅ `subscribe {events}` (thay cả danh sách; `[]` = bỏ): đẩy `{"event": …, "data": …}` – `navigate`, `popup` (`tab`, `opener`, `url`), `download`, `dialog`. Hộp thoại JS: `webContents.debugger` chỉ domain Page, chỉ gắn khi có client subscribe `dialog`; `dialog {accept, text}` trả lời; lệnh chạm trang khi hộp đang mở → `timeout` nói rõ có hộp thoại. Electron không hỗ trợ `prompt()` (trang nhận lỗi) – chỉ `alert` / `confirm` / `beforeunload`.
 - ✅ `outline` một lượt (đếm tên cùng vai trò đứng trước như `outline.js` của Ghosthand): Wikipedia 417 node 1,6 s → 162 ms; 810 selector trên Wikipedia / GitHub / Hacker News tìm lại đúng phần tử.
 - ✅ Thao tác trên tab không xem: `type` / `click` vào tab nền chạy (`isTrusted: true`), `screenRect.offscreen = true`.

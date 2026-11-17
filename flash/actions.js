@@ -1,8 +1,8 @@
-// Các thao tác trong menu Flash: đổi chế độ, allowlist, kiểm tra Flash, khởi động lại.
+// Các thao tác trong menu Flash: allowlist, kiểm tra Flash, khởi động lại.
 const { app, dialog } = require('electron');
 const tabs = require('../tabs');
-const { saveConfig, allowDomains, flashSites, saveFlashSites } = require('../config');
-const { MODE, FLASH_PATH, FLASH_VERSION, wantedMode } = require('./mode');
+const { allowDomains, flashSites, saveFlashSites } = require('../config');
+const { FLASH_PATH, FLASH_VERSION } = require('./mode');
 const { mmsCfgPath, writeMmsCfg } = require('./mms-cfg');
 const { baseDomain } = require('./allowlist');
 const siteConfig = require('./site-config');
@@ -17,12 +17,6 @@ async function askRelaunch(message) {
     message, detail: 'Thay đổi có hiệu lực sau khi mở lại app.',
   });
   if (response === 0) relaunch();
-}
-
-function setMode(mode) {
-  if (mode === wantedMode) return;
-  saveConfig({ mode });
-  askRelaunch(mode === 'flash' ? 'Chuyển sang Flash Player thật.' : 'Chuyển sang chế độ Ruffle.');
 }
 
 async function allowCurrentSite() {
@@ -40,8 +34,7 @@ async function allowCurrentSite() {
     dialog.showMessageBox(tabs.getWin(), { message: 'Các domain của trang này đã có trong danh sách cho phép.', detail: current.join('\n') });
     return;
   }
-  const engine = wantedMode === 'ruffle' ? 'ruffle' : 'flash';
-  saveFlashSites(added.reduce((sites, h) => siteConfig.setSite(sites, h, engine), flashSites()));
+  saveFlashSites(added.reduce((sites, h) => siteConfig.setSite(sites, h, 'flash'), flashSites()));
   writeMmsCfg();
   askRelaunch('Đã cho phép Flash trên: ' + added.join(', '));
 }
@@ -60,10 +53,9 @@ async function checkFlash() {
   const info = await pluginInfo(w);
   dialog.showMessageBox(tabs.getWin(), {
     type: info ? 'info' : 'warning',
-    message: MODE === 'ruffle' ? 'Đang ở chế độ Ruffle (giả lập Flash)' : (info ? 'Flash Player đã nạp ✓' : 'Không thấy Flash Player trong navigator.plugins'),
+    message: info ? 'Flash Player đã nạp ✓' : 'Không thấy Flash Player trong navigator.plugins',
     detail: [
-      info && `navigator.plugins: ${info}${MODE === 'ruffle' ? ' (Ruffle giả lập)' : ''}`,
-      `Chế độ: ${MODE === 'flash' ? 'Flash thật' : 'Ruffle'}`,
+      info && `navigator.plugins: ${info}`,
       `Plugin: ${FLASH_PATH || '(chưa có)'}`,
       FLASH_VERSION && `Version: ${FLASH_VERSION}`,
       `Kiến trúc Electron: ${process.arch}`,
@@ -74,4 +66,4 @@ async function checkFlash() {
   });
 }
 
-module.exports = { relaunch, askRelaunch, setMode, allowCurrentSite, pluginInfo, checkFlash };
+module.exports = { relaunch, askRelaunch, allowCurrentSite, pluginInfo, checkFlash };

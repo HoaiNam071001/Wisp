@@ -11,7 +11,7 @@ const flashSettings = require('./flash/settings-window');
 const page = require('./page-actions');
 const flash = require('./flash/actions');
 const { askForFlashPlugin } = require('./flash/install');
-const { MODE, FLASH_PATH, FLASH_VERSION, wantedMode } = require('./flash/mode');
+const { FLASH_PATH, FLASH_VERSION } = require('./flash/mode');
 const { loadConfig, homeUrl } = require('./config');
 const { pingSummary } = require('./ping');
 const { openInspector } = require('./inspect/window');
@@ -76,7 +76,7 @@ function menuState() {
     fullScreen: !!win && win.isFullScreen(),
     recent: history.recentHistory(4).map(h => ({ title: h.title || h.url, url: h.url, host: hostOf(h.url) })),
     ping: pingSummary(),
-    mode: MODE, wantedMode, hasPlugin: !!FLASH_PATH, version: FLASH_VERSION,
+    hasPlugin: !!FLASH_PATH, version: FLASH_VERSION,
     options: { restoreTabs: cfg.restoreTabs !== false, preventAppNap: cfg.preventAppNap !== false, pingGame: cfg.pingGame !== false,
                ghosthandPort: cfg.ghosthandPort !== false },
     ghosthand: ghosthand.state(),
@@ -95,7 +95,6 @@ function menuActions(arg) {
     inspector: () => openInspector(arg ? String(arg) : undefined), devtools: () => w && w.toggleDevTools(),
     hardReload: page.hardReload, clearCache: page.clearCacheReload,
     checkFlash: flash.checkFlash, allowSite: flash.allowCurrentSite, plugin: askForFlashPlugin,
-    modeFlash: () => flash.setMode('flash'), modeRuffle: () => flash.setMode('ruffle'),
     flashMore: flashSettings.openSettings,
     openSwf: page.openSwfFile,
     keys: keyremap.openKeysWindow,

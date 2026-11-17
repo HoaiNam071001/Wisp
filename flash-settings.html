@@ -46,7 +46,6 @@
       <button class="primary" id="add">Thêm</button>
     </div>
     <div id="msg"></div>
-    <p class="muted" style="margin:6px 0 0">Ruffle: giả lập Flash, game online cần socket không chạy.</p>
   </div>
 
   <div class="card">
@@ -80,19 +79,13 @@
     for (const site of s.sites) {
       const row = document.createElement('div'); row.className = 'row';
       const name = document.createElement('span'); name.className = 'gap'; name.textContent = site.domain;
-      const sel = document.createElement('select');
-      for (const [v, t] of [['flash', 'Flash thật'], ['ruffle', 'Ruffle']]) {
-        const o = document.createElement('option'); o.value = v; o.textContent = t; sel.append(o);
-      }
-      sel.value = site.engine;
-      sel.onchange = async () => render(await window.wfs.set(site.domain, sel.value));
       const del = document.createElement('button'); del.textContent = 'Xoá';
       del.onclick = async () => render(await window.wfs.set(site.domain, 'off'));
-      row.append(name, sel, del);
+      row.append(name, del);
       list.append(row);
     }
     const p = $('plugin');
-    p.textContent = s.plugin.path ? 'Đã cài' + (s.plugin.version ? ' – phiên bản ' + s.plugin.version : '') : 'Chưa có Flash Player – trang Flash thật tạm chạy bằng Ruffle.';
+    p.textContent = s.plugin.path ? 'Đã cài' + (s.plugin.version ? ' – phiên bản ' + s.plugin.version : '') : 'Chưa có Flash Player – cài để chơi game Flash.';
     p.className = s.plugin.path ? 'ok' : 'bad';
     $('debug').checked = s.debug;
   }

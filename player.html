@@ -5,13 +5,13 @@
 <title>Flash</title>
 <style>
   html, body { margin: 0; height: 100%; background: #000; overflow: hidden; }
-  embed, ruffle-embed { display: block; width: 100%; height: 100%; }
+  embed { display: block; width: 100%; height: 100%; }
   .err { color: #ccc; font: 14px system-ui, sans-serif; padding: 24px; }
 </style>
 </head>
 <body>
 <script>
-  // Trang bọc file .swf: <embed> chạy được với cả Flash Player thật lẫn Ruffle
+  // Trang bọc file .swf: <embed> chạy bằng Flash Player thật
   const src = new URLSearchParams(location.search).get('src');
   if (!src) {
     document.body.innerHTML = '<p class="err">Thiếu tham số ?src=…swf</p>';

@@ -2,7 +2,7 @@
   "name": "wisp",
   "productName": "Wisp",
   "version": "2.4.3",
-  "description": "Wisp — trình duyệt (Electron mới) mở webgame Flash bằng Flash Player thật (Pepper Flash, engine Electron 11 đi kèm); dự phòng Ruffle (macOS, Windows)",
+  "description": "Wisp — trình duyệt (Electron mới) mở webgame Flash bằng Flash Player thật (Pepper Flash, engine Electron 11 đi kèm; macOS, Windows)",
   "main": "main.js",
   "scripts": {
     "test": "node --test test/",
@@ -16,7 +16,6 @@
     "dist:win:personal": "electron-builder --win nsis --x64 --config electron-builder.personal.js"
   },
   "dependencies": {
-    "@ruffle-rs/ruffle": "0.7.1",
     "lzma": "2.3.2",
     "ws": "7.5.10"
   },
@@ -125,9 +124,6 @@
         "name": "Flash Movie",
         "role": "Viewer"
       }
-    ],
-    "asarUnpack": [
-      "node_modules/@ruffle-rs/ruffle/**"
     ]
   }
 }

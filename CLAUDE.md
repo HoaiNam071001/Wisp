@@ -1,6 +1,6 @@
 # Wisp
 
-Trình duyệt Electron mở webgame Flash bằng Flash Player thật (Pepper Flash 32 trong Electron 11.5.0 x64), dự phòng Ruffle; macOS + Windows. Hướng tới: **một trình duyệt** chuẩn (Electron mới) – trang được cấu hình Flash tự mở bằng engine Flash đi kèm (Electron 11) có **cổng nối Ghosthand** để AI đọc / thao tác element – plan ở `docs/plan/`.
+Trình duyệt Electron mở webgame Flash bằng Flash Player thật (Pepper Flash 32 trong Electron 11.5.0 x64); macOS + Windows. Hướng tới: **một trình duyệt** chuẩn (Electron mới) – trang được cấu hình Flash tự mở bằng engine Flash đi kèm (Electron 11) có **cổng nối Ghosthand** để AI đọc / thao tác element – plan ở `docs/plan/`.
 
 ## Bắt đầu mỗi session
 

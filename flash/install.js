@@ -45,7 +45,7 @@ async function askForFlashPlugin() {
   const { response } = await dialog.showMessageBox(win, {
     type: FLASH_PATH ? 'question' : 'warning',
     message: FLASH_PATH ? `Cài lại / thay Flash Player (đang dùng ${FLASH_VERSION})` : 'Chưa có Flash Player',
-    detail: (FLASH_PATH ? '' : 'App đang chạy tạm bằng Ruffle (không chơi được game online cần socket).\n\n') +
+    detail: (FLASH_PATH ? '' : 'Chưa có Flash Player thì trang Flash không chạy được.\n\n') +
       `• Tải và cài tự động: tải bản 32.0.0.465 (PPAPI) từ archive.org, ${FLASH_DOWNLOAD.size}, rồi tự cài.\n` +
       (IS_WIN
         ? '• Chọn file đã tải: bộ cài Adobe Flash Player PPAPI (.exe), file .zip, hoặc pepflashplayer64_32_0_0_xxx.dll — app tự tách plugin ra và cài.\n\n'

@@ -6,7 +6,7 @@ const { WebContentsView, Menu } = require('electron');
 const path = require('path');
 const { EventEmitter } = require('events');
 const { loadConfig, saveConfig, homeUrl } = require('./config');
-const { MODE, FLASH_VERSION, wantedMode } = require('./flash/mode');
+const { FLASH_PATH, FLASH_VERSION } = require('./flash/mode');
 const { normalizeQuality } = require('./flash/quality');
 const { HISTORY_URL, LAUNCHER_URL, displayUrl, isHistoryUrl, normalizeUrl, launcherUrlFor } = require('./app-urls');
 const { addLog } = require('./inspect/store');
@@ -42,9 +42,8 @@ function sendState() {
     canBack: w.navigationHistory.canGoBack(),
     canForward: w.navigationHistory.canGoForward(),
     loading: w.isLoading(),
-    mode: MODE,
     version: FLASH_VERSION,
-    wantedFlash: wantedMode === 'flash',
+    hasPlugin: !!FLASH_PATH,
   });
 }
 
@@ -93,10 +92,10 @@ function tabPrefs() {
     contextIsolation: true,
     nodeIntegration: false,
     sandbox: false, // preload cần require('./ghosthand/agent') – chỉ preload, trang web không có Node
-    // page-preload.js: chèn Ruffle (chế độ Ruffle) + cầu nối cho trang Lịch sử
+    // page-preload.js: cầu nối cho trang Lịch sử / trang chờ Flash + agent Ghosthand
     preload: path.join(__dirname, 'page-preload.js'),
     additionalArguments: ['--wisp-history=' + HISTORY_URL, '--wisp-launcher=' + LAUNCHER_URL, ...(quality ? ['--flash-quality=' + quality] : [])],
-    // preload chạy trong mọi frame (kể cả iframe): chèn Ruffle (chế độ Ruffle) + agent Ghosthand ở frame khác nguồn
+    // preload chạy trong mọi frame (kể cả iframe): agent Ghosthand ở frame khác nguồn
     nodeIntegrationInSubFrames: true,
   };
 }

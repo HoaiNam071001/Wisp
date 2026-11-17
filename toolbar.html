@@ -187,7 +187,7 @@
     $('upd-t').textContent = on ? `Cập nhật ${u.available}` : 'Cập nhật';
     updDot = on; refreshDot();
   });
-  // chấm cam trên ⋮: có bản cập nhật, hoặc thiếu Flash Player (đang chạy tạm bằng Ruffle)
+  // chấm cam trên ⋮: có bản cập nhật, hoặc chưa có Flash Player
   let updDot = false, flashDot = false;
   function refreshDot() {
     $('more').classList.toggle('dot', updDot || flashDot);
@@ -286,7 +286,7 @@
     $('reload').innerHTML = s.loading ? ICON.stop : ICON.reload;
     $('reload').classList.toggle('stop', s.loading);
     $('reload').title = s.loading ? 'Dừng tải' : 'Tải lại (Cmd+R)';
-    flashDot = s.mode !== 'flash' && s.wantedFlash; refreshDot();
+    flashDot = !s.hasPlugin; refreshDot();
   });
   // ---- chip Ghosthand: hiện khi có kết nối, bấm để ngắt ----
   nav.onGhosthand((g) => $('gh').classList.toggle('show', !!g.clients));

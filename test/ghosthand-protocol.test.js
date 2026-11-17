@@ -57,7 +57,7 @@ test('checkArgs: find scope, type không đích, focused', () => {
 test('webUrlOnly: chỉ http(s)', () => {
   assert.strictEqual(webUrlOnly('https://a.vn/'), 'https://a.vn/');
   assert.strictEqual(webUrlOnly('HTTP://localhost:8080'), 'HTTP://localhost:8080');
-  for (const u of ['file:///etc/passwd', 'chrome://gpu', 'javascript:alert(1)', 'ruffle://local/x', '', undefined]) {
+  for (const u of ['file:///etc/passwd', 'chrome://gpu', 'javascript:alert(1)', 'ftp://x/y', '', undefined]) {
     assert.strictEqual(codeOf(() => webUrlOnly(u)), 'bad_args', String(u));
   }
 });

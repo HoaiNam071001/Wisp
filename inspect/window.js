@@ -9,7 +9,7 @@ const { probeTcp } = require('./probe');
 const { perfPayload } = require('../perf');
 const { openShotsDir } = require('../page-actions');
 const { allowDomains } = require('../config');
-const { MODE, FLASH_PATH, FLASH_VERSION, wantedMode } = require('../flash/mode');
+const { FLASH_PATH, FLASH_VERSION } = require('../flash/mode');
 const { mmsCfgPath } = require('../flash/mms-cfg');
 const { pluginInfo } = require('../flash/actions');
 const { displayUrl } = require('../app-urls');
@@ -45,7 +45,7 @@ async function flashInfo() {
   let mms = '';
   try { mms = fs.readFileSync(mmsCfgPath(), 'utf8'); } catch (e) { mms = '(không đọc được: ' + e.message + ')'; }
   return {
-    mode: MODE, wantedMode, flashPath: FLASH_PATH, flashVersion: FLASH_VERSION, plugin,
+    flashPath: FLASH_PATH, flashVersion: FLASH_VERSION, plugin,
     arch: process.arch, electron: process.versions.electron, chrome: process.versions.chrome,
     userAgent: w ? w.getUserAgent() : '', pageUrl: w ? displayUrl(w.getURL()) : '',
     mmsCfgPath: mmsCfgPath(), mmsCfg: mms, allowDomains: allowDomains(), seenSwfHosts: [...store.seenSwfHosts],

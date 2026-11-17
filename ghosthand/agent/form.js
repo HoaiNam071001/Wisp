@@ -61,8 +61,8 @@ function checkedOf(el) {
   throw err('bad_args', describe(el) + ' không phải ô đánh dấu (checkbox / radio / switch)');
 }
 
-// Khung game: phần tử plugin / canvas / iframe lớn nhất đang hiện (Flash: embed / object, Ruffle: ruffle-player).
-const GAME = 'embed, object, canvas, iframe, ruffle-player, ruffle-object, ruffle-embed';
+// Khung game: phần tử plugin / canvas / iframe lớn nhất đang hiện (Flash: embed / object).
+const GAME = 'embed, object, canvas, iframe';
 function gameRect() {
   let best = null, area = 0;
   for (const el of [].concat(...allRoots().map(r => Array.from(r.querySelectorAll(GAME))))) {

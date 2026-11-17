@@ -1,6 +1,6 @@
 # Wisp — Kế hoạch
 
-App macOS mở **webgame Flash online** (Bang Bang 4VN – cf4vn.bar, Bang Bang CMN) bằng **Flash Player thật**: Electron 11.5.0 x64 + Pepper Flash 32.0.0.465, có chế độ dự phòng Ruffle. Cách cài và dùng: xem `README.md`.
+App macOS mở **webgame Flash online** (Bang Bang 4VN – cf4vn.bar, Bang Bang CMN) bằng **Flash Player thật**: Electron 11.5.0 x64 + Pepper Flash 32.0.0.465. Cách cài và dùng: xem `README.md`.
 
 Trạng thái: ✅ xong · 🔄 đang làm · ⬜ chưa làm
 
@@ -11,7 +11,6 @@ Trạng thái: ✅ xong · 🔄 đang làm · ⬜ chưa làm
 | Flash thật | `ppapi-flash-path` / `ppapi-flash-version`, `plugins: true` | `flash/plugin.js` – `findFlashPlugin`, `readFlashVersion`; `flash/mode.js` |
 | Kill switch Flash 32 | Ghi `mms.cfg` (allowlist) vào `userData/Pepper Data/Shockwave Flash/System/` mỗi lần mở | `flash/mms-cfg.js`, `flash/allowlist.js`; domain: `DEFAULT_ALLOW` (`config.js`) + `config.json` |
 | Giao diện | `BrowserWindow` (toolbar) + `BrowserView` (trang) | `toolbar.html`, `toolbar-preload.js` |
-| Dự phòng Ruffle | Giao thức `ruffle://`, gỡ CSP, preload chèn Ruffle | `page-preload.js`, `player.html` |
 | Bảng kiểm tra | Mạng / Socket TCP / Console / Flash, thử kết nối, NetLog, báo cáo JSON | `inspect.html`, `inspect-preload.js`, `inspect/` |
 | Chạy thử dev | `WISP_USER_DATA` (dữ liệu riêng), `WISP_INSPECT=1` (mở sẵn bảng) | `user-data.js`, `main.js` |
 
@@ -77,4 +76,3 @@ Chia thành từng bước: xem [`docs/plan/README.md`](docs/plan/README.md).
 - Flash Player 32 Admin Guide (`mms.cfg`, allowlist): https://open-flash.github.io/mirrors/flash-player-admin-32.pdf
 - GitHub API – latest release: https://docs.github.com/rest/releases/releases#get-the-latest-release
 - NetLog viewer: https://netlog-viewer.appspot.com
-- Ruffle: https://ruffle.rs

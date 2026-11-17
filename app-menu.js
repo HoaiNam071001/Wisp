@@ -7,7 +7,7 @@ const keyremap = require('./keyremap-main');
 const page = require('./page-actions');
 const flash = require('./flash/actions');
 const { openSettings: openFlashSettings } = require('./flash/settings-window');
-const { MODE, FLASH_PATH, FLASH_VERSION, wantedMode } = require('./flash/mode');
+const { FLASH_PATH, FLASH_VERSION } = require('./flash/mode');
 const { loadConfig, saveConfig } = require('./config');
 const { QUALITIES, normalizeQuality } = require('./flash/quality');
 const { applyAppNap } = require('./perf');
@@ -68,12 +68,9 @@ function flashSubmenu() {
     { label: 'Cài đặt Flash…', click: openFlashSettings },
     { label: 'Kiểm tra Flash Player', click: flash.checkFlash },
     { type: 'separator' },
-    { label: 'Chế độ: Flash Player thật', type: 'radio', checked: wantedMode === 'flash', enabled: !!FLASH_PATH || wantedMode === 'flash', click: () => flash.setMode('flash') },
-    { label: 'Chế độ: Ruffle (dự phòng)', type: 'radio', checked: wantedMode === 'ruffle', click: () => flash.setMode('ruffle') },
-    { type: 'separator' },
     { label: 'Chất lượng vẽ Flash (cho tab mới)', submenu: qualitySubmenu() },
     { type: 'separator' },
-    { label: 'Cho phép Flash trên trang này', accelerator: 'Shift+CmdOrCtrl+A', enabled: MODE === 'flash', click: flash.allowCurrentSite },
+    { label: 'Cho phép Flash trên trang này', accelerator: 'Shift+CmdOrCtrl+A', enabled: !!FLASH_PATH, click: flash.allowCurrentSite },
   ];
 }
 
@@ -92,7 +89,7 @@ function optionsSubmenu() {
 
 function aboutWin() {
   dialog.showMessageBox(tabs.getWin(), { type: 'info', message: `Wisp ${app.getVersion()}`,
-    detail: `Electron ${process.versions.electron} · Chromium ${process.versions.chrome} · ${process.arch}\nFlash: ${FLASH_VERSION || 'chưa cài'} (${MODE})` });
+    detail: `Electron ${process.versions.electron} · Chromium ${process.versions.chrome} · ${process.arch}\nFlash: ${FLASH_VERSION || 'chưa cài'}` });
 }
 
 function fileSubmenu() {

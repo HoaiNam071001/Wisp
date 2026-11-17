@@ -615,7 +615,6 @@ async function loadInfo() {
   b.appendChild(el('h3', '', 'Flash Player'));
   const kv = el('div', 'kv');
   const rows = {
-    'Chế độ': i.mode === 'flash' ? 'Flash Player thật (Pepper Flash)' : 'Ruffle (giả lập)' + (i.wantedMode === 'flash' ? ' — không tìm thấy plugin' : ''),
     'navigator.plugins': i.plugin || '(không thấy Shockwave Flash)',
     'Plugin': i.flashPath || '(chưa có)', 'Version': i.flashVersion || '-',
     'Electron / Chromium': `${i.electron} / ${i.chrome} (${i.arch})`,

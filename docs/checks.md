@@ -38,7 +38,6 @@ Chạy `npm run dev` (dữ liệu `.dev-data/`), thử như bản 2.3.0:
 - [ ] "Cho phép Flash trên trang này".
 - [x] Cmd+Q → mở lại: khôi phục đúng 2 tab + tab đang xem; menu hệ thống hiện đủ (Claude thử).
 - [ ] Chụp màn hình tab (Shift+Cmd+S).
-- [ ] Chế độ Ruffle: đổi sang Ruffle, mở lại app, mở file .swf (Cmd+O).
 - [ ] Windows (`npm run dist:win`): cài plugin từ bộ cài .exe, socket / ping trong Bảng kiểm tra.
 - ⬜ **Đổi phím (bước 09):** menu ⋮ → Đổi phím… → Thêm: nhấn phím game cần (vd S), rồi phím thay (vd B). Vào game Flash bấm B phải ra S (giữ / nhả đúng, không lọt thêm chữ b); ô chat trong game gõ B ra S; thanh địa chỉ vẫn gõ B bình thường; tắt công tắc trả như cũ; thử trong iframe khác nguồn và Windows.
 - ⬜ **Vòng tiến độ (bước 10):** khi bấm Cập nhật Wisp / Cài Flash Player, góc phải thanh công cụ hiện vòng tròn chạy % (tải), quay khi giải nén / kiểm tra; biến mất khi xong hoặc lỗi; Dock / taskbar cũng có thanh tiến độ.
@@ -47,8 +46,9 @@ Chạy `npm run dev` (dữ liệu `.dev-data/`), thử như bản 2.3.0:
 - [ ] 04: bấm / gõ trong iframe khác site ở tab web bằng cổng Ghosthand (đã bỏ `disable-site-isolation-trials`)
 - [ ] 04: bản đóng gói `npm run dist` (macOS) mở cf4vn.bar ở engine Flash (dev đã thử 2026-11-17); Windows chưa thử
 - [ ] 04: chạy lệnh thử engine Flash (docs/plan/04) với plugin thật, cửa sổ hiện game cf4vn.bar và vào được game
-- [ ] 04 (2026-11-17): mở cf4vn.bar → chuột phải → "Flash cho <domain>" → chọn Flash thật → cửa sổ engine Flash mở game; chọn Tắt → tab tải lại bình thường
-- [ ] 04 (2026-11-17): ⋮ → "Thêm tuỳ chọn Flash…" (hoặc menu Flash → "Cài đặt Flash…") mở cửa sổ Cài đặt Flash: thêm domain, đổi Flash thật / Ruffle, xoá, ghi log allowlist, nút cài / thay plugin, mở thư mục plugin / mms.cfg hoạt động; tối (dark) đọc được
+- [ ] 04 (2026-11-17): mở cf4vn.bar → chuột phải → bấm "Chạy bằng Flash" (có dấu ✓) → cửa sổ engine Flash mở game; bấm lại để bỏ ✓ → tab tải lại như web thường
+- [ ] 04 (2026-11-17): ⋮ → "Thêm tuỳ chọn Flash…" (hoặc menu Flash → "Cài đặt Flash…") mở cửa sổ Cài đặt Flash: thêm domain, xoá, ghi log allowlist, nút cài / thay plugin, mở thư mục plugin / mms.cfg hoạt động; tối (dark) đọc được
+- [ ] 04 (2026-11-17): bỏ Ruffle: app mở bình thường; menu ⋮ phần Flash không còn nút Flash thật / Ruffle; menu hệ thống Flash không còn "Chế độ…"; Cài đặt Flash chỉ còn domain + Xoá; config.json cũ có engine ruffle vẫn mở được (thành Flash thật); mở file .swf (Cmd+O) báo / chạy bằng Flash thật không lỗi; chưa có plugin → chấm cam trên ⋮ và app hỏi cài.
 - [ ] 04 (2026-11-17): cửa sổ engine Flash có thanh trên cùng (chỉ còn nút tải lại; đã bỏ Ruffle / Tắt Flash khỏi thanh): trên trang chờ Flash bấm "Mở như web thường" → cửa sổ Flash đóng (nếu đang mở), tab tải lại như web thường và domain biến mất khỏi Cài đặt Flash; Ghosthand vẫn lấy đúng vùng game (frameRect trừ thanh)
 - [ ] 04 (2026-11-17): mở trang đã bật Flash (vd cf4vn.bar) → tab hiện trang chờ màu tím–cam có nút "Mở game Flash" (thanh địa chỉ vẫn hiện địa chỉ thật); bấm nút → cửa sổ Flash mở; đóng tab → cửa sổ Flash đóng; đóng cửa sổ Flash → tab KHÔNG đóng (vẫn ở trang chờ, bấm lại mở được); thoát app → cửa sổ Flash đóng; khởi động lại app khôi phục tab Flash về đúng trang chờ
-- [ ] 04 (2026-11-17): chuột phải trong tab: trên link (mở tab mới / sao chép), ảnh, chữ chọn (sao chép / tìm Google), ô nhập (cắt / dán…), trống (quay lại / tiến / tải lại, "Flash cho <domain>" Tắt / Flash thật / Ruffle, kiểm tra phần tử, Bảng kiểm tra) đều chạy đúng
+- [ ] 04 (2026-11-17): chuột phải trong tab: trên link (mở tab mới / sao chép), ảnh, chữ chọn (sao chép / tìm Google), ô nhập (cắt / dán…), trống (quay lại / tiến / tải lại, "Chạy bằng Flash" (bật / tắt, có dấu ✓ khi đang bật), kiểm tra phần tử, Bảng kiểm tra) đều chạy đúng

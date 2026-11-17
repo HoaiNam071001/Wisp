@@ -1,4 +1,4 @@
-// Menu chọn Tắt / Flash thật / Ruffle cho trang (domain gốc) đang xem.
+// Bật / tắt Flash cho trang (domain gốc) đang xem.
 const tabs = require('../tabs');
 const { flashSites, saveFlashSites } = require('../config');
 const { FLASH_PATH } = require('./mode');
@@ -17,21 +17,21 @@ function apply(host, engine) {
   writeMmsCfg();
   const w = tabs.wc();
   if (!w) return;
-  // Qua tabs.load: Flash thật → trang chờ Flash; Tắt / Ruffle → tải lại để preload chèn (hoặc thôi chèn) Ruffle
+  // Qua tabs.load: Flash thật → trang chờ Flash; Tắt → tải lại như web thường
   tabs.load(w, displayUrl(w.getURL()));
   tabs.sendState();
 }
 
-// Mục menu chọn engine Flash cho host (menu chuột phải)
-function menuItems(host) {
-  const cur = choiceFor(host);
-  const radio = (label, engine, extra) => ({ label, type: 'radio', checked: cur === engine, click: () => apply(host, engine), ...extra });
-  return [
-    radio('Tắt', 'off'),
-    radio('Flash thật (cửa sổ riêng)', 'flash', FLASH_PATH ? {} : { enabled: false }),
-    radio('Ruffle (giả lập, game online cần socket không chạy)', 'ruffle'),
-    ...(FLASH_PATH ? [] : [{ type: 'separator' }, { label: 'Cài Flash Player…', click: askForFlashPlugin }]),
-  ];
+// Mục menu chuột phải: bật / tắt Flash cho host (một mục đánh dấu, không cần menu con)
+function menuItem(host) {
+  const on = choiceFor(host) === 'flash';
+  return {
+    label: 'Chạy bằng Flash', type: 'checkbox', checked: on,
+    click: () => {
+      if (!on && !FLASH_PATH) { askForFlashPlugin(); return; }
+      apply(host, on ? 'off' : 'flash');
+    },
+  };
 }
 
-module.exports = { menuItems, apply };
+module.exports = { menuItem, apply };

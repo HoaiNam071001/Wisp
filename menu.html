@@ -78,12 +78,6 @@
   .seg button + button { border-left: 1px solid var(--border); }
 
   /* chế độ Flash */
-  .modes { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; padding: 4px; margin: 2px 8px 4px; background: var(--surface); border-radius: 9px; }
-  .modes button { height: 28px; border-radius: 6px; color: var(--muted); font-weight: 600; font-size: 12px; }
-  .modes button:hover:not(.on):not(:disabled) { color: var(--text); background: var(--hover); }
-  .modes button.on.flash { background: rgba(63,185,80,.2); color: #7ee29a; }
-  .modes button.on.ruffle { background: rgba(227,160,8,.2); color: #f0c050; }
-  .modes button:disabled { opacity: .4; cursor: default; }
 
   /* công tắc */
   .opt { width: 100%; display: flex; align-items: center; gap: 10px; padding: 5px 8px; border-radius: 7px; text-align: left; }
@@ -136,10 +130,6 @@
   <div class="sep"></div>
   <div class="sec">Flash Player<span class="tag" id="flash-tag"></span></div>
   <button class="item install" data-do="plugin" id="install"><span class="ic c-brand"><svg viewBox="0 0 24 24"><path d="M12 3v12M7 10l5 5 5-5"/><path d="M4 17v3h16v-3"/></svg></span><span class="lb" id="install-lb">Cài Flash Player…</span><span class="pill" id="install-pill"></span></button>
-  <div class="modes">
-    <button class="flash" data-do="modeFlash" id="m-flash">Flash thật</button>
-    <button class="ruffle" data-do="modeRuffle" id="m-ruffle">Ruffle</button>
-  </div>
   <button class="item" data-do="allowSite" id="allow"><span class="ic c-green"><svg viewBox="0 0 24 24"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/><path d="M8.5 12l2.5 2.5 4.5-5"/></svg></span><span class="lb">Cho phép Flash trên trang này</span><span class="kb">⇧⌘A</span></button>
   <button class="item" data-do="checkFlash"><span class="ic c-green"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16.5v.5"/></svg></span><span class="lb">Kiểm tra Flash Player</span></button>
   <button class="item" data-do="flashMore"><span class="ic c-gray"><svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/></svg></span><span class="lb">Thêm tuỳ chọn Flash…</span></button>
@@ -193,12 +183,9 @@
     }
 
     const tag = $('flash-tag');
-    if (s.mode === 'flash') { tag.textContent = 'Flash ' + (s.version || ''); tag.style.cssText = 'background:rgba(63,185,80,.18);color:#7ee29a'; }
-    else { tag.textContent = s.wantedMode === 'flash' ? 'Ruffle (thiếu plugin)' : 'Ruffle'; tag.style.cssText = 'background:rgba(227,160,8,.18);color:#f0c050'; }
-    $('m-flash').classList.toggle('on', s.wantedMode === 'flash');
-    $('m-ruffle').classList.toggle('on', s.wantedMode === 'ruffle');
-    $('m-flash').disabled = !s.hasPlugin && s.wantedMode !== 'flash';
-    $('allow').disabled = s.mode !== 'flash' || !s.hasTab;
+    if (s.hasPlugin) { tag.textContent = 'Flash ' + (s.version || ''); tag.style.cssText = 'background:rgba(63,185,80,.18);color:#7ee29a'; }
+    else { tag.textContent = 'Chưa cài'; tag.style.cssText = 'background:rgba(227,160,8,.18);color:#f0c050'; }
+    $('allow').disabled = !s.hasPlugin || !s.hasTab;
     // chưa có plugin → mục cài Flash nổi bật; có rồi → mục thường "Cài lại / thay"
     $('install').classList.toggle('need', !s.hasPlugin);
     $('install-lb').textContent = s.hasPlugin ? 'Cài lại / thay Flash Player…' : 'Tải và cài Flash Player';

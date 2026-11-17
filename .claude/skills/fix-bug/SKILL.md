@@ -13,7 +13,7 @@ Thấy lỗi sâu hơn → đường thường dưới đây.
 
 ## 1. Hiểu đúng lỗi
 
-- Ghi: làm gì → mong gì → thấy gì; engine web hay Flash; Flash hay Ruffle; macOS / Windows; bản cài hay dev; trang nào (URL).
+- Ghi: làm gì → mong gì → thấy gì; engine web hay Flash; macOS / Windows; bản cài hay dev; trang nào (URL).
 - Thiếu thông tin quyết định hướng sửa → hỏi một lần (gom câu hỏi); còn lại tự tra.
 - Nguồn tra: **Bảng kiểm tra** (`WISP_INSPECT=1`: Mạng / Socket TCP / Console / Flash, NetLog, báo cáo JSON), console DevTools của tab, log terminal khi chạy dev, `config.json` + `Pepper Data/Shockwave Flash/System/mms.cfg` trong `userData`.
 
