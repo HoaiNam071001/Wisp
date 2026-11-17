@@ -1,5 +1,4 @@
-// Nút Flash trên thanh công cụ: chọn Tắt / Flash thật / Ruffle cho trang (domain gốc) đang xem.
-const { Menu } = require('electron');
+// Menu chọn Tắt / Flash thật / Ruffle cho trang (domain gốc) đang xem.
 const tabs = require('../tabs');
 const flashRouter = require('../flash-engine/router');
 const { flashSites, saveFlashSites } = require('../config');
@@ -7,13 +6,7 @@ const { FLASH_PATH } = require('./mode');
 const { writeMmsCfg } = require('./mms-cfg');
 const { askForFlashPlugin } = require('./install');
 const { siteFor, setSite } = require('./site-config');
-const { baseDomain } = require('./allowlist');
 const { displayUrl } = require('../app-urls');
-
-function currentHost() {
-  const w = tabs.wc();
-  try { return w ? new URL(displayUrl(w.getURL())).hostname : ''; } catch { return ''; }
-}
 
 function choiceFor(host) {
   const s = siteFor(flashSites(), host);
@@ -30,7 +23,7 @@ function apply(host, engine) {
   tabs.sendState();
 }
 
-// Mục menu chọn engine Flash cho host (dùng cho nút tia chớp và menu chuột phải)
+// Mục menu chọn engine Flash cho host (menu chuột phải)
 function menuItems(host) {
   const cur = choiceFor(host);
   const radio = (label, engine, extra) => ({ label, type: 'radio', checked: cur === engine, click: () => apply(host, engine), ...extra });
@@ -40,14 +33,6 @@ function menuItems(host) {
     radio('Ruffle (giả lập, game online cần socket không chạy)', 'ruffle'),
     ...(FLASH_PATH ? [] : [{ type: 'separator' }, { label: 'Cài Flash Player…', click: askForFlashPlugin }]),
   ];
-}
-
-function popup(x, y) {
-  const host = currentHost();
-  const win = tabs.getWin();
-  if (!host || !win) return;
-  Menu.buildFromTemplate([{ label: 'Flash cho ' + baseDomain(host), enabled: false }, ...menuItems(host)])
-    .popup({ window: win, x: Math.round(x), y: Math.round(y) });
 }
 
 // Chọn từ thanh của cửa sổ engine Flash: đổi cấu hình, đóng cửa sổ Flash, mở lại trang ở cửa sổ chính
@@ -60,4 +45,4 @@ function applyFromEngine(url, engine) {
   tabs.openNextToActive(url);
 }
 
-module.exports = { applyFromEngine, menuItems, popup, choiceFor, currentHost };
+module.exports = { applyFromEngine, menuItems };

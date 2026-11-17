@@ -15,8 +15,6 @@ contextBridge.exposeInMainWorld('nav', {
   onToast: (cb) => ipcRenderer.on('toast', (_e, t) => cb(t)),
   onMenuClosed: (cb) => ipcRenderer.on('menu-closed', () => cb()),
   history: () => ipcRenderer.send('nav', 'history'),
-  flashMenu: (x, y) => ipcRenderer.send('flash-menu', x, y),
-  flash: () => ipcRenderer.send('nav', 'flash'),
   update: () => ipcRenderer.send('nav', 'update'),
   onTasks: (cb) => ipcRenderer.on('tasks', (_e, s) => cb(s)),
   onUpdate: (cb) => ipcRenderer.on('update', (_e, s) => cb(s)),

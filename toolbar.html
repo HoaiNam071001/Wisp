@@ -52,7 +52,6 @@
   .nb { width: 32px; height: 32px; border-radius: 8px; display: grid; place-items: center; color: #c9cbcf; transition: background .12s; }
   .nb:hover:not(:disabled) { background: var(--surface); color: #fff; }
   .nb:active:not(:disabled) { background: var(--hover); }
-  #flashbtn.on { color: var(--green); }
   .nb:disabled { opacity: .3; cursor: default; }
   #reload.stop { color: var(--red); }
   #home:hover { color: var(--amber) !important; }
@@ -143,7 +142,6 @@
       <span class="sec" id="sec"></span>
       <input id="url" spellcheck="false" placeholder="Nhập địa chỉ trang web hoặc file .swf rồi Enter">
     </form>
-    <button class="nb" id="flashbtn" title="Flash cho trang này"><svg class="i" viewBox="0 0 24 24"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></svg></button>
     <button id="perf" title="Hiệu năng — bấm để xem chi tiết">
       <span class="dot" id="pf-dot"></span><span id="pf-ping">—</span><span class="sep1"></span><span class="cpu" id="pf-cpu">CPU —</span>
     </button>
@@ -184,7 +182,6 @@
     $('more').classList.add('open');
     nav.menu(r.right + 6, r.bottom + 2);
   };
-  $('flashbtn').onclick = () => { const r = $('flashbtn').getBoundingClientRect(); nav.flashMenu(r.left, r.bottom + 4); };
   nav.onMenuClosed(() => $('more').classList.remove('open'));
   $('perf').onclick = () => nav.inspect('perf');
   // vòng tiến độ: sum = { count, label, fraction } hoặc null
@@ -327,8 +324,6 @@
     $('reload').innerHTML = s.loading ? ICON.stop : ICON.reload;
     $('reload').classList.toggle('stop', s.loading);
     $('reload').title = s.loading ? 'Dừng tải' : 'Tải lại (Cmd+R)';
-    $('flashbtn').classList.toggle('on', s.siteFlash !== 'off');
-    $('flashbtn').title = 'Flash cho trang này: ' + ({ off: 'tắt', flash: 'Flash thật', ruffle: 'Ruffle' }[s.siteFlash] || 'tắt');
     flashDot = s.mode !== 'flash' && s.wantedFlash; refreshDot();
   });
   // ---- chip Ghosthand: hiện khi có kết nối, bấm để ngắt ----

@@ -5,14 +5,10 @@ const tabs = require('./tabs');
 const { openHistory } = require('./history');
 const { saveConfig, homeUrl } = require('./config');
 const { normalizeUrl } = require('./app-urls');
-const { MODE } = require('./flash/mode');
-const { checkFlash } = require('./flash/actions');
-const { askForFlashPlugin } = require('./flash/install');
 const { openInspector } = require('./inspect/window');
 const { showMainMenu } = require('./menu-popup');
 const ghosthand = require('./ghosthand/server');
 const tasks = require('./progress-tasks');
-const siteMenu = require('./flash/site-menu');
 
 // Vòng tiến độ ở thanh công cụ + thanh tiến độ trên Dock / taskbar (fraction null = chưa biết → quay, 2 = không xác định)
 tasks.events.on('changed', (sum) => {
@@ -36,9 +32,7 @@ ipcMain.on('nav', (_e, action, arg) => {
   else if (action === 'inspect') { openInspector(); }
   else if (action === 'history') { openHistory(); }
   else if (action === 'update') { updater.promptUpdate(true); }
-  else if (action === 'flash') { if (MODE !== 'flash') askForFlashPlugin(); else checkFlash(); }
 });
-ipcMain.on('flash-menu', (e, x, y) => { if (fromToolbar(e)) siteMenu.popup(x, y); });
 ipcMain.on('menu', (e, x, y) => { if (fromToolbar(e)) showMainMenu(x, y); });
 ipcMain.on('ghosthand-disconnect', (e) => { if (fromToolbar(e)) ghosthand.disconnect(); });
 ipcMain.on('open-inspector', (e, tab) => { if (fromToolbar(e)) openInspector(tab); });

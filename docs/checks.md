@@ -47,7 +47,7 @@ Chạy `npm run dev` (dữ liệu `.dev-data/`), thử như bản 2.3.0:
 - [ ] 04: bấm / gõ trong iframe khác site ở tab web bằng cổng Ghosthand (đã bỏ `disable-site-isolation-trials`)
 - [ ] 04: bản đóng gói `npm run dist` (macOS) mở cf4vn.bar ở engine Flash (dev đã thử 2026-11-17); Windows chưa thử
 - [ ] 04: chạy lệnh thử engine Flash (docs/plan/04) với plugin thật, cửa sổ hiện game cf4vn.bar và vào được game
-- [ ] 04 (2026-11-17): mở cf4vn.bar → bấm nút tia chớp cạnh ô địa chỉ → chọn Flash thật → cửa sổ engine Flash mở game; chọn Tắt → tab tải lại bình thường
+- [ ] 04 (2026-11-17): mở cf4vn.bar → chuột phải → "Flash cho <domain>" → chọn Flash thật → cửa sổ engine Flash mở game; chọn Tắt → tab tải lại bình thường
 - [ ] 04 (2026-11-17): ⋮ → "Thêm tuỳ chọn Flash…" (hoặc menu Flash → "Cài đặt Flash…") mở cửa sổ Cài đặt Flash: thêm domain, đổi Flash thật / Ruffle, xoá, ghi log allowlist, nút cài / thay plugin, mở thư mục plugin / mms.cfg hoạt động; tối (dark) đọc được
 - [ ] 04 (2026-11-17): cửa sổ engine Flash có thanh trên cùng (tải lại, Dùng Ruffle, Tắt Flash): bấm "Tắt Flash" → cửa sổ Flash đóng, trang mở như web thường ở cửa sổ chính và domain biến mất khỏi Cài đặt Flash; Ghosthand vẫn lấy đúng vùng game (frameRect trừ thanh)
 - [ ] 04 (2026-11-17): mở trang đã bật Flash (vd cf4vn.bar) → tab hiện trang chờ màu tím–cam có nút "Mở game Flash" (thanh địa chỉ vẫn hiện địa chỉ thật); bấm nút → cửa sổ Flash mở; đóng tab → cửa sổ Flash đóng; đóng cửa sổ Flash → tab đóng; thoát app → cửa sổ Flash đóng; khởi động lại app khôi phục tab Flash về đúng trang chờ

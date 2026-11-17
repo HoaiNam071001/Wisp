@@ -27,3 +27,4 @@ Chỉ thêm dòng bằng `>>`: `- **YYYY-MM-DD** – <việc>. <kết quả ki�
 - **2026-11-17** – Bước 04: cửa sổ engine Flash có thanh công cụ (tải lại / Ruffle / Tắt Flash), game chuyển sang BrowserView
 - **2026-11-17** – Bước 04: tab trang Flash hiện trang chờ có nút mở game; tab ↔ cửa sổ Flash đóng theo nhau
 - **2026-11-17** – Menu chuột phải trong tab (page-menu.js) gồm chuyển Flash theo trang
+- **2026-11-17** – Bỏ nút Flash trên thanh địa chỉ (đổi Flash qua chuột phải / Cài đặt Flash)
