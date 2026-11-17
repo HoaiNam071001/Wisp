@@ -12,7 +12,7 @@ Phụ thuộc: 04
 - ✅ **Chặn `file://`** (2026-11-17: `nav-policy.js` + test; trang http(s) / data / blob không dẫn / `window.open` sang `file:` được; trang nội bộ file: giữ nguyên; gõ ở thanh địa chỉ không bị chặn).
 - ✅ **In trang** (menu Tệp → "In trang…" Cmd/Ctrl+P, `webContents.print()`; chưa thử tay).
 - ⬜ **PDF viewer:** mở file .pdf / link PDF xem được trong tab (kiểm tra Electron mới có viewer sẵn không).
-- ⬜ **Tìm trong trang** (Cmd/Ctrl+F): cần thanh tìm nhỏ (UI) + `findInPage`.
+- ✅ **Tìm trong trang** (2026-11-17: `find-window.js` + `find.html` – cửa sổ con nhỏ góc trên phải, `findInPage`, Enter / ⇧Enter, Esc; đóng khi đổi tab; menu Trang → "Tìm trong trang…" Cmd/Ctrl+F. Chưa thử tay).
 - ⬜ **Zoom nhớ theo trang:** hiện zoom theo tab; nhớ theo domain trong config.
 - ⬜ **Đăng nhập Google:** thử trực tiếp trên bản mới. Google báo "Trình duyệt này hoặc ứng dụng có thể không an toàn" → không cố vượt: nút **Đăng nhập bằng trình duyệt hệ thống** (mở `shell.openExternal`), ghi chú cho người dùng.
 - ⬜ **Bộ trang thử** (`test/sites.json` + script chạy Wisp mở lần lượt, chụp ảnh, ghi lỗi console / trạng thái): google.com, accounts.google.com, youtube.com, facebook.com, github.com, một trang Cloudflare, một trang có reCAPTCHA, cf4vn.bar (đã bật Flash → phải mở bằng engine flash). Chạy trước mỗi bản phát hành.

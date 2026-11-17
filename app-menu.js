@@ -5,6 +5,7 @@ const tabs = require('./tabs');
 const history = require('./history');
 const keyremap = require('./keyremap-main');
 const page = require('./page-actions');
+const { openFindBar } = require('./find-window');
 const flash = require('./flash/actions');
 const { openSettings: openFlashSettings } = require('./flash/settings-window');
 const { FLASH_PATH, FLASH_VERSION } = require('./flash/mode');
@@ -116,6 +117,7 @@ function pageSubmenu() {
   const w = () => tabs.wc();
   return [
     { label: 'Mở địa chỉ…', accelerator: 'CmdOrCtrl+L', click: tabs.focusUrlBar },
+    { label: 'Tìm trong trang…', accelerator: 'CmdOrCtrl+F', click: openFindBar },
     { label: 'Quay lại', accelerator: IS_MAC ? 'Cmd+[' : 'Alt+Left', click: () => w() && w().navigationHistory.canGoBack() && w().navigationHistory.goBack() },
     { label: 'Tiến tới', accelerator: IS_MAC ? 'Cmd+]' : 'Alt+Right', click: () => w() && w().navigationHistory.canGoForward() && w().navigationHistory.goForward() },
     { label: 'Tải lại', accelerator: 'CmdOrCtrl+R', click: () => w() && w().reload() },

@@ -60,3 +60,4 @@ Chạy `npm run dev` (dữ liệu `.dev-data/`), thử như bản 2.3.0:
 - [ ] 05: tải một file thật từ trang web → vòng tròn tiến độ, toast, file nằm trong Downloads
 - 05 Session: menu 'Xoá cookie và dữ liệu trang…' (browsing-data.js) – thử tay: đăng nhập 1 trang, xoá cookie, tải lại phải mất đăng nhập; 'Chỉ cache' giữ đăng nhập.
 - 05 Khác: (1) từ trang web http(s) bấm link / window.open tới file:///… phải bị chặn; (2) Cmd/Ctrl+P hiện hộp in.
+- 05 Tìm trong trang: Cmd/Ctrl+F hiện thanh tìm; gõ → tô kết quả + đếm n/m; Enter / ⇧Enter đi tiếp / lùi; Esc đóng; đổi tab thì thanh đóng; kéo / đổi cỡ cửa sổ thanh đi theo.

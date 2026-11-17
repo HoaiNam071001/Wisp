@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<title>Tìm trong trang</title>
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'unsafe-inline'; script-src 'unsafe-inline'">
+<style>
+  :root {
+    --card: #ffffff; --surface: #f1f2f4; --hover: #e6e8eb; --border: #d5d8dd;
+    --text: #1f2328; --muted: #6a7078; --blue: #2f6fe4; --red: #d1362f;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --card: #25272c; --surface: #2f3137; --hover: #363940; --border: #3b3e46; --text: #e8e9eb; --muted: #9da0a8; --blue: #4c8dff; --red: #f85149; }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: transparent; }
+  body { padding: 4px 6px 8px; font: 13px system-ui, -apple-system, sans-serif; color: var(--text); user-select: none; overflow: hidden; }
+  .bar { display: flex; align-items: center; gap: 4px; background: var(--card); border: 1px solid var(--border); border-radius: 10px;
+         padding: 5px 6px; box-shadow: 0 8px 22px rgba(0,0,0,.3); }
+  input { flex: 1; min-width: 0; height: 30px; border: 1px solid var(--border); border-radius: 7px; padding: 0 9px;
+          background: var(--surface); color: var(--text); font: inherit; user-select: text; }
+  input:focus { outline: 2px solid var(--blue); outline-offset: -1px; }
+  input.none { color: var(--red); }
+  #count { min-width: 44px; text-align: right; color: var(--muted); font-size: 12px; }
+  button { width: 28px; height: 28px; border: 0; border-radius: 7px; background: none; color: var(--text); cursor: pointer; display: grid; place-items: center; }
+  button:hover { background: var(--hover); }
+  button:focus-visible { outline: 2px solid var(--blue); }
+  svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+</style>
+</head>
+<body>
+<div class="bar">
+  <input id="q" type="text" placeholder="Tìm trong trang" spellcheck="false" autocomplete="off">
+  <span id="count"></span>
+  <button id="prev" title="Kết quả trước (⇧Enter)"><svg viewBox="0 0 24 24"><path d="M6 15l6-6 6 6"/></svg></button>
+  <button id="next" title="Kết quả sau (Enter)"><svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></button>
+  <button id="close" title="Đóng (Esc)"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+</div>
+<script>
+  const q = document.getElementById('q'), count = document.getElementById('count');
+  let sent = '';
+  function search(forward, next) { sent = q.value; window.wfind.query(q.value, forward, next); }
+  q.addEventListener('input', () => search(true, false));
+  q.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') window.wfind.close();
+    else if (e.key === 'Enter') search(!e.shiftKey, q.value === sent);
+  });
+  document.getElementById('next').onclick = () => { search(true, q.value === sent); q.focus(); };
+  document.getElementById('prev').onclick = () => { search(false, q.value === sent); q.focus(); };
+  document.getElementById('close').onclick = () => window.wfind.close();
+  window.wfind.onResult((r) => {
+    count.textContent = q.value ? (r.total ? r.active + '/' + r.total : 'Không có') : '';
+    q.classList.toggle('none', !!q.value && !r.total);
+  });
+  window.wfind.onFocus(() => { q.focus(); q.select(); });
+  q.focus();
+</script>
+</body>
+</html>
