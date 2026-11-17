@@ -1,7 +1,7 @@
 // Các thao tác trong menu Flash: đổi chế độ, allowlist, kiểm tra Flash, khởi động lại.
-const { app, dialog, shell } = require('electron');
+const { app, dialog } = require('electron');
 const tabs = require('../tabs');
-const { configPath, saveConfig, allowDomains, flashSites, saveFlashSites } = require('../config');
+const { saveConfig, allowDomains, flashSites, saveFlashSites } = require('../config');
 const { MODE, FLASH_PATH, FLASH_VERSION, wantedMode } = require('./mode');
 const { mmsCfgPath, writeMmsCfg } = require('./mms-cfg');
 const { baseDomain } = require('./allowlist');
@@ -46,16 +46,6 @@ async function allowCurrentSite() {
   askRelaunch('Đã cho phép Flash trên: ' + added.join(', '));
 }
 
-async function editAllowList() {
-  // Mở config.json để sửa tay "flashSites"
-  saveFlashSites(flashSites());
-  await shell.openPath(configPath());
-  dialog.showMessageBox(tabs.getWin(), {
-    message: 'Sửa mục "flashSites" trong config.json rồi lưu, sau đó mở lại app.',
-    detail: 'Mỗi mục {"domain": "cmn.vn", "engine": "flash" | "ruffle"} (tự gồm cả các subdomain).',
-  });
-}
-
 // navigator.plugins của tab đang xem ('' nếu không có Flash / không đọc được)
 async function pluginInfo(w) {
   if (!w) return '';
@@ -84,4 +74,4 @@ async function checkFlash() {
   });
 }
 
-module.exports = { relaunch, askRelaunch, setMode, allowCurrentSite, editAllowList, pluginInfo, checkFlash };
+module.exports = { relaunch, askRelaunch, setMode, allowCurrentSite, pluginInfo, checkFlash };

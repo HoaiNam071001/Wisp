@@ -105,6 +105,8 @@
       "keyremap-main.js",
       "keys.html",
       "keys-preload.js",
+      "flash-settings.html",
+      "flash-settings-preload.js",
       "menu.html",
       "menu-preload.js",
       "updater.js",

@@ -1,12 +1,13 @@
 // Menu ⋮: bảng xổ xuống tự vẽ (menu.html trong cửa sổ con không viền).
 // Menu hệ thống của macOS không tô màu / đặt công tắc được, nên dùng cửa sổ HTML riêng.
 // Cửa sổ được tạo sẵn một lần rồi chỉ ẩn / hiện: tạo cửa sổ mới mỗi lần bấm mất vài giây.
-const { BrowserWindow, Menu, ipcMain } = require('electron');
+const { BrowserWindow, ipcMain } = require('electron');
 const path = require('path');
 const updater = require('./updater');
 const tabs = require('./tabs');
 const history = require('./history');
 const keyremap = require('./keyremap-main');
+const flashSettings = require('./flash/settings-window');
 const page = require('./page-actions');
 const flash = require('./flash/actions');
 const { askForFlashPlugin } = require('./flash/install');
@@ -83,16 +84,8 @@ function menuState() {
   };
 }
 
-// Các tuỳ chọn Flash ít dùng: menu hệ thống ngay chỗ menu ⋮ vừa đóng
-function popupFlashMore(bounds) {
-  const win = tabs.getWin();
-  if (!win) return;
-  const cb = win.getContentBounds();
-  Menu.buildFromTemplate(appMenu.flashSubmenu()).popup({ window: win, x: bounds ? bounds.x - cb.x + 12 : 0, y: bounds ? bounds.y - cb.y + 12 : tabs.TOOLBAR_HEIGHT });
-}
-
 // Thao tác đóng menu rồi mới chạy
-function menuActions(arg, bounds) {
+function menuActions(arg) {
   const w = tabs.wc();
   return {
     newTab: tabs.newTab, reopen: tabs.reopenClosedTab, mute: () => tabs.activeTab() && tabs.toggleMute(tabs.getActiveId()),
@@ -103,7 +96,7 @@ function menuActions(arg, bounds) {
     hardReload: page.hardReload, clearCache: page.clearCacheReload,
     checkFlash: flash.checkFlash, allowSite: flash.allowCurrentSite, plugin: askForFlashPlugin,
     modeFlash: () => flash.setMode('flash'), modeRuffle: () => flash.setMode('ruffle'),
-    flashMore: () => popupFlashMore(bounds),
+    flashMore: flashSettings.openSettings,
     openSwf: page.openSwfFile,
     keys: keyremap.openKeysWindow,
     update: appMenu.checkUpdate,
@@ -136,9 +129,8 @@ ipcMain.handle('menu:do', (e, action, arg) => {
   };
   if (stay[action]) { stay[action](); return menuState(); }
 
-  const bounds = menuOpen() ? menuWin.getBounds() : null;
   closeMenuPopup();
-  const run = menuActions(arg, bounds)[action];
+  const run = menuActions(arg)[action];
   if (run) setTimeout(run, 0);
   return null;
 });

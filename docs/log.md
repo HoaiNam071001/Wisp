@@ -23,3 +23,4 @@ Chỉ thêm dòng bằng `>>`: `- **YYYY-MM-DD** – <việc>. <kết quả ki�
 2026-11-16 hiệu năng: cờ GPU/không hãm nền (main.js), tuỳ chọn chất lượng vẽ Flash (flash/quality*.js), chờ thử tay
 - **2026-11-16** – Phát hành 2.4.2 (hiệu năng: cờ GPU, không hãm tiến trình nền, tuỳ chọn chất lượng vẽ Flash): dmg + mac.zip + win-setup.exe kèm sha256.
 - **2026-11-17** – Bước 04: vỏ app lên Electron 45.3.3, engine Flash (Electron 11, gói `electron-flash`) chọn tự động theo flashSites, đóng gói mac x64 thử được; google 20/20 qua cổng Ghosthand
+- **2026-11-17** – Bước 04: cửa sổ Cài đặt → Flash (danh sách trang, plugin, mms.cfg, log); gọn menu Flash cũ

@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<title>Cài đặt Flash</title>
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'unsafe-inline'; script-src 'unsafe-inline'">
+<style>
+  :root {
+    --bg: #f6f6f7; --card: #fff; --hover: #eef0f3; --border: #dcdee3; --text: #1d1e21; --muted: #5f636b;
+    --brand: #ff6a3d; --brand-text: #fff; --red: #d92d20; --ok: #1a7f37;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #1b1c1f; --card: #232428; --hover: #2c2e33; --border: #33363c; --text: #e8e9eb; --muted: #9da0a8; --red: #f85149; --ok: #3fb950; }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; padding: 20px; background: var(--bg); color: var(--text); font: 14px system-ui, -apple-system, sans-serif; }
+  h1 { margin: 0 0 4px; font-size: 18px; }
+  h2 { margin: 0 0 8px; font-size: 14px; }
+  p.sub { margin: 0 0 16px; color: var(--muted); font-size: 13px; line-height: 1.45; }
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 12px; margin-bottom: 14px; }
+  button, select, input[type=text] { font: inherit; color: var(--text); border: 1px solid var(--border); background: var(--card); border-radius: 8px; padding: 6px 10px; }
+  button { cursor: pointer; }
+  button:hover { background: var(--hover); }
+  button.primary { background: var(--brand); border-color: var(--brand); color: var(--brand-text); }
+  .row { display: flex; align-items: center; gap: 10px; padding: 8px 4px; border-bottom: 1px solid var(--border); }
+  .row:last-child { border-bottom: 0; }
+  .row .gap { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+  .add { display: flex; gap: 8px; margin-top: 10px; }
+  .add input { flex: 1; min-width: 0; }
+  .empty, .muted { color: var(--muted); font-size: 13px; }
+  .btns { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+  .ok { color: var(--ok); } .bad { color: var(--red); }
+  label.sw { display: flex; align-items: center; gap: 10px; cursor: pointer; }
+  #msg { min-height: 18px; font-size: 13px; color: var(--red); margin-top: 6px; }
+</style>
+</head>
+<body>
+  <h1>Cài đặt Flash</h1>
+  <p class="sub">Trang trong danh sách tự mở bằng engine Flash (gồm cả subdomain); các trang khác mở bình thường. Thay đổi có hiệu lực khi mở lại trang đó.</p>
+
+  <div class="card">
+    <h2>Trang dùng Flash</h2>
+    <div id="list"></div>
+    <div class="add">
+      <input type="text" id="domain" placeholder="vd. cf4vn.bar" spellcheck="false">
+      <button class="primary" id="add">Thêm</button>
+    </div>
+    <div id="msg"></div>
+    <p class="muted" style="margin:6px 0 0">Ruffle: giả lập Flash, game online cần socket không chạy.</p>
+  </div>
+
+  <div class="card">
+    <h2>Flash Player</h2>
+    <div id="plugin"></div>
+    <div class="btns">
+      <button id="install">Cài / thay Flash Player…</button>
+      <button id="choose">Chọn file đã tải…</button>
+      <button id="pluginDir">Mở thư mục plugin</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <label class="sw"><input type="checkbox" id="debug"> <span>Ghi log allowlist (gỡ lỗi)</span></label>
+    <div class="btns"><button id="mms">Mở thư mục mms.cfg</button></div>
+  </div>
+
+<script>
+  const $ = (id) => document.getElementById(id);
+  const msg = (t) => { $('msg').textContent = t || ''; };
+
+  function render(s) {
+    if (!s) return;
+    const list = $('list');
+    list.textContent = '';
+    if (!s.sites.length) {
+      const d = document.createElement('div'); d.className = 'empty';
+      d.textContent = 'Chưa có trang nào. Thêm domain bên dưới, hoặc bấm biểu tượng tia chớp cạnh thanh địa chỉ.';
+      list.append(d);
+    }
+    for (const site of s.sites) {
+      const row = document.createElement('div'); row.className = 'row';
+      const name = document.createElement('span'); name.className = 'gap'; name.textContent = site.domain;
+      const sel = document.createElement('select');
+      for (const [v, t] of [['flash', 'Flash thật'], ['ruffle', 'Ruffle']]) {
+        const o = document.createElement('option'); o.value = v; o.textContent = t; sel.append(o);
+      }
+      sel.value = site.engine;
+      sel.onchange = async () => render(await window.wfs.set(site.domain, sel.value));
+      const del = document.createElement('button'); del.textContent = 'Xoá';
+      del.onclick = async () => render(await window.wfs.set(site.domain, 'off'));
+      row.append(name, sel, del);
+      list.append(row);
+    }
+    const p = $('plugin');
+    p.textContent = s.plugin.path ? 'Đã cài' + (s.plugin.version ? ' – phiên bản ' + s.plugin.version : '') : 'Chưa có Flash Player – trang Flash thật tạm chạy bằng Ruffle.';
+    p.className = s.plugin.path ? 'ok' : 'bad';
+    $('debug').checked = s.debug;
+  }
+
+  $('add').onclick = async () => {
+    const v = $('domain').value.trim().replace(/^https?:\/\//i, '').replace(/[\/:?#].*$/, '');
+    if (!/^[a-z0-9-]+(\.[a-z0-9-]+)+$/i.test(v)) { msg('Domain không hợp lệ – nhập dạng example.com.'); return; }
+    msg(''); $('domain').value = '';
+    render(await window.wfs.set(v, 'flash'));
+  };
+  $('domain').addEventListener('keydown', (e) => { if (e.key === 'Enter') $('add').click(); });
+  for (const a of ['install', 'choose', 'pluginDir', 'mms']) $(a).onclick = async () => render(await window.wfs.do(a));
+  $('debug').onchange = async () => render(await window.wfs.debug($('debug').checked));
+  window.wfs.get().then(render);
+</script>
+</body>
+</html>

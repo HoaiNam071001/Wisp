@@ -1,17 +1,13 @@
 // Menu hệ thống của app (thanh menu macOS / Alt trên Windows) + phím tắt; tuỳ chọn chung với menu ⋮.
-const { app, Menu, dialog, shell } = require('electron');
-const path = require('path');
-const fs = require('fs');
+const { app, Menu, dialog } = require('electron');
 const updater = require('./updater');
 const tabs = require('./tabs');
 const history = require('./history');
 const keyremap = require('./keyremap-main');
 const page = require('./page-actions');
 const flash = require('./flash/actions');
-const { askForFlashPlugin, choosePluginFile } = require('./flash/install');
+const { openSettings: openFlashSettings } = require('./flash/settings-window');
 const { MODE, FLASH_PATH, FLASH_VERSION, wantedMode } = require('./flash/mode');
-const { userPluginPath } = require('./flash/plugin');
-const { mmsCfgPath, writeMmsCfg } = require('./flash/mms-cfg');
 const { loadConfig, saveConfig } = require('./config');
 const { QUALITIES, normalizeQuality } = require('./flash/quality');
 const { applyAppNap } = require('./perf');
@@ -68,12 +64,9 @@ function qualitySubmenu() {
 }
 
 function flashSubmenu() {
-  const cfg = loadConfig();
   return [
+    { label: 'Cài đặt Flash…', click: openFlashSettings },
     { label: 'Kiểm tra Flash Player', click: flash.checkFlash },
-    { label: FLASH_PATH ? 'Cài lại / thay Flash Player…' : 'Cài Flash Player…', click: askForFlashPlugin },
-    { label: 'Chọn file Flash Player đã tải…', click: choosePluginFile },
-    { label: 'Mở thư mục plugin', click: () => { const d = path.dirname(userPluginPath()); fs.mkdirSync(d, { recursive: true }); shell.openPath(d); } },
     { type: 'separator' },
     { label: 'Chế độ: Flash Player thật', type: 'radio', checked: wantedMode === 'flash', enabled: !!FLASH_PATH || wantedMode === 'flash', click: () => flash.setMode('flash') },
     { label: 'Chế độ: Ruffle (dự phòng)', type: 'radio', checked: wantedMode === 'ruffle', click: () => flash.setMode('ruffle') },
@@ -81,9 +74,6 @@ function flashSubmenu() {
     { label: 'Chất lượng vẽ Flash (cho tab mới)', submenu: qualitySubmenu() },
     { type: 'separator' },
     { label: 'Cho phép Flash trên trang này', accelerator: 'Shift+CmdOrCtrl+A', enabled: MODE === 'flash', click: flash.allowCurrentSite },
-    { label: 'Sửa danh sách domain cho phép…', click: flash.editAllowList },
-    { label: 'Ghi log allowlist (gỡ lỗi)', type: 'checkbox', checked: !!cfg.flashDebug, click: (item) => { saveConfig({ flashDebug: item.checked }); writeMmsCfg(); flash.askRelaunch(item.checked ? 'Đã bật log allowlist.' : 'Đã tắt log allowlist.'); } },
-    { label: 'Mở thư mục mms.cfg', click: () => shell.showItemInFolder(mmsCfgPath()) },
   ];
 }
 
@@ -185,4 +175,4 @@ function buildMenu() {
   ]));
 }
 
-module.exports = { OPTION_KEYS, scheduleMenu, buildMenu, setOption, flashSubmenu, checkUpdate };
+module.exports = { OPTION_KEYS, scheduleMenu, buildMenu, setOption, checkUpdate };
