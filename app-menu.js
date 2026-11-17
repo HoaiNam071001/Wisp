@@ -100,6 +100,7 @@ function fileSubmenu() {
     { label: 'Đóng tab', accelerator: 'CmdOrCtrl+W', click: () => tabs.activeTab() && tabs.closeTab(tabs.getActiveId()) },
     { label: 'Mở lại tab vừa đóng', accelerator: 'Shift+CmdOrCtrl+T', click: tabs.reopenClosedTab },
     { type: 'separator' },
+    { label: 'In trang…', accelerator: 'CmdOrCtrl+P', click: page.printPage },
     { label: 'Chụp màn hình tab', accelerator: 'Shift+CmdOrCtrl+S', click: page.screenshotTab },
     ...(IS_MAC ? [] : [
       { type: 'separator' },

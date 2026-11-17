@@ -12,6 +12,7 @@ const { HISTORY_URL, LAUNCHER_URL, displayUrl, isHistoryUrl, normalizeUrl, launc
 const { addLog } = require('./inspect/store');
 const flashRouter = require('./flash-engine/router');
 const { popupFor } = require('./popup-policy');
+const { blockedNavigation } = require('./nav-policy');
 
 const TOOLBAR_HEIGHT = 80; // thanh tab (36) + thanh địa chỉ (44)
 const CLOSED_MAX = 25;
@@ -230,6 +231,7 @@ function wireTab(t) {
 
   // Popup (window.open / target=_blank / Cmd+bấm link) → mở tab mới ngay bên phải
   w.setWindowOpenHandler(({ url, disposition, features }) => {
+    if (blockedNavigation(w.getURL(), url)) return { action: 'deny' };
     const pop = popupFor({ url, disposition, features });
     if (pop.popup) return { action: 'allow', overrideBrowserWindowOptions: {
       width: pop.width, height: pop.height, autoHideMenuBar: true,
@@ -245,6 +247,9 @@ function wireTab(t) {
   ['did-navigate-in-page', 'did-start-loading', 'did-stop-loading'].forEach(ev => w.on(ev, () => { if (isActive()) sendState(); sendTabs(); }));
   // Bấm link / chuyển hướng sang trang Flash thật → trang chờ Flash trong tab này
   const toFlash = (e, url) => { if (/^https?:/i.test(url) && flashRouter.wantsFlash(url)) { e.preventDefault(); loadInTab(t, url); } };
+  const noFile = (e, url) => { if (blockedNavigation(w.getURL(), url)) e.preventDefault(); };
+  w.on('will-navigate', noFile);
+  w.on('will-redirect', noFile);
   w.on('will-navigate', toFlash);
   w.on('will-redirect', toFlash);
   w.on('did-navigate', (_e, url) => {

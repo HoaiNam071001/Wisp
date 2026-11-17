@@ -18,6 +18,7 @@ async function clearCacheReload() {
   hardReload();
   tabs.toast('Đã xoá cache, đang tải lại');
 }
+function printPage() { const w = tabs.wc(); if (w) w.print(); }
 function setHomeHere() {
   const w = tabs.wc();
   if (!w) return;
@@ -48,4 +49,4 @@ async function openSwfFile() {
   if (!r.canceled && r.filePaths[0]) tabs.openNextToActive(normalizeUrl(r.filePaths[0]));
 }
 
-module.exports = { zoomBy, zoomPercent, toggleFullScreen, hardReload, clearCacheReload, setHomeHere, openShotsDir, screenshotTab, openSwfFile };
+module.exports = { zoomBy, zoomPercent, toggleFullScreen, hardReload, clearCacheReload, printPage, setHomeHere, openShotsDir, screenshotTab, openSwfFile };

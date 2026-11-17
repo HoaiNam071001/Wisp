@@ -9,6 +9,10 @@ Phụ thuộc: 04
 - 🔄 **Quyền** (2026-11-17: `permission-policy.js` + test, `permissions.js` – hộp hỏi Cho phép / Chặn, nhớ theo domain ở `config.sitePermissions`; quyền an toàn (toàn màn hình, clipboard ghi…) tự cho, quyền lạ từ chối. Còn: thử tay hộp hỏi, màn hình xoá / sửa quyền đã nhớ): `setPermissionRequestHandler` hỏi người dùng (camera, mic, thông báo, vị trí, clipboard), nhớ theo domain; trang chưa hỏi thì từ chối.
 - ⬜ **Session:** `persist:web` lưu cookie / localStorage / cache lâu dài; engine flash dùng dữ liệu riêng (Chromium 87 không đọc được cookie bản mới). Menu xoá dữ liệu duyệt web.
 - 🔄 **Tải file** (2026-11-17: `downloads.js` + `download-name.js` + test – lưu vào Downloads không đè file có sẵn, tiến độ ở vòng tròn toolbar, toast khi xong; thử tải 5000 byte OK. Chọn: không hỏi chỗ lưu (mặc định Downloads). Còn: mục menu "Mở thư mục Tải về"): `will-download` → hỏi chỗ lưu / mặc định Downloads, tiến độ trên toolbar, mở thư mục.
-- ⬜ **Khác:** PDF viewer, in, zoom theo trang, tìm trong trang (Cmd/Ctrl+F), chặn mở `file://` từ trang web.
+- ✅ **Chặn `file://`** (2026-11-17: `nav-policy.js` + test; trang http(s) / data / blob không dẫn / `window.open` sang `file:` được; trang nội bộ file: giữ nguyên; gõ ở thanh địa chỉ không bị chặn).
+- ✅ **In trang** (menu Tệp → "In trang…" Cmd/Ctrl+P, `webContents.print()`; chưa thử tay).
+- ⬜ **PDF viewer:** mở file .pdf / link PDF xem được trong tab (kiểm tra Electron mới có viewer sẵn không).
+- ⬜ **Tìm trong trang** (Cmd/Ctrl+F): cần thanh tìm nhỏ (UI) + `findInPage`.
+- ⬜ **Zoom nhớ theo trang:** hiện zoom theo tab; nhớ theo domain trong config.
 - ⬜ **Đăng nhập Google:** thử trực tiếp trên bản mới. Google báo "Trình duyệt này hoặc ứng dụng có thể không an toàn" → không cố vượt: nút **Đăng nhập bằng trình duyệt hệ thống** (mở `shell.openExternal`), ghi chú cho người dùng.
 - ⬜ **Bộ trang thử** (`test/sites.json` + script chạy Wisp mở lần lượt, chụp ảnh, ghi lỗi console / trạng thái): google.com, accounts.google.com, youtube.com, facebook.com, github.com, một trang Cloudflare, một trang có reCAPTCHA, cf4vn.bar (đã bật Flash → phải mở bằng engine flash). Chạy trước mỗi bản phát hành.

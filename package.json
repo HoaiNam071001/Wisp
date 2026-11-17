@@ -83,6 +83,7 @@
       "app-urls.js",
       "util.js",
       "ua.js",
+      "nav-policy.js",
       "popup-policy.js",
       "permission-policy.js",
       "permissions.js",

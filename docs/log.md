@@ -37,3 +37,4 @@ Chỉ thêm dòng bằng `>>`: `- **YYYY-MM-DD** – <việc>. <kết quả ki�
 2026-11-17 04: screenshot fullPage, chip Cần Flash (.swf), thử arm64
 2026-11-17 05: UA Chrome, popup giữ opener, quyền theo domain, tải file
 - **2026-11-17** – Bước 05 Session: giữ session mặc định, thêm menu ⋮ "Xoá cookie và dữ liệu trang…" (browsing-data.js). check + test OK; chưa thử tay.
+- **2026-11-17** – Bước 05: chặn file:// từ trang web (nav-policy.js), In trang Cmd/Ctrl+P; tách PDF / tìm trong trang / zoom theo trang thành việc ⬜. check + test OK; chưa thử tay.
