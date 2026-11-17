@@ -4,7 +4,16 @@ const tabs = require('../tabs');
 const { fail } = require('./protocol');
 
 // tab: id (số / chuỗi số), URL hoặc tiêu đề chứa (không phân biệt hoa thường); trống = tab đang xem.
-function resolveTab(arg) {
+// flashOk: lệnh vòng đời (mở / đóng / tải lại / frameRect) chạy được trên tab đang có game Flash; lệnh DOM thì không.
+function resolveTab(arg, { flashOk = false } = {}) {
+  const t = findTab(arg);
+  if (!flashOk && require('../flash/launcher').isFlashTab(t.id)) {
+    fail('flash_page', 'tab đang mở game ở cửa sổ engine Flash – chỉ frameRect + ảnh / chữ (OCR), không có DOM');
+  }
+  return t;
+}
+
+function findTab(arg) {
   const all = tabs.list().filter(t => !t.view.webContents.isDestroyed());
   if (arg === undefined || arg === '') {
     const t = tabs.activeTab();
@@ -36,4 +45,11 @@ function screenRect(t, rect) {
   return r;
 }
 
-module.exports = { resolveTab, screenRect };
+// Khung engine Flash ({x, y, width, height}, điểm DIP) → cùng dạng screenRect của tab web.
+function flashScreenRect(r) {
+  const out = { x: r.x, y: r.y, w: r.width, h: r.height };
+  out.scale = screen.getDisplayMatching({ x: r.x, y: r.y, width: Math.max(1, r.width), height: Math.max(1, r.height) }).scaleFactor;
+  return out;
+}
+
+module.exports = { resolveTab, screenRect, flashScreenRect };

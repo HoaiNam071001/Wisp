@@ -8,6 +8,9 @@ const siteMenu = require('./site-menu');
 
 let ownerId = null; // tab đã bấm mở game (engine chỉ có một cửa sổ)
 
+// Tab đang có game mở ở cửa sổ engine Flash (Ghosthand: lệnh DOM trên tab này → flash_page, chỉ frameRect)
+const isFlashTab = (id) => ownerId !== null && id === ownerId;
+
 ipcMain.handle('flash:launch', (e) => {
   let url = '';
   try { url = e.sender.getURL(); } catch { return; }
@@ -37,3 +40,5 @@ tabs.events.on('tab-closed', (t) => {
 
 // Cửa sổ Flash đóng → chỉ đóng chính nó; tab chủ ở lại (trang chờ vẫn bấm "Mở game" lại được)
 flashRouter.events.on('closed', () => { ownerId = null; });
+
+module.exports = { isFlashTab };

@@ -1,6 +1,8 @@
 // Lệnh nhóm đọc: find, outline, read, pageText, screenshot.
 const { fail } = require('../protocol');
-const { resolveTab, screenRect } = require('../target');
+const { resolveTab, screenRect, flashScreenRect } = require('../target');
+const flashRouter = require('../../flash-engine/router');
+const launcher = require('../../flash/launcher');
 const { callPage } = require('../page-call');
 
 const pick = (a, keys) => { const o = {}; for (const k of keys) if (a[k] !== undefined) o[k] = a[k]; return o; };
@@ -25,9 +27,10 @@ module.exports = {
     const t = resolveTab(a.tab);
     return callPage(t.view.webContents, 'pageText', pick(a, ['maxChars']));
   },
-  // Khung game trên màn hình (Ghosthand OCR / bấm chuột thật đúng vùng). Bước 04: trang Flash ở engine riêng → đổi cách lấy.
+  // Khung game trên màn hình (Ghosthand OCR / bấm chuột thật đúng vùng). Game Flash: hỏi engine Flash (không có DOM).
   async frameRect(a) {
-    const t = resolveTab(a.tab);
+    const t = resolveTab(a.tab, { flashOk: true });
+    if (launcher.isFlashTab(t.id)) return { tag: 'flash', rect: null, screenRect: flashScreenRect(await flashRouter.frameRect()) };
     const r = await callPage(t.view.webContents, 'gameRect', {});
     return { tag: r.tag, rect: r.rect, screenRect: screenRect(t, r.rect) };
   },

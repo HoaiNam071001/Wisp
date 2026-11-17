@@ -33,3 +33,4 @@ Chỉ thêm dòng bằng `>>`: `- **YYYY-MM-DD** – <việc>. <kết quả ki�
 - **2026-11-17** – Chốt bỏ việc Ruffle trong engine Flash (docs/decisions.md, bước 04). Chỉ sửa tài liệu.
 - **2026-11-17** – Bỏ hẳn Ruffle: xoá flash/ruffle.js, ruffle://, @ruffle-rs/ruffle, v1-ruffle/, chế độ Flash / Ruffle (MODE / wantedMode) và lựa chọn Ruffle ở menu / Cài đặt; engine chỉ còn web | flash; config cũ engine ruffle → flash. npm run check + npm test OK; chưa thử tay.
 - **2026-11-17** – Menu chuột phải gọn: "Flash cho <domain>" + menu con → một mục đánh dấu "Chạy bằng Flash". check + test OK; chưa thử tay.
+2026-11-17 04: Ghosthand nối engine Flash (tabs engine, frameRect, flash_page)

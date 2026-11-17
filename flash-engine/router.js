@@ -50,8 +50,14 @@ async function open(url) {
   }
 }
 
+// Khung game trên màn hình ({x, y, width, height}) – engine trừ thanh công cụ. Chưa mở cửa sổ → no_tab.
+function frameRect() {
+  if (!client || !client.running) return Promise.reject(Object.assign(new Error('chưa mở cửa sổ engine Flash'), { code: 'no_tab' }));
+  return client.request('frameRect').then((r) => r.screenRect);
+}
+
 function close() { return client && client.running ? client.request('close').catch(() => {}) : Promise.resolve(); }
 
 function stop() { stopping = true; return client ? client.stop() : Promise.resolve(); }
 
-module.exports = { events, wantsFlash, open, close, stop };
+module.exports = { events, wantsFlash, open, frameRect, close, stop };

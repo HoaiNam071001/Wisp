@@ -9,12 +9,13 @@ const { sleep } = require('../input');
 // "google.com" → https://google.com; file / .swf / trang nội bộ thì từ chối (webUrlOnly).
 const urlOf = u => webUrlOnly(normalizeUrl(u) || u);
 // loadURL bị huỷ giữa chừng (ERR_ABORTED khi trang tự chuyển) cũng reject – kết quả tải xem bằng waitLoad
+const FLASH_OK = { flashOk: true };
 const load = (w, u) => tabs.load(w, u);
 
 function tabEntry(t) {
   const w = t.view.webContents;
-  // engine "flash" có từ bước 04 (trang cấu hình Flash mở bằng engine Flash riêng); giờ mọi tab cùng một engine
-  return { id: t.id, url: w.getURL(), title: t.title || w.getTitle(), active: t.id === tabs.getActiveId(), engine: 'web', loading: w.isLoading() };
+  const engine = require('../../flash/launcher').isFlashTab(t.id) ? 'flash' : 'web';
+  return { id: t.id, url: w.getURL(), title: t.title || w.getTitle(), active: t.id === tabs.getActiveId(), engine, loading: w.isLoading() };
 }
 
 // Chờ tab hết tải: until = load (hết vòng quay) | idle (thêm DOM đứng yên 500ms).
@@ -51,29 +52,29 @@ module.exports = {
   open({ url, newTab, tab }) {
     const u = urlOf(url);
     if (newTab) return { tab: tabs.createTab(u).id };
-    const t = resolveTab(tab);
+    const t = resolveTab(tab, FLASH_OK);
     load(t.view.webContents, u);
     return { tab: t.id };
   },
   navigate({ url, tab }) {
-    const t = resolveTab(tab);
+    const t = resolveTab(tab, FLASH_OK);
     load(t.view.webContents, urlOf(url));
     return { tab: t.id };
   },
   back({ tab }) {
-    const t = resolveTab(tab), w = t.view.webContents;
+    const t = resolveTab(tab, FLASH_OK), w = t.view.webContents;
     if (!w.navigationHistory.canGoBack()) fail('bad_args', 'tab không có trang trước');
     w.navigationHistory.goBack();
     return { tab: t.id };
   },
   forward({ tab }) {
-    const t = resolveTab(tab), w = t.view.webContents;
+    const t = resolveTab(tab, FLASH_OK), w = t.view.webContents;
     if (!w.navigationHistory.canGoForward()) fail('bad_args', 'tab không có trang sau');
     w.navigationHistory.goForward();
     return { tab: t.id };
   },
-  reload({ tab }) { const t = resolveTab(tab); t.view.webContents.reload(); return { tab: t.id }; },
-  close({ tab }) { const t = resolveTab(tab); tabs.closeTab(t.id); return { tab: t.id }; },
-  activate({ tab }) { const t = resolveTab(tab); tabs.activateTab(t.id); return { tab: t.id }; },
-  waitLoad({ tab, until, timeoutMs }) { return waitLoad(resolveTab(tab), until, timeoutMs); },
+  reload({ tab }) { const t = resolveTab(tab, FLASH_OK); t.view.webContents.reload(); return { tab: t.id }; },
+  close({ tab }) { const t = resolveTab(tab, FLASH_OK); tabs.closeTab(t.id); return { tab: t.id }; },
+  activate({ tab }) { const t = resolveTab(tab, FLASH_OK); tabs.activateTab(t.id); return { tab: t.id }; },
+  waitLoad({ tab, until, timeoutMs }) { return waitLoad(resolveTab(tab, FLASH_OK), until, timeoutMs); },
 };
