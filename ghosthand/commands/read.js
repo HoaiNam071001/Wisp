@@ -3,6 +3,7 @@ const { fail } = require('../protocol');
 const { resolveTab, screenRect, flashScreenRect } = require('../target');
 const flashRouter = require('../../flash-engine/router');
 const launcher = require('../../flash/launcher');
+const { captureFullPage } = require('../fullpage');
 const { callPage } = require('../page-call');
 
 const pick = (a, keys) => { const o = {}; for (const k of keys) if (a[k] !== undefined) o[k] = a[k]; return o; };
@@ -36,8 +37,11 @@ module.exports = {
   },
   // PNG base64 phần đang thấy của trang, hoặc khung một phần tử (ref / selector).
   async screenshot(a) {
-    if (a.fullPage) fail('bad_args', 'fullPage chưa hỗ trợ – chụp phần đang thấy hoặc một phần tử');
     const t = resolveTab(a.tab), w = t.view.webContents;
+    if (a.fullPage) {
+      if (a.ref || a.sels) fail('bad_args', 'fullPage không đi cùng ref / selector');
+      return captureFullPage(w);
+    }
     let area;
     if (a.ref || a.sels) {
       const { rect } = await callPage(w, 'rect', targetArgs(a));

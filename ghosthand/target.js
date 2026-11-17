@@ -8,7 +8,7 @@ const { fail } = require('./protocol');
 function resolveTab(arg, { flashOk = false } = {}) {
   const t = findTab(arg);
   if (!flashOk && require('../flash/launcher').isFlashTab(t.id)) {
-    fail('flash_page', 'tab đang mở game ở cửa sổ engine Flash – chỉ frameRect + ảnh / chữ (OCR), không có DOM');
+    fail('flash_page', 'tab này là trang Flash (game ở cửa sổ engine Flash riêng) – chỉ frameRect + ảnh / chữ (OCR), không có DOM');
   }
   return t;
 }

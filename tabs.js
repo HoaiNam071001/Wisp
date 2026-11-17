@@ -44,6 +44,7 @@ function sendState() {
     loading: w.isLoading(),
     version: FLASH_VERSION,
     hasPlugin: !!FLASH_PATH,
+    swfHint: !!(activeTab() && activeTab().swfHint), // trang có .swf mà chưa bật Flash
   });
 }
 
@@ -219,6 +220,7 @@ function tabMenu(id) {
 }
 
 function wireTab(t) {
+  t.view.webContents.on('did-start-navigation', (d) => { if (d.isMainFrame && !d.isSameDocument) t.swfHint = false; }); // gợi ý .swf theo từng trang
   const w = t.view.webContents;
   const isActive = () => activeId === t.id;
 

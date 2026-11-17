@@ -58,5 +58,5 @@ Làm trên Electron 11 hiện tại (tab thường) để chốt API sớm; lên
 - ✅ Thêm cho Ghosthand (bước 02, 2026-11-15, vẫn `api: 1` – chỉ thêm): `find` `scope` / `brief` / `covered` / `hidden`, `focused`, `type` không đích, sự kiện `dialog closed`.
 
 **Còn lại**
-- ⬜ `screenshot fullPage` (Electron 11 `capturePage` chỉ chụp phần đang thấy; cuộn rồi ghép thì trang thấy cuộn) → làm ở bước 04 bằng API của Electron mới.
+- ✅ `screenshot fullPage` (2026-11-17: `ghosthand/fullpage.js` – CDP `Page.captureScreenshot` + `captureBeyondViewport` qua `webContents.debugger`, không cuộn trang; trần 16000 px mỗi cạnh, `truncated: true` khi cắt; không đi cùng `ref` / `selector`. Thử trên vi.wikipedia: 1280×16000).
 - ✅ Chạy `scripts/ghosthand-client.js 20 google` sau khi vỏ app lên Electron 45: 20/20 ok (2026-11-17); wiki 20/20.

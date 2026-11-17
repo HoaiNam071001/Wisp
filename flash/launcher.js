@@ -8,8 +8,13 @@ const siteMenu = require('./site-menu');
 
 let ownerId = null; // tab đã bấm mở game (engine chỉ có một cửa sổ)
 
-// Tab đang có game mở ở cửa sổ engine Flash (Ghosthand: lệnh DOM trên tab này → flash_page, chỉ frameRect)
-const isFlashTab = (id) => ownerId !== null && id === ownerId;
+// Tab của trang Flash: đã mở game ở cửa sổ engine Flash, hoặc đang ở trang chờ (không có agent / DOM).
+// Ghosthand: lệnh DOM trên tab này → flash_page, chỉ frameRect.
+function isFlashTab(id) {
+  if (ownerId !== null && id === ownerId) return true;
+  const t = tabs.list().find((x) => x.id === id);
+  try { return !!t && isLauncherUrl(t.view.webContents.getURL()); } catch { return false; }
+}
 
 ipcMain.handle('flash:launch', (e) => {
   let url = '';

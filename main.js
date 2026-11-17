@@ -21,6 +21,7 @@ const { FLASH_PATH } = require('./flash/mode');
 const flashRouter = require('./flash-engine/router');
 const siteMenu = require('./flash/site-menu');
 require('./flash/launcher');
+require('./flash/swf-hint');
 require('./page-menu');
 
 const updater = require('./updater');

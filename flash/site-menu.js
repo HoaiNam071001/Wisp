@@ -22,16 +22,21 @@ function apply(host, engine) {
   tabs.sendState();
 }
 
+// Bật Flash cho host (không có plugin → hỏi cài trước)
+function enable(host) {
+  if (!FLASH_PATH) { askForFlashPlugin(); return; }
+  apply(host, 'flash');
+}
+
 // Mục menu chuột phải: bật / tắt Flash cho host (một mục đánh dấu, không cần menu con)
 function menuItem(host) {
   const on = choiceFor(host) === 'flash';
   return {
     label: 'Chạy bằng Flash', type: 'checkbox', checked: on,
     click: () => {
-      if (!on && !FLASH_PATH) { askForFlashPlugin(); return; }
-      apply(host, on ? 'off' : 'flash');
+      if (on) apply(host, 'off'); else enable(host);
     },
   };
 }
 
-module.exports = { menuItem, apply };
+module.exports = { menuItem, apply, enable };

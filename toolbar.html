@@ -98,6 +98,10 @@
   #more { margin-left: 2px; position: relative; }
   #more.dot::after { content: ''; position: absolute; top: 6px; right: 6px; width: 7px; height: 7px; border-radius: 50%;
                      background: var(--brand); box-shadow: 0 0 0 2px var(--bar); }
+  #swf { display: none; height: 28px; align-items: center; padding: 0 11px; margin-left: 4px; border-radius: 14px; border: 1px solid var(--amber);
+         color: var(--amber); font-size: 12px; font-weight: 650; white-space: nowrap; }
+  #swf.show { display: flex; }
+  #swf:hover { background: var(--amber); color: #1a1a1a; }
   #upd { display: none; height: 28px; align-items: center; gap: 6px; padding: 0 11px; margin-left: 4px; border-radius: 14px;
          background: var(--brand); color: #fff; font-size: 12px; font-weight: 650; white-space: nowrap; }
   #upd.show { display: flex; }
@@ -131,6 +135,7 @@
     </form>
     <button id="gh" title="Ghosthand đang điều khiển Wisp – bấm để ngắt"><span class="dot"></span><svg class="i x" viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg>Ghosthand</button>
     <button id="task" title=""><svg viewBox="0 0 28 28"><circle class="trk" cx="14" cy="14" r="11"/><circle class="arc" cx="14" cy="14" r="11"/></svg><span id="task-pct"></span><span id="task-n"></span></button>
+    <button id="swf" title="Trang này có nội dung Flash chưa chạy — bấm để bật Flash cho trang">Cần Flash – Bật</button>
     <button id="upd" title="Có bản Wisp mới — bấm để xem và cập nhật"><svg class="i" viewBox="0 0 24 24"><path d="M12 3v12M7 10l5 5 5-5"/><path d="M4 17v3h16v-3"/></svg><span id="upd-t">Cập nhật</span></button>
     <button class="nb" id="more" title="Menu: lịch sử, chụp màn hình, hiệu năng, Flash, tuỳ chọn…">
       <svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="5" r="1.2"/><circle cx="12" cy="12" r="1.2"/><circle cx="12" cy="19" r="1.2"/></svg>
@@ -181,6 +186,7 @@
     t.title = sum.label + (known ? ` – ${Math.round(sum.fraction * 100)}%` : '…') + (sum.count > 1 ? ` (+${sum.count - 1} việc nữa)` : '');
   });
   $('upd').onclick = () => nav.update();
+  $('swf').onclick = () => nav.enableFlash();
   nav.onUpdate((u) => {
     const on = !!(u && u.available && !u.busy);
     $('upd').classList.toggle('show', on);
@@ -286,6 +292,7 @@
     $('reload').innerHTML = s.loading ? ICON.stop : ICON.reload;
     $('reload').classList.toggle('stop', s.loading);
     $('reload').title = s.loading ? 'Dừng tải' : 'Tải lại (Cmd+R)';
+    $('swf').classList.toggle('show', !!s.swfHint);
     flashDot = !s.hasPlugin; refreshDot();
   });
   // ---- chip Ghosthand: hiện khi có kết nối, bấm để ngắt ----

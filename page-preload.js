@@ -15,6 +15,9 @@ const isHistoryPage = !!HISTORY_URL && process.isMainFrame && location.href.spli
 const crossToParent = () => { try { return !window.parent.document; } catch (e) { return true; } };
 if (!isHistoryPage && !isLauncherPage && (process.isMainFrame || crossToParent())) require('./ghosthand/agent').install(!process.isMainFrame);
 
+// Trang có .swf nhúng mà chưa bật Flash → báo vỏ app hiện gợi ý ở thanh địa chỉ (chỉ gửi IPC, không đổi trang)
+if (process.isMainFrame && !isHistoryPage && !isLauncherPage) require('./flash/swf-detect').install(() => ipcRenderer.send('flash:swf'));
+
 const argQuality = process.argv.find(a => a.startsWith('--flash-quality='));
 if (argQuality && !isHistoryPage) require('./flash/quality-patch').install(argQuality.slice('--flash-quality='.length));
 
