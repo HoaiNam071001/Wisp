@@ -1,6 +1,5 @@
 // Menu chọn Tắt / Flash thật / Ruffle cho trang (domain gốc) đang xem.
 const tabs = require('../tabs');
-const flashRouter = require('../flash-engine/router');
 const { flashSites, saveFlashSites } = require('../config');
 const { FLASH_PATH } = require('./mode');
 const { writeMmsCfg } = require('./mms-cfg');
@@ -35,14 +34,4 @@ function menuItems(host) {
   ];
 }
 
-// Chọn từ thanh của cửa sổ engine Flash: đổi cấu hình, đóng cửa sổ Flash, mở lại trang ở cửa sổ chính
-function applyFromEngine(url, engine) {
-  let host = '';
-  try { host = new URL(url).hostname; } catch { return; }
-  saveFlashSites(setSite(flashSites(), host, engine));
-  writeMmsCfg();
-  flashRouter.close();
-  tabs.openNextToActive(url);
-}
-
-module.exports = { applyFromEngine, menuItems };
+module.exports = { menuItems, apply };

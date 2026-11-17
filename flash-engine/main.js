@@ -61,11 +61,10 @@ function createWindow() {
   win.on('closed', () => { win = null; view = null; send(event('closed', {})); });
 }
 
-// Nút trên thanh: tải lại, hoặc đổi engine cho trang → nhờ vỏ app lưu cấu hình và mở lại
+// Nút trên thanh: tải lại
 ipcMain.on('bar', (e, action) => {
   if (!win || win.isDestroyed() || e.sender !== win.webContents || !view) return;
   if (action === 'reload') view.webContents.reload();
-  else if (action === 'off' || action === 'ruffle') send(event('choose', { engine: action, url: view.webContents.getURL() }));
 });
 
 function openWindow(url) {

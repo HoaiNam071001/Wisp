@@ -24,6 +24,9 @@
   button:hover { transform: translateY(-1px); }
   button:active { transform: translateY(1px); }
   button:focus-visible { outline: 3px solid #fff; outline-offset: 3px; }
+  button.alt { margin-top: 12px; padding: 9px 18px; font-size: 14px; font-weight: 600; background: transparent; color: var(--text);
+               border: 1px solid var(--line); box-shadow: none; }
+  button.alt:hover { background: var(--card); }
   .hint { margin: 18px 0 0; font-size: 13px; color: var(--muted); line-height: 1.5; }
 </style>
 </head>
@@ -32,12 +35,14 @@
     <div class="bolt"><svg viewBox="0 0 24 24"><path d="M13 2 4 14h6l-1 8 9-12h-6z"/></svg></div>
     <h1>Trang này chạy bằng Flash</h1>
     <p class="host" id="host"></p>
-    <button id="go" autofocus>Mở game Flash</button>
-    <p class="hint">Game mở ở cửa sổ riêng. Đóng tab này hoặc đóng cửa sổ game thì cái còn lại cũng đóng theo.</p>
+    <button id="go" autofocus>Mở game Flash</button><br>
+    <button id="normal" class="alt">Mở như web thường</button>
+    <p class="hint">Game mở ở cửa sổ riêng. Đóng tab này thì cửa sổ game đóng theo; đóng cửa sổ game thì tab ở lại. "Mở như web thường" tắt Flash cho trang này (bật lại ở menu chuột phải).</p>
   </main>
 <script>
   try { document.getElementById('host').textContent = new URL(new URL(location.href).searchParams.get('url')).host; } catch {}
   document.getElementById('go').onclick = () => window.wispFlash && window.wispFlash.launch();
+  document.getElementById('normal').onclick = () => window.wispFlash && window.wispFlash.normal();
 </script>
 </body>
 </html>

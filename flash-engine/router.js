@@ -11,7 +11,7 @@ const { FLASH_PATH, FLASH_VERSION } = require('../flash/mode');
 const { engineForUrl } = require('../flash/engine-pick');
 const { addLog } = require('../inspect/store');
 
-const events = new EventEmitter(); // 'closed' (cửa sổ Flash đóng), 'leave' (url), 'choose' ({url, engine: 'off'|'ruffle'})
+const events = new EventEmitter(); // 'closed' (cửa sổ Flash đóng), 'leave' (url)
 let client = null;
 let stopping = false; // đang thoát app: không báo 'closed' (tab không bị đóng theo)
 
@@ -34,7 +34,6 @@ async function ensure() {
   }));
   client.on('leave', (d) => events.emit('leave', d.url));
   client.on('closed', () => { if (!stopping) events.emit('closed'); });
-  client.on('choose', (d) => events.emit('choose', d));
   client.on('flash', (d) => addLog('info', 'event', 'Engine Flash: ' + (d.plugin || 'không thấy plugin Flash')));
   client.on('exit', () => addLog('warning', 'event', 'Engine Flash đã thoát'));
   await client.start();

@@ -28,7 +28,7 @@ const argQuality = process.argv.find(a => a.startsWith('--flash-quality='));
 if (argQuality && !isHistoryPage) require('./flash/quality-patch').install(argQuality.slice('--flash-quality='.length));
 
 if (isLauncherPage) {
-  contextBridge.exposeInMainWorld('wispFlash', { launch: () => ipcRenderer.invoke('flash:launch') });
+  contextBridge.exposeInMainWorld('wispFlash', { launch: () => ipcRenderer.invoke('flash:launch'), normal: () => ipcRenderer.invoke('flash:normal') });
 } else if (isHistoryPage) {
   contextBridge.exposeInMainWorld('wispHistory', {
     list: () => ipcRenderer.invoke('history:list'),

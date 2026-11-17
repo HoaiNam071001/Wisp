@@ -12,20 +12,15 @@
   button { width: 32px; height: 32px; display: grid; place-items: center; color: var(--text); background: none; border: 1px solid transparent; border-radius: 8px; padding: 0; cursor: pointer; }
   button:hover { background: var(--hover); }
   button svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
-  #off { color: var(--brand); }
   #host { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--muted); padding: 0 6px; }
 </style>
 </head>
 <body>
   <button id="reload" title="Tải lại"><svg viewBox="0 0 24 24"><path d="M20 12a8 8 0 1 1-2.4-5.7"/><path d="M20 4v5h-5"/></svg></button>
   <span id="host"></span>
-  <button id="ruffle" title="Dùng Ruffle (giả lập; game online cần socket không chạy)"><svg viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="2"/><path d="M9 2v4M15 2v4M9 18v4M15 18v4M2 9h4M2 15h4M18 9h4M18 15h4"/></svg></button>
-  <button id="off" title="Tắt Flash: bỏ trang này khỏi danh sách Flash, mở như web thường ở cửa sổ chính"><svg viewBox="0 0 24 24"><path d="M13 2 4 14h7l-1 8 9-12h-4"/><path d="M3 3l18 18"/></svg></button>
 <script>
   const $ = (id) => document.getElementById(id);
   $('reload').onclick = () => window.wbar.send('reload');
-  $('ruffle').onclick = () => window.wbar.send('ruffle');
-  $('off').onclick = () => window.wbar.send('off');
   window.wbar.onHost((h) => { $('host').textContent = h; });
 </script>
 </body>
