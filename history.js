@@ -103,7 +103,7 @@ ipcMain.handle('history:open', (e, url, inNewTab) => {
     const all = tabs.list();
     const t = all.find(x => x.view.webContents === e.sender);
     tabs.createTab(u, { index: t ? all.indexOf(t) + 1 : all.length, activate: false });
-  } else e.sender.loadURL(u).catch(() => {});
+  } else tabs.load(e.sender, u);
 });
 ipcMain.handle('history:remove', (e, ids) => {
   if (!fromHistoryPage(e) || !Array.isArray(ids)) return;

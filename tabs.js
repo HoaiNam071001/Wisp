@@ -122,6 +122,12 @@ function createTab(url, { activate = true, index = tabs.length } = {}) {
   return t;
 }
 
+// Tải địa chỉ vào webContents của một tab (mọi nơi ngoài tabs.js gọi hàm này, không loadURL trực tiếp – để trang Flash đi đúng engine)
+function load(w, url) {
+  const t = tabs.find(x => x.view.webContents === w);
+  if (t) loadInTab(t, url); else w.loadURL(url).catch(() => {});
+}
+
 // Mở tab mới ngay bên phải tab đang xem
 function openNextToActive(url) { return createTab(url, { index: tabs.indexOf(activeTab()) + 1 }); }
 
@@ -309,7 +315,7 @@ function openStartTabs(startUrl, explicit) {
 module.exports = {
   TOOLBAR_HEIGHT, events,
   winOk, getWin, list, getActiveId, tabOf, activeTab, wc, canReopen, toast,
-  sendState, tabInfo, sendTabs, createTab, openNextToActive, openUrl, activateTab, closeTab,
+  sendState, tabInfo, load, sendTabs, createTab, openNextToActive, openUrl, activateTab, closeTab,
   reopenClosedTab, cycleTab, newTab, focusUrlBar, toggleMute, tabMenu,
   attachWindow, saveSession, openStartTabs,
 };

@@ -98,7 +98,7 @@ function menuActions(arg, bounds) {
     newTab: tabs.newTab, reopen: tabs.reopenClosedTab, mute: () => tabs.activeTab() && tabs.toggleMute(tabs.getActiveId()),
     screenshot: page.screenshotTab, fullscreen: page.toggleFullScreen, shots: page.openShotsDir,
     history: history.openHistory, clearHistory: history.clearHistoryDialog, recent: () => tabs.openUrl(String(arg || '')),
-    home: () => w && w.loadURL(homeUrl()).catch(() => {}), setHome: page.setHomeHere,
+    home: () => w && tabs.load(w, homeUrl()), setHome: page.setHomeHere,
     inspector: () => openInspector(arg ? String(arg) : undefined), devtools: () => w && w.toggleDevTools(),
     hardReload: page.hardReload, clearCache: page.clearCacheReload,
     checkFlash: flash.checkFlash, allowSite: flash.allowCurrentSite, plugin: askForFlashPlugin,

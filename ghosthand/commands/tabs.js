@@ -9,7 +9,7 @@ const { sleep } = require('../input');
 // "google.com" → https://google.com; file / .swf / trang nội bộ thì từ chối (webUrlOnly).
 const urlOf = u => webUrlOnly(normalizeUrl(u) || u);
 // loadURL bị huỷ giữa chừng (ERR_ABORTED khi trang tự chuyển) cũng reject – kết quả tải xem bằng waitLoad
-const load = (w, u) => { w.loadURL(u).catch(() => {}); };
+const load = (w, u) => tabs.load(w, u);
 
 function tabEntry(t) {
   const w = t.view.webContents;
