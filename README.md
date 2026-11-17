@@ -1,6 +1,6 @@
 # Wisp (macOS, Windows)
 
-App mở webgame Flash (vd. Bang Bang) bằng **Flash Player thật** (Pepper Flash / PPAPI) chạy trong **Electron 11.5.0 x64**. Flash thật mở được kết nối socket tới máy chủ game, điều mà Ruffle (bản 1) không làm được.
+App mở webgame Flash (vd. Bang Bang) bằng **Flash Player thật** (Pepper Flash / PPAPI) chạy trong engine **Electron 11.5.0 x64** đi kèm (vỏ app và mọi trang web thường chạy Electron 45; trang cấu hình Flash mở ở cửa sổ engine Flash riêng). Flash thật mở được kết nối socket tới máy chủ game, điều mà Ruffle (bản 1) không làm được.
 Chế độ dự phòng **Ruffle** vẫn còn, dùng cho nội dung Flash đơn giản không cần socket.
 
 Bản 1 (Electron 45 + Ruffle) được lưu ở `v1-ruffle/`. Kế hoạch chi tiết: `plan.md`.

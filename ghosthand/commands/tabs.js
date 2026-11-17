@@ -62,14 +62,14 @@ module.exports = {
   },
   back({ tab }) {
     const t = resolveTab(tab), w = t.view.webContents;
-    if (!w.canGoBack()) fail('bad_args', 'tab không có trang trước');
-    w.goBack();
+    if (!w.navigationHistory.canGoBack()) fail('bad_args', 'tab không có trang trước');
+    w.navigationHistory.goBack();
     return { tab: t.id };
   },
   forward({ tab }) {
     const t = resolveTab(tab), w = t.view.webContents;
-    if (!w.canGoForward()) fail('bad_args', 'tab không có trang sau');
-    w.goForward();
+    if (!w.navigationHistory.canGoForward()) fail('bad_args', 'tab không có trang sau');
+    w.navigationHistory.goForward();
     return { tab: t.id };
   },
   reload({ tab }) { const t = resolveTab(tab); t.view.webContents.reload(); return { tab: t.id }; },

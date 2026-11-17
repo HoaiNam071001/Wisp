@@ -15,3 +15,11 @@ test('reply / fail / event: một dòng JSON', () => {
   assert.strictEqual(p.fail(3, { code: 'x', detail: 'y' }).endsWith('\n'), true);
   assert.deepStrictEqual(JSON.parse(p.event('url', { url: 'u' })), { event: 'url', data: { url: 'u' } });
 });
+
+test('hostInDomains: domain gốc, subdomain, danh sách rỗng', () => {
+  assert.strictEqual(p.hostInDomains(['cf4vn.bar'], 'cf4vn.bar'), true);
+  assert.strictEqual(p.hostInDomains(['cf4vn.bar'], 'game.cf4vn.bar'), true);
+  assert.strictEqual(p.hostInDomains(['cf4vn.bar'], 'evilcf4vn.bar'), false);
+  assert.strictEqual(p.hostInDomains(['cf4vn.bar'], 'youtube.com'), false);
+  assert.strictEqual(p.hostInDomains([], 'bất kỳ'), true);
+});

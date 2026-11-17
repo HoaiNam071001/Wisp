@@ -2,7 +2,7 @@
   "name": "wisp",
   "productName": "Wisp",
   "version": "2.4.3",
-  "description": "Wisp — trình duyệt mở webgame Flash bằng Flash Player thật (Pepper Flash) trong Electron 11 (macOS, Windows); dự phòng bằng Ruffle",
+  "description": "Wisp — trình duyệt (Electron mới) mở webgame Flash bằng Flash Player thật (Pepper Flash, engine Electron 11 đi kèm); dự phòng Ruffle (macOS, Windows)",
   "main": "main.js",
   "scripts": {
     "test": "node --test test/",
@@ -21,8 +21,9 @@
     "ws": "7.5.10"
   },
   "devDependencies": {
-    "electron": "11.5.0",
-    "electron-builder": "^24.13.3"
+    "electron": "45.3.3",
+    "electron-builder": "^24.13.3",
+    "electron-flash": "npm:electron@11.5.0"
   },
   "build": {
     "appId": "local.wisp",
@@ -37,7 +38,16 @@
           ]
         }
       ],
-      "identity": null
+      "identity": null,
+      "extraResources": [
+        {
+          "from": "node_modules/electron-flash/dist",
+          "to": "game",
+          "filter": [
+            "**/*"
+          ]
+        }
+      ]
     },
     "win": {
       "target": [
@@ -45,6 +55,15 @@
           "target": "nsis",
           "arch": [
             "x64"
+          ]
+        }
+      ],
+      "extraResources": [
+        {
+          "from": "node_modules/electron-flash/dist",
+          "to": "game",
+          "filter": [
+            "**/*"
           ]
         }
       ]

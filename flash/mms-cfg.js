@@ -1,12 +1,14 @@
-// Ghi mms.cfg của Flash 32 (nội dung tạo ở allowlist.js) vào thư mục dữ liệu Pepper Flash.
+// Ghi mms.cfg của Flash 32 (nội dung tạo ở allowlist.js) vào thư mục dữ liệu Pepper Flash của engine Flash
+// (userData/flash-engine – tách khỏi dữ liệu Chromium mới của vỏ app, hai bản Chromium không dùng chung profile).
 const { app } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const { loadConfig, allowDomains } = require('../config');
 const { mmsCfgContent } = require('./allowlist');
 
+function engineUserData() { return path.join(app.getPath('userData'), 'flash-engine'); }
 function mmsCfgPath() {
-  return path.join(app.getPath('userData'), 'Pepper Data', 'Shockwave Flash', 'System', 'mms.cfg');
+  return path.join(engineUserData(), 'Pepper Data', 'Shockwave Flash', 'System', 'mms.cfg');
 }
 function writeMmsCfg() {
   try {
@@ -15,4 +17,4 @@ function writeMmsCfg() {
   } catch (e) { console.error('Không ghi được mms.cfg:', e); }
 }
 
-module.exports = { mmsCfgPath, writeMmsCfg };
+module.exports = { engineUserData, mmsCfgPath, writeMmsCfg };

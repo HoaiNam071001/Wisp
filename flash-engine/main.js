@@ -3,7 +3,7 @@
 // Env: WISP_USER_DATA (thư mục dữ liệu), WISP_FLASH_PLUGIN + WISP_FLASH_VERSION (không có → Flash không nạp).
 const { app, BrowserWindow } = require('electron');
 const readline = require('readline');
-const { parseLine, reply, fail, event } = require('./protocol');
+const { parseLine, reply, fail, event, hostInDomains } = require('./protocol');
 
 if (process.env.WISP_USER_DATA) app.setPath('userData', process.env.WISP_USER_DATA);
 if (process.env.WISP_FLASH_PLUGIN) {
@@ -12,6 +12,9 @@ if (process.env.WISP_FLASH_PLUGIN) {
 }
 const send = (s) => process.stdout.write(s);
 let win = null;
+let domains = []; // trang Flash thật; ra ngoài thì nhờ vỏ app mở bằng engine web
+
+function hostOf(url) { try { return new URL(url).hostname; } catch { return ''; } }
 
 function openWindow(url) {
   if (!win || win.isDestroyed()) {
@@ -20,6 +23,18 @@ function openWindow(url) {
       webPreferences: { plugins: true, contextIsolation: true, nodeIntegration: false },
     });
     const wc = win.webContents;
+    // Ra khỏi trang Flash: huỷ và báo vỏ app mở ở cửa sổ chính (engine web)
+    const leave = (e, url) => {
+      if (!/^https?:/i.test(url) || hostInDomains(domains, hostOf(url))) return;
+      e.preventDefault();
+      send(event('leave', { url }));
+    };
+    wc.on('will-navigate', leave);
+    wc.on('will-redirect', leave);
+    wc.on('new-window', (e, url) => { // popup: cùng domain mở trong cửa sổ này, khác domain nhờ vỏ app
+      e.preventDefault();
+      if (hostInDomains(domains, hostOf(url))) wc.loadURL(url).catch(() => {}); else send(event('leave', { url }));
+    });
     wc.on('did-navigate', (_e, u) => send(event('url', { url: u })));
     wc.on('did-finish-load', async () => {
       const info = await wc.executeJavaScript(`(() => { const p = navigator.plugins['Shockwave Flash']; return p ? p.description : ''; })()`).catch(() => '');
@@ -38,7 +53,7 @@ function frameRect() {
 }
 
 async function handle(m) {
-  if (m.cmd === 'open') { await openWindow(m.url); return {}; }
+  if (m.cmd === 'open') { domains = Array.isArray(m.domains) ? m.domains : []; await openWindow(m.url); return {}; }
   if (m.cmd === 'close') { if (win && !win.isDestroyed()) win.close(); return {}; }
   if (m.cmd === 'frameRect') return frameRect();
   app.quit();

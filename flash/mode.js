@@ -1,7 +1,6 @@
 // Chọn chế độ lúc khởi động: 'flash' (Flash thật) | 'ruffle'. Không có plugin thì tự rơi về Ruffle.
-// Chạy một lần khi được require lần đầu – phải trước app ready (switch ppapi-flash-* gắn lúc này)
-// và sau user-data.js (đọc config.json trong userData).
-const { app } = require('electron');
+// Vỏ app (Electron mới) không nạp Pepper Flash – plugin chỉ để engine Flash (Electron 11) dùng.
+// Chạy một lần khi được require lần đầu, sau user-data.js (đọc config.json trong userData).
 const fs = require('fs');
 const { loadConfig } = require('../config');
 const plugin = require('./plugin');
@@ -15,10 +14,5 @@ const FLASH_PATH = plugin.findFlashPlugin();
 const FLASH_VERSION = FLASH_PATH ? plugin.readFlashVersion(FLASH_PATH) : null;
 const wantedMode = loadConfig().mode === 'ruffle' ? 'ruffle' : 'flash';
 const MODE = wantedMode === 'flash' && FLASH_PATH ? 'flash' : 'ruffle';
-
-if (MODE === 'flash') {
-  app.commandLine.appendSwitch('ppapi-flash-path', FLASH_PATH);
-  app.commandLine.appendSwitch('ppapi-flash-version', FLASH_VERSION);
-}
 
 module.exports = { FLASH_PATH, FLASH_VERSION, wantedMode, MODE };

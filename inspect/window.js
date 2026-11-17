@@ -29,7 +29,7 @@ function openInspector(tab) {
   }
   inspectWin = new BrowserWindow({
     width: 1100, height: 700, minWidth: 720, minHeight: 420, title: 'Bảng kiểm tra — Wisp', backgroundColor: '#1e1f22',
-    webPreferences: { preload: path.join(APP_DIR, 'inspect-preload.js'), contextIsolation: true, nodeIntegration: false, worldSafeExecuteJavaScript: true },
+    webPreferences: { preload: path.join(APP_DIR, 'inspect-preload.js'), contextIsolation: true, nodeIntegration: false, sandbox: false },
   });
   store.setInspector(inspectWin.webContents);
   inspectWin.loadFile(path.join(APP_DIR, 'inspect.html'), tab ? { hash: tab } : undefined);

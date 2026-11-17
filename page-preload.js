@@ -1,6 +1,5 @@
 // Preload của mọi tab (chạy trong thế giới riêng, trang web không đụng được Node).
-// - Chế độ Ruffle: chạy trong mọi frame (kể cả iframe) và chèn Ruffle vào trang.
-//   Electron 11 chưa có webFrameMain nên dùng preload + nodeIntegrationInSubFrames thay cho bản 1.
+// - Trang cấu hình Ruffle: chạy trong mọi frame (kể cả iframe) và chèn Ruffle vào trang.
 // - Trang Lịch sử nội bộ (history.html): mở cầu nối window.wispHistory.
 // - Mọi trang web: agent cổng Ghosthand (ghosthand/agent – chỉ nghe IPC, không gắn gì vào trang) ở khung chính và ở
 //   frame khác nguồn với khung cha (frame cùng nguồn do agent của khung trên đọc thẳng DOM).
@@ -14,6 +13,14 @@ const isHistoryPage = !!HISTORY_URL && process.isMainFrame && location.href.spli
 const crossToParent = () => { try { return !window.parent.document; } catch (e) { return true; } };
 if (!isHistoryPage && (process.isMainFrame || crossToParent())) require('./ghosthand/agent').install(!process.isMainFrame);
 
+// Trang cấu hình Ruffle? Hỏi theo host khung trên cùng (iframe game khác domain vẫn theo trang bọc nó)
+function isRuffleSite() {
+  try {
+    const top = location.ancestorOrigins && location.ancestorOrigins.length ? new URL(location.ancestorOrigins[location.ancestorOrigins.length - 1]).hostname : location.hostname;
+    return /^https?:$/.test(location.protocol) && ipcRenderer.sendSync('flash:is-ruffle', top);
+  } catch { return false; }
+}
+
 const argQuality = process.argv.find(a => a.startsWith('--flash-quality='));
 if (argQuality && !isHistoryPage) require('./flash/quality-patch').install(argQuality.slice('--flash-quality='.length));
 
@@ -25,7 +32,7 @@ if (isHistoryPage) {
     clear: () => ipcRenderer.invoke('history:clear'),
     onChange: (cb) => ipcRenderer.on('history:changed', () => cb()),
   });
-} else if (process.argv.includes('--flash-mode=ruffle')) {
+} else if (isRuffleSite()) {
   const INJECT = `
   (() => {
     if (window.__ruffleInjected) return;

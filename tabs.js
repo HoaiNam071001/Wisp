@@ -1,8 +1,8 @@
-// Cửa sổ chính + các tab. Mỗi tab là một BrowserView; chỉ tab đang xem nằm trong vùng nhìn thấy.
+// Cửa sổ chính + các tab. Mỗi tab là một WebContentsView; chỉ tab đang xem nằm trong vùng nhìn thấy.
 // Không gọi ngược lên lịch sử / menu / Bảng kiểm tra – các module đó nghe tabs.events:
 //   'visit' (tab, url) · 'title' (tab, title) · 'changed' (vừa vẽ lại thanh tab) · 'window-closed'
 //   'opened' (tab mới, tab mở ra nó, url) – popup / target=_blank · 'created' (tab vừa tạo, trước khi tải trang)
-const { BrowserView, Menu, dialog } = require('electron');
+const { WebContentsView, Menu } = require('electron');
 const path = require('path');
 const { EventEmitter } = require('events');
 const { loadConfig, saveConfig, homeUrl } = require('./config');
@@ -10,6 +10,7 @@ const { MODE, FLASH_VERSION, wantedMode } = require('./flash/mode');
 const { normalizeQuality } = require('./flash/quality');
 const { HISTORY_URL, displayUrl, isHistoryUrl, normalizeUrl } = require('./app-urls');
 const { addLog } = require('./inspect/store');
+const flashRouter = require('./flash-engine/router');
 
 const TOOLBAR_HEIGHT = 80; // thanh tab (36) + thanh địa chỉ (44)
 const CLOSED_MAX = 25;
@@ -38,8 +39,8 @@ function sendState() {
   const w = wc();
   win.webContents.send('state', {
     url: displayUrl(w.getURL()),
-    canBack: w.canGoBack(),
-    canForward: w.canGoForward(),
+    canBack: w.navigationHistory.canGoBack(),
+    canForward: w.navigationHistory.canGoForward(),
     loading: w.isLoading(),
     mode: MODE,
     version: FLASH_VERSION,
@@ -73,9 +74,8 @@ function updateTitle() {
   if (winOk()) win.setTitle((t && t.title ? t.title + ' — ' : '') + 'Wisp');
 }
 
-// Mọi tab luôn gắn vào cửa sổ: gỡ BrowserView ra rồi gắn lại làm Pepper Flash mất bề mặt vẽ
-// (quay lại tab chỉ thấy màn hình trống). Tab không xem được đẩy ra ngoài vùng nhìn thấy,
-// giữ nguyên kích thước để game vẫn chạy và vẽ bình thường.
+// Mọi tab luôn gắn vào cửa sổ, tab không xem được đẩy ra ngoài vùng nhìn thấy (giữ nguyên kích thước)
+// để game / video vẫn chạy và vẽ bình thường, quay lại tab không phải dựng lại bề mặt vẽ.
 function layout() {
   if (!winOk()) return;
   const [width, height] = win.getContentSize();
@@ -90,29 +90,34 @@ function layout() {
 function tabPrefs() {
   const quality = normalizeQuality(loadConfig().flashQuality);
   return {
-    plugins: MODE === 'flash',
     contextIsolation: true,
     nodeIntegration: false,
-    worldSafeExecuteJavaScript: true,
+    sandbox: false, // preload cần require('./ghosthand/agent') – chỉ preload, trang web không có Node
     // page-preload.js: chèn Ruffle (chế độ Ruffle) + cầu nối cho trang Lịch sử
     preload: path.join(__dirname, 'page-preload.js'),
-    additionalArguments: ['--wisp-history=' + HISTORY_URL, ...(MODE === 'ruffle' ? ['--flash-mode=ruffle'] : []),
-      ...(quality ? ['--flash-quality=' + quality] : [])],
+    additionalArguments: ['--wisp-history=' + HISTORY_URL, ...(quality ? ['--flash-quality=' + quality] : [])],
     // preload chạy trong mọi frame (kể cả iframe): chèn Ruffle (chế độ Ruffle) + agent Ghosthand ở frame khác nguồn
     nodeIntegrationInSubFrames: true,
   };
 }
 
+// Trang cấu hình Flash thật → engine Flash (cửa sổ riêng); tab này giữ trang trống. Còn lại tải ở tab.
+function loadInTab(t, url) {
+  const w = t.view.webContents;
+  if (flashRouter.wantsFlash(url)) { flashRouter.open(url); if (!w.getURL()) w.loadURL('about:blank').catch(() => {}); return; }
+  w.loadURL(url).catch(() => {});
+}
+
 function createTab(url, { activate = true, index = tabs.length } = {}) {
-  const view = new BrowserView({ webPreferences: tabPrefs() });
+  const view = new WebContentsView({ webPreferences: tabPrefs() });
   const t = { id: ++tabSeq, view, title: '', favicon: '', htmlFull: false, hist: null, audible: false, muted: false };
   tabs.splice(Math.max(0, Math.min(index, tabs.length)), 0, t);
   // Game ở tab khác vẫn chạy bình thường (không bị Chromium hãm timer khi tab ẩn)
   view.webContents.setBackgroundThrottling(false);
   wireTab(t);
   events.emit('created', t);
-  if (winOk()) win.addBrowserView(view);
-  view.webContents.loadURL(url).catch(() => {});
+  if (winOk()) win.contentView.addChildView(view);
+  loadInTab(t, url);
   if (activate) activateTab(t.id); else { layout(); sendTabs(); }
   return t;
 }
@@ -124,7 +129,7 @@ function openNextToActive(url) { return createTab(url, { index: tabs.indexOf(act
 function openUrl(url) {
   const u = normalizeUrl(url);
   if (!u) return;
-  if (wc()) wc().loadURL(u).catch(() => {}); else createTab(u);
+  if (activeTab()) loadInTab(activeTab(), u); else createTab(u);
 }
 
 function activateTab(id) {
@@ -133,7 +138,7 @@ function activateTab(id) {
   const prev = activeTab();
   if (prev !== t) {
     activeId = t.id;
-    win.setTopBrowserView(t.view);
+    win.contentView.addChildView(t.view); // thêm lại = đưa lên trên cùng
   }
   layout();
   t.view.webContents.focus();
@@ -153,8 +158,8 @@ function closeTab(id) {
   }
   tabs.splice(i, 1);
   if (activeId === id) activeId = null;
-  if (winOk()) win.removeBrowserView(t.view);
-  try { w.destroy(); } catch {}
+  if (winOk()) win.contentView.removeChildView(t.view);
+  try { w.close(); } catch {}
   // Đóng tab cuối cùng thì mở tab trang chủ thay vì tắt app (tránh lỡ tay thoát game)
   if (!tabs.length) { createTab(homeUrl()); return; }
   if (activeId === null) activateTab(tabs[Math.min(i, tabs.length - 1)].id);
@@ -216,12 +221,16 @@ function wireTab(t) {
   w.on('leave-html-full-screen', () => { t.htmlFull = false; if (isActive()) layout(); });
 
   // Popup (window.open / target=_blank / Cmd+bấm link) → mở tab mới ngay bên phải
-  w.on('new-window', (e, url, _name, disposition) => {
-    e.preventDefault();
+  w.setWindowOpenHandler(({ url, disposition }) => {
     events.emit('opened', createTab(url, { index: tabs.indexOf(t) + 1, activate: disposition !== 'background-tab' }), t, url);
+    return { action: 'deny' };
   });
 
   ['did-navigate-in-page', 'did-start-loading', 'did-stop-loading'].forEach(ev => w.on(ev, () => { if (isActive()) sendState(); sendTabs(); }));
+  // Bấm link / chuyển hướng sang trang Flash thật → engine Flash, tab ở lại trang cũ
+  const toFlash = (e, url) => { if (/^https?:/i.test(url) && flashRouter.wantsFlash(url)) { e.preventDefault(); flashRouter.open(url); } };
+  w.on('will-navigate', toFlash);
+  w.on('will-redirect', toFlash);
   w.on('did-navigate', (_e, url) => {
     t.favicon = '';
     events.emit('visit', t, url);
@@ -239,20 +248,17 @@ function wireTab(t) {
   w.on('did-fail-load', (_e, code, desc, url, isMain) => {
     if (isMain && code !== -3) console.warn('Lỗi tải trang', code, desc, url);
   });
-  w.on('plugin-crashed', (_e, name, version) => {
-    addLog('error', 'event', `Plugin ${name} ${version} bị crash`);
-    dialog.showMessageBox(win, { type: 'warning', message: `Plugin ${name} ${version} bị lỗi và đã dừng.`, detail: 'Bấm Tải lại (Cmd+R) để thử lại.' });
-  });
   logTabEvents(w);
 }
 
 // Ghi lại console của trang + các sự kiện đáng chú ý cho Bảng kiểm tra
-const LEVELS = ['verbose', 'info', 'warning', 'error'];
 function logTabEvents(w) {
-  w.on('console-message', (_e, level, message, line, sourceId) => {
-    addLog(LEVELS[level] || 'info', 'console', message, sourceId ? `${sourceId}:${line}` : '');
+  // Electron mới: một đối tượng sự kiện mang đủ thông tin (level là chữ)
+  w.on('console-message', (e) => {
+    const level = e.level === 'warning' || e.level === 'error' ? e.level : e.level === 'debug' ? 'verbose' : 'info';
+    addLog(level, 'console', e.message, e.sourceId ? `${e.sourceId}:${e.lineNumber}` : '');
   });
-  w.on('did-start-navigation', (_e, url, inPage, isMain) => { if (isMain && !inPage) addLog('info', 'event', 'Mở trang ' + displayUrl(url)); });
+  w.on('did-start-navigation', (d) => { if (d.isMainFrame && !d.isSameDocument) addLog('info', 'event', 'Mở trang ' + displayUrl(d.url)); });
   w.on('did-fail-load', (_e, code, desc, url, isMain) => {
     if (code !== -3) addLog('error', 'event', `Tải ${isMain ? 'trang' : 'frame'} lỗi ${code} ${desc}`, url);
   });
@@ -268,10 +274,10 @@ function attachWindow(w) {
   // Nhớ tab trước khi cửa sổ đóng (sau 'closed' danh sách tab đã bị xoá)
   win.on('close', () => { if (loadConfig().restoreTabs !== false) saveSession(); });
   win.on('closed', () => {
-    // BrowserView không tự huỷ theo cửa sổ → DevTools (detach) của tab vẫn còn,
+    // WebContentsView không tự huỷ theo cửa sổ → DevTools (detach) của tab vẫn còn,
     // Bảng kiểm tra / menu ⋮ cũng là cửa sổ riêng → đóng hết (qua 'window-closed') để app thoát hẳn
     tabs.forEach(t => {
-      try { const v = t.view.webContents; if (!v.isDestroyed()) { v.closeDevTools(); v.destroy(); } } catch {}
+      try { const v = t.view.webContents; if (!v.isDestroyed()) { v.closeDevTools(); v.close(); } } catch {}
     });
     win = null; tabs = []; activeId = null;
     events.emit('window-closed');

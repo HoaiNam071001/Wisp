@@ -1,5 +1,5 @@
 // Lệnh khởi chạy engine Flash (logic thuần, không require electron).
-// Dev: Electron 11 trong node_modules. Bản đóng gói: Electron 11 kèm theo ở Resources/game (bước 04, mục Đóng gói – chưa làm).
+// electronPath do router.js chọn: dev = gói electron-flash (Electron 11), bản đóng gói = Resources/game.
 const path = require('path');
 
 function launchFor({ electronPath, userData, pluginPath, pluginVersion }) {

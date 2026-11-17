@@ -128,8 +128,8 @@ function pageSubmenu() {
   const w = () => tabs.wc();
   return [
     { label: 'Mở địa chỉ…', accelerator: 'CmdOrCtrl+L', click: tabs.focusUrlBar },
-    { label: 'Quay lại', accelerator: IS_MAC ? 'Cmd+[' : 'Alt+Left', click: () => w() && w().canGoBack() && w().goBack() },
-    { label: 'Tiến tới', accelerator: IS_MAC ? 'Cmd+]' : 'Alt+Right', click: () => w() && w().canGoForward() && w().goForward() },
+    { label: 'Quay lại', accelerator: IS_MAC ? 'Cmd+[' : 'Alt+Left', click: () => w() && w().navigationHistory.canGoBack() && w().navigationHistory.goBack() },
+    { label: 'Tiến tới', accelerator: IS_MAC ? 'Cmd+]' : 'Alt+Right', click: () => w() && w().navigationHistory.canGoForward() && w().navigationHistory.goForward() },
     { label: 'Tải lại', accelerator: 'CmdOrCtrl+R', click: () => w() && w().reload() },
     { label: 'Tải lại không dùng cache', accelerator: 'Shift+CmdOrCtrl+R', click: page.hardReload },
     { label: 'Xoá cache và tải lại', click: page.clearCacheReload },

@@ -27,8 +27,8 @@ ipcMain.on('nav', (_e, action, arg) => {
   const w = tabs.wc();
   if (!w) return;
   if (action === 'go') { const u = normalizeUrl(arg); if (u) w.loadURL(u).catch(() => {}); }
-  else if (action === 'back') { if (w.canGoBack()) w.goBack(); }
-  else if (action === 'forward') { if (w.canGoForward()) w.goForward(); }
+  else if (action === 'back') { if (w.navigationHistory.canGoBack()) w.navigationHistory.goBack(); }
+  else if (action === 'forward') { if (w.navigationHistory.canGoForward()) w.navigationHistory.goForward(); }
   else if (action === 'reload') { w.isLoading() ? w.stop() : w.reload(); }
   else if (action === 'home') { w.loadURL(homeUrl()).catch(() => {}); }
   else if (action === 'sethome') { saveConfig({ url: w.getURL() }); }

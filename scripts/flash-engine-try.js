@@ -1,6 +1,6 @@
 // Thử engine Flash độc lập: node scripts/flash-engine-try.js [url]  (mở 1 cửa sổ, hỏi frameRect, đóng)
 const path = require('path');
-const electron = require('electron');
+const electron = require('electron-flash'); // Electron 11 (gói phụ cho engine Flash)
 
 const fs = require('fs');
 const { mmsCfgContent } = require('../flash/allowlist');

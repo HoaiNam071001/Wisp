@@ -1,10 +1,11 @@
 // Ruffle: giao thức riêng ruffle:// để trang nào cũng tải được file Ruffle đóng gói sẵn.
 //   ruffle://local/<file>     → file Ruffle đóng gói sẵn (trang nào cũng tải được)
 //   ruffle://file/<đường dẫn> → file .swf trên máy (Ruffle không đọc được file:// trực tiếp)
-const { protocol } = require('electron');
+const { protocol, ipcMain } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const { PLAYER_PATH } = require('../urls');
+const { engineForHost } = require('./engine-pick');
 
 const IS_WIN = process.platform === 'win32';
 const MIME = { '.wasm': 'application/wasm', '.js': 'text/javascript', '.map': 'application/json',
@@ -18,8 +19,10 @@ function registerRuffleScheme() {
   ]);
 }
 
-// Gọi sau app ready (chỉ ở chế độ Ruffle)
+// Gọi sau app ready
 function serveRuffle() {
+  // preload hỏi từng khung: trang (host của khung trên cùng) có cấu hình Ruffle không
+  ipcMain.on('flash:is-ruffle', (e, host) => { e.returnValue = engineForHost(String(host || '')) === 'ruffle'; });
   const ruffleDir = path.dirname(require.resolve('@ruffle-rs/ruffle/ruffle.js'));
   protocol.registerBufferProtocol('ruffle', (req, cb) => {
     try {

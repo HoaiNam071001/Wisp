@@ -59,4 +59,4 @@ Làm trên Electron 11 hiện tại (tab thường) để chốt API sớm; lên
 
 **Còn lại**
 - ⬜ `screenshot fullPage` (Electron 11 `capturePage` chỉ chụp phần đang thấy; cuộn rồi ghép thì trang thấy cuộn) → làm ở bước 04 bằng API của Electron mới.
-- ⬜ Chạy `scripts/ghosthand-client.js 20 google` sau bước 04.
+- ✅ Chạy `scripts/ghosthand-client.js 20 google` sau khi vỏ app lên Electron 45: 20/20 ok (2026-11-17); wiki 20/20.

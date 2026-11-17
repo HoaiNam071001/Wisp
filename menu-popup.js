@@ -41,7 +41,7 @@ function ensureMenuWin() {
     parent: win, width: MENU_W, height: 120,
     frame: false, transparent: true, resizable: false, movable: false, minimizable: false, maximizable: false,
     fullscreenable: false, skipTaskbar: true, hasShadow: false, show: false, backgroundColor: '#00000000',
-    webPreferences: { preload: path.join(__dirname, 'menu-preload.js'), contextIsolation: true, nodeIntegration: false, worldSafeExecuteJavaScript: true,
+    webPreferences: { preload: path.join(__dirname, 'menu-preload.js'), contextIsolation: true, nodeIntegration: false, sandbox: false,
                       backgroundThrottling: false },
   });
   menuWin.loadFile(path.join(__dirname, 'menu.html'));

@@ -23,7 +23,7 @@ function focusIfActive(t) { if (t.id === tabs.getActiveId()) t.view.webContents.
 function watchAfter(t, ms) {
   const w = t.view.webContents;
   let navigated = false, popup = null;
-  const onNav = (_e, _url, _inPage, isMain) => { if (isMain) navigated = true; };
+  const onNav = (d) => { if (d.isMainFrame) navigated = true; };
   const onOpen = (nt, opener) => { if (opener === t) popup = nt.id; };
   w.on('did-start-navigation', onNav);
   tabs.events.on('opened', onOpen);

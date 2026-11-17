@@ -1,25 +1,24 @@
-// Wisp — trình duyệt chạy Electron 11 + Flash Player thật (Pepper Flash / PPAPI).
-// Chế độ dự phòng: Ruffle (giả lập Flash bằng WebAssembly), giống bản 1.
-// Electron 12 trở lên đã bỏ Pepper Flash, nên app phải ở Electron 11.x (x64).
+// Wisp — trình duyệt Electron mới; trang cấu hình Flash mở bằng engine Flash (Electron 11 + Pepper Flash, flash-engine/),
+// hoặc Ruffle (giả lập Flash bằng WebAssembly) ngay trong tab. Electron 12+ đã bỏ Pepper Flash nên engine Flash ở Electron 11.x (x64).
 // File này chỉ lo khởi động; từng việc nằm ở module riêng (xem docs/plan/03-tach-main-js.md).
 const { app, BrowserWindow, session } = require('electron');
 const path = require('path');
-// Electron 11: sendInputEvent chỉ tới widget khung chính – iframe khác site chạy process riêng không nhận chuột / phím
-// của cổng Ghosthand. Tắt site isolation để iframe chạy chung process (docs/decisions.md, 2026-11-15).
-app.commandLine.appendSwitch('disable-site-isolation-trials');
 // Hiệu năng game: Chromium 87 hay chặn GPU trên máy cũ / Rosetta → Flash vẽ bằng CPU. Bật GPU raster, không hãm tiến trình nền.
 // WISP_NO_PERF_FLAGS=1 để tắt khi cần so sánh FPS.
 if (!process.env.WISP_NO_PERF_FLAGS) {
   for (const sw of ['ignore-gpu-blocklist', 'enable-gpu-rasterization', 'enable-zero-copy',
     'disable-renderer-backgrounding', 'disable-background-timer-throttling']) app.commandLine.appendSwitch(sw);
 }
+// Chromium mới bỏ rơi sự kiện chuột giả (sendInputEvent) khi cửa sổ bị che / ở nền → cổng Ghosthand không bấm được lúc người dùng làm việc khác
+app.commandLine.appendSwitch('disable-backgrounding-occluded-windows');
 
 // Thứ tự quan trọng: thư mục dữ liệu → khoá một bản → chọn chế độ Flash (gắn switch trước app ready)
 require('./user-data').setupUserData();
 // Chỉ chạy một Wisp cho mỗi thư mục dữ liệu (khoá theo userData, nên bản dev có WISP_USER_DATA riêng vẫn chạy song song)
 const SECOND_INSTANCE = !app.requestSingleInstanceLock();
 if (SECOND_INSTANCE) app.quit();
-const { MODE, FLASH_PATH, wantedMode } = require('./flash/mode');
+const { FLASH_PATH, wantedMode } = require('./flash/mode');
+const flashRouter = require('./flash-engine/router');
 
 const updater = require('./updater');
 const tabs = require('./tabs');
@@ -31,7 +30,6 @@ const { installRequestLog } = require('./inspect/request-log');
 const { startSocketWatch } = require('./inspect/sockets');
 const { openInspector } = require('./inspect/window');
 const { startPerf, applyAppNap } = require('./perf');
-const { writeMmsCfg } = require('./flash/mms-cfg');
 const { registerRuffleScheme, serveRuffle } = require('./flash/ruffle');
 const { askForFlashPlugin } = require('./flash/install');
 const { buildMenu, scheduleMenu } = require('./app-menu');
@@ -53,7 +51,7 @@ function createWindow() {
   // Cửa sổ chính chứa thanh tab + thanh công cụ; trang web nằm trong BrowserView bên dưới
   const win = new BrowserWindow({
     width: 1280, height: 820, title: 'Wisp', backgroundColor: '#2b2d31', autoHideMenuBar: !IS_MAC,
-    webPreferences: { preload: path.join(__dirname, 'toolbar-preload.js'), contextIsolation: true, nodeIntegration: false, worldSafeExecuteJavaScript: true },
+    webPreferences: { preload: path.join(__dirname, 'toolbar-preload.js'), contextIsolation: true, nodeIntegration: false, sandbox: false },
   });
   win.loadFile(path.join(__dirname, 'toolbar.html'));
   // tạo sẵn cửa sổ menu ⋮ (ẩn) để bấm là hiện ngay
@@ -78,10 +76,11 @@ app.whenReady().then(() => {
   app.userAgentFallback = app.userAgentFallback.replace(/\s?(Electron|wisp|flash-browser)\/\S+/gi, '');
 
   installRequestLog(session.defaultSession);
-  if (MODE === 'flash') writeMmsCfg();
-  else serveRuffle();
+  serveRuffle();
 
   applyAppNap();
+  // Trang Flash đi ra ngoài trang đã cấu hình → mở ở cửa sổ chính
+  flashRouter.events.on('leave', (url) => tabs.openNextToActive(url));
   createWindow();
   // Cổng cho Ghosthand (config ghosthandPort: false = tắt; mặc định bật)
   if (loadConfig().ghosthandPort !== false) ghosthand.start();
@@ -110,5 +109,5 @@ app.on('open-file', (e, file) => {
   else pendingFile = file;
 });
 
-app.on('before-quit', () => { ghosthand.stop(); saveHistoryNow(); if (loadConfig().restoreTabs !== false) tabs.saveSession(); });
+app.on('before-quit', () => { flashRouter.stop(); ghosthand.stop(); saveHistoryNow(); if (loadConfig().restoreTabs !== false) tabs.saveSession(); });
 app.on('window-all-closed', () => app.quit());

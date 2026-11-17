@@ -9,7 +9,7 @@ function framesOf(wc) {
   if (!m) {
     m = new Map();
     byWc.set(wc.id, m);
-    wc.on('did-start-navigation', (_e, _url, inPage, isMain) => { if (isMain && !inPage) m.clear(); });
+    wc.on('did-start-navigation', (d) => { if (d.isMainFrame && !d.isSameDocument) m.clear(); });
     wc.once('destroyed', () => byWc.delete(wc.id));
   }
   return m;

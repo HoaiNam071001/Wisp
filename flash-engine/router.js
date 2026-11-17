@@ -1,0 +1,53 @@
+// Phía vỏ app: trang cấu hình Flash thật → mở ở engine Flash (Electron 11, tiến trình riêng).
+// Không require tabs: engine báo 'leave' (trang đi ra ngoài trang Flash) qua events, main.js nối sang tabs.
+const { app } = require('electron');
+const path = require('path');
+const { EventEmitter } = require('events');
+const { EngineClient } = require('./client');
+const { launchFor } = require('./launch');
+const { engineUserData, writeMmsCfg } = require('../flash/mms-cfg');
+const { flashSites } = require('../config');
+const { FLASH_PATH, FLASH_VERSION } = require('../flash/mode');
+const { engineForUrl } = require('../flash/engine-pick');
+const { addLog } = require('../inspect/store');
+
+const events = new EventEmitter(); // 'leave' (url)
+let client = null;
+
+// Dev: Electron 11 cài như gói electron-flash. Bản đóng gói: Resources/game (extraResources).
+function engineElectronPath() {
+  if (!app.isPackaged) return require('electron-flash');
+  const dir = path.join(process.resourcesPath, 'game');
+  return process.platform === 'darwin' ? path.join(dir, 'Electron.app', 'Contents', 'MacOS', 'Electron') : path.join(dir, 'electron.exe');
+}
+
+function wantsFlash(url) { return engineForUrl(url) === 'flash'; }
+
+function domains() { return flashSites().filter((s) => s.engine === 'flash').map((s) => s.domain); }
+
+async function ensure() {
+  if (client && client.running) return client;
+  writeMmsCfg();
+  client = new EngineClient(launchFor({
+    electronPath: engineElectronPath(), userData: engineUserData(), pluginPath: FLASH_PATH, pluginVersion: FLASH_VERSION,
+  }));
+  client.on('leave', (d) => events.emit('leave', d.url));
+  client.on('flash', (d) => addLog('info', 'event', 'Engine Flash: ' + (d.plugin || 'không thấy plugin Flash')));
+  client.on('exit', () => addLog('warning', 'event', 'Engine Flash đã thoát'));
+  await client.start();
+  return client;
+}
+
+async function open(url) {
+  try {
+    const c = await ensure();
+    await c.request('open', { url, domains: domains() });
+  } catch (e) {
+    addLog('error', 'event', 'Không mở được engine Flash: ' + e.message);
+    events.emit('leave', url); // dự phòng: mở ở engine web (Flash không chạy nhưng thấy trang)
+  }
+}
+
+function stop() { return client ? client.stop() : Promise.resolve(); }
+
+module.exports = { events, wantsFlash, open, stop };

@@ -7,6 +7,6 @@ module.exports = {
   ...base,
   artifactName: '${productName}-${version}-personal.${ext}',
   nsis: { ...base.nsis, artifactName: '${productName}-${version}-win-personal-setup.${ext}' },
-  mac: { ...base.mac, extraResources: [{ from: 'plugins', to: 'plugins', filter: ['PepperFlashPlayer.plugin/**'] }] },
-  win: { ...base.win, extraResources: [{ from: 'plugins', to: 'plugins', filter: ['pepflashplayer.dll'] }] },
+  mac: { ...base.mac, extraResources: [...base.mac.extraResources, { from: 'plugins', to: 'plugins', filter: ['PepperFlashPlayer.plugin/**'] }] },
+  win: { ...base.win, extraResources: [...base.win.extraResources, { from: 'plugins', to: 'plugins', filter: ['pepflashplayer.dll'] }] },
 };

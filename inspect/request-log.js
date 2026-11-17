@@ -5,7 +5,7 @@ const path = require('path');
 const { pathToFileURL } = require('url');
 const { httpLog, seenSwfHosts, trimMap, httpUpdate, inspector } = require('./store');
 const { getWin } = require('../tabs');
-const { MODE } = require('../flash/mode');
+const { engineForUrl } = require('../flash/engine-pick');
 
 const APP_FILE_URL = pathToFileURL(path.join(__dirname, '..')).href + '/';
 
@@ -33,8 +33,8 @@ function installRequestLog(ses) {
   wr.onSendHeaders((d) => httpUpdate(d.id, { reqHeaders: d.requestHeaders }));
   wr.onHeadersReceived((d, cb) => {
     const h = { ...d.responseHeaders };
-    if (MODE === 'ruffle') {
-      // Gỡ Content-Security-Policy để script Ruffle chạy được trên mọi trang
+    if (engineForUrl(d.url) === 'ruffle') {
+      // Gỡ Content-Security-Policy để script Ruffle chạy được trên trang cấu hình Ruffle
       for (const k of Object.keys(h)) if (/^content-security-policy/i.test(k)) delete h[k];
       cb({ responseHeaders: h });
     } else cb({});
@@ -45,7 +45,7 @@ function installRequestLog(ses) {
     if (r) httpUpdate(d.id, { redirects: [...r.redirects, `${d.statusCode} → ${d.redirectURL}`], status: d.statusCode });
   });
   wr.onCompleted((d) => {
-    if (MODE === 'flash' && (/\.swf(\?|#|$)/i.test(d.url) || d.resourceType === 'object')) {
+    if (/\.swf(\?|#|$)/i.test(d.url) || d.resourceType === 'object') {
       try { seenSwfHosts.add(new URL(d.url).hostname); } catch {}
     }
     httpUpdate(d.id, { state: 'done', status: d.statusCode, ip: d.ip || '', fromCache: d.fromCache, end: Date.now() });

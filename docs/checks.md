@@ -43,4 +43,7 @@ Chạy `npm run dev` (dữ liệu `.dev-data/`), thử như bản 2.3.0:
 - ⬜ **Đổi phím (bước 09):** menu ⋮ → Đổi phím… → Thêm: nhấn phím game cần (vd S), rồi phím thay (vd B). Vào game Flash bấm B phải ra S (giữ / nhả đúng, không lọt thêm chữ b); ô chat trong game gõ B ra S; thanh địa chỉ vẫn gõ B bình thường; tắt công tắc trả như cũ; thử trong iframe khác nguồn và Windows.
 - ⬜ **Vòng tiến độ (bước 10):** khi bấm Cập nhật Wisp / Cài Flash Player, góc phải thanh công cụ hiện vòng tròn chạy % (tải), quay khi giải nén / kiểm tra; biến mất khi xong hoặc lỗi; Dock / taskbar cũng có thanh tiến độ.
 - ⬜ **Chất lượng vẽ Flash + cờ GPU:** menu Flash → "Chất lượng vẽ Flash" → chọn Thấp, mở tab mới vào game: không lỗi hình, so CPU / FPS với "Theo game". Cờ GPU (main.js) so với `WISP_NO_PERF_FLAGS=1 npm run dev`. Nếu game tự đặt stage.quality thì lựa chọn này không có tác dụng.
+- [ ] 04 (2026-11-17): `npm run dev -- https://cf4vn.bar/` → mở cửa sổ engine Flash riêng, vào được game; bấm link ra youtube.com từ trang game → mở ở cửa sổ chính; youtube phát video bình thường ở tab
+- [ ] 04: bấm / gõ trong iframe khác site ở tab web bằng cổng Ghosthand (đã bỏ `disable-site-isolation-trials`)
+- [ ] 04: bản đóng gói `npm run dist` (macOS) mở cf4vn.bar ở engine Flash (dev đã thử 2026-11-17); Windows chưa thử
 - [ ] 04: chạy lệnh thử engine Flash (docs/plan/04) với plugin thật, cửa sổ hiện game cf4vn.bar và vào được game
