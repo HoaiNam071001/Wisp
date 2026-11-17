@@ -11,8 +11,8 @@ Phụ thuộc: 04
 - 🔄 **Tải file** (2026-11-17: `downloads.js` + `download-name.js` + test – lưu vào Downloads không đè file có sẵn, tiến độ ở vòng tròn toolbar, toast khi xong; thử tải 5000 byte OK. Chọn: không hỏi chỗ lưu (mặc định Downloads). Còn: mục menu "Mở thư mục Tải về"): `will-download` → hỏi chỗ lưu / mặc định Downloads, tiến độ trên toolbar, mở thư mục.
 - ✅ **Chặn `file://`** (2026-11-17: `nav-policy.js` + test; trang http(s) / data / blob không dẫn / `window.open` sang `file:` được; trang nội bộ file: giữ nguyên; gõ ở thanh địa chỉ không bị chặn).
 - ✅ **In trang** (menu Tệp → "In trang…" Cmd/Ctrl+P, `webContents.print()`; chưa thử tay).
-- ⬜ **PDF viewer:** mở file .pdf / link PDF xem được trong tab (kiểm tra Electron mới có viewer sẵn không).
+- ✅ **PDF viewer** (2026-11-17: Electron 45 có viewer sẵn – mở http://…/t.pdf trong tab hiện viewer đủ thanh công cụ (thu phóng, in, tải về), không cần code thêm. Chưa thử file: PDF local / PDF lớn).
 - ✅ **Tìm trong trang** (2026-11-17: `find-window.js` + `find.html` – cửa sổ con nhỏ góc trên phải, `findInPage`, Enter / ⇧Enter, Esc; đóng khi đổi tab; menu Trang → "Tìm trong trang…" Cmd/Ctrl+F. Chưa thử tay).
-- ⬜ **Zoom nhớ theo trang:** hiện zoom theo tab; nhớ theo domain trong config.
+- ✅ **Zoom nhớ theo trang** (2026-11-17: `site-zoom.js` + test; `config.siteZoom {host: mức}` ghi khi bấm zoom ở menu / phím tắt, áp lại khi vào trang cùng domain; 100% thì xoá khỏi danh sách. Chưa thử tay, chưa có màn xoá danh sách).
 - ⬜ **Đăng nhập Google:** thử trực tiếp trên bản mới. Google báo "Trình duyệt này hoặc ứng dụng có thể không an toàn" → không cố vượt: nút **Đăng nhập bằng trình duyệt hệ thống** (mở `shell.openExternal`), ghi chú cho người dùng.
 - ⬜ **Bộ trang thử** (`test/sites.json` + script chạy Wisp mở lần lượt, chụp ảnh, ghi lỗi console / trạng thái): google.com, accounts.google.com, youtube.com, facebook.com, github.com, một trang Cloudflare, một trang có reCAPTCHA, cf4vn.bar (đã bật Flash → phải mở bằng engine flash). Chạy trước mỗi bản phát hành.

@@ -3,12 +3,24 @@ const { app, session, dialog, shell, clipboard } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const tabs = require('./tabs');
-const { saveConfig } = require('./config');
+const { saveConfig, loadConfig } = require('./config');
+const siteZoom = require('./site-zoom');
 const { addLog } = require('./inspect/store');
 const { normalizeUrl } = require('./app-urls');
 const { pad2 } = require('./util');
 
-function zoomBy(step) { const w = tabs.wc(); if (w) w.setZoomLevel(step === 0 ? 0 : w.getZoomLevel() + step); }
+function zoomBy(step) {
+  const w = tabs.wc();
+  if (!w) return;
+  const level = step === 0 ? 0 : w.getZoomLevel() + step;
+  w.setZoomLevel(level);
+  saveConfig({ siteZoom: siteZoom.remember(loadConfig().siteZoom, w.getURL(), level) });
+}
+// Vào trang → áp mức zoom đã nhớ cho domain (về 100% nếu chưa nhớ, tránh dính mức của trang trước trong cùng tab)
+tabs.events.on('visit', (t, url) => {
+  const w = t.view.webContents;
+  if (!w.isDestroyed() && siteZoom.hostOf(url)) w.setZoomLevel(siteZoom.levelFor(loadConfig().siteZoom, url));
+});
 function zoomPercent() { const w = tabs.wc(); return w ? Math.round(100 * Math.pow(1.2, w.getZoomLevel())) : 100; }
 function toggleFullScreen() { const win = tabs.getWin(); if (win) win.setFullScreen(!win.isFullScreen()); }
 function hardReload() { const w = tabs.wc(); if (w) w.reloadIgnoringCache(); }

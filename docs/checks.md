@@ -61,3 +61,4 @@ Chạy `npm run dev` (dữ liệu `.dev-data/`), thử như bản 2.3.0:
 - 05 Session: menu 'Xoá cookie và dữ liệu trang…' (browsing-data.js) – thử tay: đăng nhập 1 trang, xoá cookie, tải lại phải mất đăng nhập; 'Chỉ cache' giữ đăng nhập.
 - 05 Khác: (1) từ trang web http(s) bấm link / window.open tới file:///… phải bị chặn; (2) Cmd/Ctrl+P hiện hộp in.
 - 05 Tìm trong trang: Cmd/Ctrl+F hiện thanh tìm; gõ → tô kết quả + đếm n/m; Enter / ⇧Enter đi tiếp / lùi; Esc đóng; đổi tab thì thanh đóng; kéo / đổi cỡ cửa sổ thanh đi theo.
+- 05 Zoom: phóng to một trang (Cmd+=), mở tab mới vào cùng domain → vẫn phóng; khởi động lại app vẫn nhớ; domain khác 100%; Cmd+0 thì quên. 05 PDF: mở link .pdf local / lớn xem được.

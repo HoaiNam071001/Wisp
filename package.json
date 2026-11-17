@@ -84,6 +84,7 @@
       "util.js",
       "ua.js",
       "nav-policy.js",
+      "site-zoom.js",
       "find-window.js",
       "find-preload.js",
       "find.html",
