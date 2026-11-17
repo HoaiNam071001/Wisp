@@ -1,7 +1,7 @@
 {
   "name": "wisp",
   "productName": "Wisp",
-  "version": "2.4.3",
+  "version": "3.0.0",
   "description": "Wisp — trình duyệt (Electron mới) mở webgame Flash bằng Flash Player thật (Pepper Flash, engine Electron 11 đi kèm; macOS, Windows)",
   "main": "main.js",
   "scripts": {
