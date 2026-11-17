@@ -5,7 +5,7 @@ const fs = require('fs');
 const siteConfig = require('./flash/site-config');
 
 // ====== ĐỔI ĐỊA CHỈ TRANG MẶC ĐỊNH Ở ĐÂY (hoặc bấm "★ Đặt làm trang chủ") ======
-const DEFAULT_URL = 'https://bangbang.cmn.vn/';
+const DEFAULT_URL = 'https://www.google.com/';
 // =================================================================================
 
 function configPath() { return path.join(app.getPath('userData'), 'config.json'); }
