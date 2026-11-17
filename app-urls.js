@@ -6,12 +6,13 @@ const { pathToFileURL } = require('url');
 const { createUrls } = require('./urls');
 
 const HISTORY_URL = pathToFileURL(path.join(__dirname, 'history.html')).href;
+const BOOKMARKS_URL = pathToFileURL(path.join(__dirname, 'bookmarks.html')).href;
 const LAUNCHER_URL = pathToFileURL(path.join(__dirname, 'flash-launcher.html')).href;
 
 module.exports = {
-  HISTORY_URL, LAUNCHER_URL,
+  HISTORY_URL, BOOKMARKS_URL, LAUNCHER_URL,
   ...createUrls({
-    historyUrl: HISTORY_URL, launcherUrl: LAUNCHER_URL, appDir: __dirname, homeDir: () => app.getPath('home'),
+    historyUrl: HISTORY_URL, bookmarksUrl: BOOKMARKS_URL, launcherUrl: LAUNCHER_URL, appDir: __dirname, homeDir: () => app.getPath('home'),
     isWin: process.platform === 'win32', exists: fs.existsSync,
   }),
 };

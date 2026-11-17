@@ -5,7 +5,7 @@ const path = require('path');
 const fs = require('fs');
 const { EventEmitter } = require('events');
 const tabs = require('./tabs');
-const { HISTORY_URL, displayUrl, isHistoryUrl, normalizeUrl } = require('./app-urls');
+const { HISTORY_URL, displayUrl, isHistoryUrl, isBookmarksUrl, normalizeUrl } = require('./app-urls');
 
 const HISTORY_MAX = 5000;
 const events = new EventEmitter();
@@ -39,7 +39,7 @@ function historyChanged() {
 
 function recordVisit(t, rawUrl) {
   const url = displayUrl(rawUrl);
-  if (!/^(https?|file):/i.test(url) || isHistoryUrl(rawUrl)) return;
+  if (!/^(https?|file):/i.test(url) || isHistoryUrl(rawUrl) || isBookmarksUrl(rawUrl)) return;
   const h = loadHistory();
   const now = Date.now();
   const last = h[h.length - 1];

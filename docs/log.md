@@ -40,3 +40,4 @@ Chỉ thêm dòng bằng `>>`: `- **YYYY-MM-DD** – <việc>. <kết quả ki�
 - **2026-11-17** – Bước 05: chặn file:// từ trang web (nav-policy.js), In trang Cmd/Ctrl+P; tách PDF / tìm trong trang / zoom theo trang thành việc ⬜. check + test OK; chưa thử tay.
 - **2026-11-17** – Bước 05: tìm trong trang, xem PDF (viewer sẵn, thử bằng http local), zoom nhớ theo domain (site-zoom.js). check + test OK; Cmd+F / zoom chưa thử tay.
 - **2026-11-17** – Bước 05: nút 'Mở bằng trình duyệt hệ thống', bộ trang thử (test/sites.json + scripts/sites-try.js; 8/8 ok trên app dev). check + test OK; đăng nhập Google thật chưa thử.
+- **2026-11-17** – Bước 11: dấu trang (★, Cmd/Ctrl+D, wisp://bookmarks, bookmarks-store.js có tombstone cho đồng bộ). check + test OK; trang quản lý thử trên app dev, ★ / Cmd+D chưa thử tay. Phần Google (đăng nhập, Drive) chờ OAuth client ID.

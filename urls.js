@@ -3,10 +3,13 @@
 const path = require('path');
 const { pathToFileURL } = require('url');
 
-// ctx: { historyUrl, launcherUrl, appDir, homeDir(), isWin, exists(path) }
+// ctx: { historyUrl, bookmarksUrl?, launcherUrl, appDir, homeDir(), isWin, exists(path) }
 function createUrls(ctx) {
   // Trang Lịch sử nội bộ; thanh địa chỉ hiện "wisp://history"
   function isHistoryUrl(u) { return String(u || '').split(/[?#]/)[0] === ctx.historyUrl; }
+
+  // Trang Dấu trang nội bộ; thanh địa chỉ hiện "wisp://bookmarks"
+  function isBookmarksUrl(u) { return !!ctx.bookmarksUrl && String(u || '').split(/[?#]/)[0] === ctx.bookmarksUrl; }
 
   // Trang chờ của trang Flash thật (flash-launcher.html?url=…): tab hiện địa chỉ thật của trang
   function isLauncherUrl(u) { return String(u || '').split(/[?#]/)[0] === ctx.launcherUrl; }
@@ -15,6 +18,7 @@ function createUrls(ctx) {
   // Địa chỉ hiển thị trên thanh địa chỉ: bỏ lớp player.html / trang chờ Flash
   function displayUrl(u) {
     if (isHistoryUrl(u)) return 'wisp://history';
+    if (isBookmarksUrl(u)) return 'wisp://bookmarks';
     if (isLauncherUrl(u)) {
       try { return new URL(u).searchParams.get('url') || ''; } catch { return ''; }
     }
@@ -27,6 +31,7 @@ function createUrls(ctx) {
     let u = String(input || '').trim();
     if (!u) return null;
     if (/^wisp:\/*history\/?$/i.test(u)) return ctx.historyUrl;
+    if (ctx.bookmarksUrl && /^wisp:\/*bookmarks\/?$/i.test(u)) return ctx.bookmarksUrl;
     if (u.startsWith('~/')) u = path.join(ctx.homeDir(), u.slice(2));
     if ((u.startsWith('/') || (ctx.isWin && /^[a-z]:[\\/]|^\\\\/i.test(u))) && ctx.exists(u)) u = pathToFileURL(u).href;
     else if (!/^[a-z]+:/i.test(u)) u = (/^(localhost|[\d.]+)(:\d+)?(\/|$)/.test(u) ? 'http://' : 'https://') + u;
@@ -35,7 +40,7 @@ function createUrls(ctx) {
     return u;
   }
 
-  return { isHistoryUrl, isLauncherUrl, launcherUrlFor, displayUrl, normalizeUrl };
+  return { isHistoryUrl, isBookmarksUrl, isLauncherUrl, launcherUrlFor, displayUrl, normalizeUrl };
 }
 
 module.exports = { createUrls };

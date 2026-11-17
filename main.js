@@ -28,6 +28,7 @@ require('./page-menu');
 const updater = require('./updater');
 const tabs = require('./tabs');
 const { saveHistoryNow } = require('./history');
+const { saveNow: saveBookmarksNow } = require('./bookmarks');
 const { loadConfig, saveConfig, homeUrl } = require('./config');
 const { normalizeUrl } = require('./app-urls');
 const { addLog } = require('./inspect/store');
@@ -113,5 +114,5 @@ app.on('open-file', (e, file) => {
   else pendingFile = file;
 });
 
-app.on('before-quit', () => { flashRouter.stop(); ghosthand.stop(); saveHistoryNow(); if (loadConfig().restoreTabs !== false) tabs.saveSession(); });
+app.on('before-quit', () => { flashRouter.stop(); ghosthand.stop(); saveHistoryNow(); saveBookmarksNow(); if (loadConfig().restoreTabs !== false) tabs.saveSession(); });
 app.on('window-all-closed', () => app.quit());

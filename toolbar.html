@@ -55,6 +55,9 @@
   .nb:disabled { opacity: .3; cursor: default; }
   #reload.stop { color: var(--red); }
   #home:hover { color: var(--amber) !important; }
+  #star:disabled { opacity: .3; }
+  #star.on { color: var(--amber); }
+  #star.on svg { fill: currentColor; }
 
   form { flex: 1; min-width: 0; display: flex; margin: 0 4px; position: relative; }
   .sec { position: absolute; left: 4px; top: 4px; height: 24px; display: flex; align-items: center; gap: 5px; padding: 0 7px;
@@ -133,6 +136,7 @@
       <span class="sec" id="sec"></span>
       <input id="url" spellcheck="false" placeholder="Nhập địa chỉ trang web hoặc file .swf rồi Enter">
     </form>
+    <button class="nb" id="star" title="Thêm dấu trang (Cmd+D)"><svg class="i" viewBox="0 0 24 24"><path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z"/></svg></button>
     <button id="gh" title="Ghosthand đang điều khiển Wisp – bấm để ngắt"><span class="dot"></span><svg class="i x" viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg>Ghosthand</button>
     <button id="task" title=""><svg viewBox="0 0 28 28"><circle class="trk" cx="14" cy="14" r="11"/><circle class="arc" cx="14" cy="14" r="11"/></svg><span id="task-pct"></span><span id="task-n"></span></button>
     <button id="swf" title="Trang này có nội dung Flash chưa chạy — bấm để bật Flash cho trang">Cần Flash – Bật</button>
@@ -295,6 +299,13 @@
     $('swf').classList.toggle('show', !!s.swfHint);
     flashDot = !s.hasPlugin; refreshDot();
   });
+  // ---- ★ dấu trang ----
+  nav.onBookmark((b) => {
+    $('star').disabled = !b.can;
+    $('star').classList.toggle('on', !!b.starred);
+    $('star').title = b.starred ? 'Bỏ dấu trang (Cmd+D)' : 'Thêm dấu trang (Cmd+D)';
+  });
+  $('star').onclick = () => nav.toggleBookmark();
   // ---- chip Ghosthand: hiện khi có kết nối, bấm để ngắt ----
   nav.onGhosthand((g) => $('gh').classList.toggle('show', !!g.clients));
   $('gh').onclick = () => nav.ghosthandDisconnect();

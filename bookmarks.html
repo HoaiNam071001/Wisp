@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<title>Dấu trang</title>
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'unsafe-inline'; script-src 'unsafe-inline'">
+<style>
+  :root {
+    --bg: #1b1c1f; --card: #232428; --hover: #2c2e33; --border: #33363c; --field: #141517;
+    --text: #e8e9eb; --muted: #9da0a8; --faint: #70747c;
+    --brand: #ff6a3d; --amber: #e3a008; --red: #f85149;
+  }
+  @media (prefers-color-scheme: light) {
+    :root { --bg: #f4f5f7; --card: #ffffff; --hover: #eef0f3; --border: #d9dce1; --field: #ffffff; --text: #1f2328; --muted: #5d636b; --faint: #8a9099; }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 14px system-ui, -apple-system, sans-serif; }
+  svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+  header { position: sticky; top: 0; z-index: 1; background: var(--bg); border-bottom: 1px solid var(--border); }
+  .head { max-width: 880px; margin: 0 auto; padding: 18px 20px 16px; display: flex; gap: 12px; align-items: center; }
+  .logo { width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center; background: rgba(227,160,8,.16); color: var(--amber); }
+  .logo svg { width: 18px; height: 18px; }
+  h1 { margin: 0; font-size: 20px; font-weight: 650; }
+  .count { color: var(--faint); font-size: 12.5px; margin-right: auto; }
+  input { width: 300px; max-width: 45vw; height: 34px; border: 1px solid var(--border); border-radius: 17px; background: var(--field);
+          color: var(--text); padding: 0 14px; font-size: 14px; outline: none; }
+  input:focus { border-color: var(--brand); box-shadow: 0 0 0 3px rgba(255,106,61,.2); }
+  main { max-width: 880px; margin: 0 auto; padding: 16px 20px 48px; }
+  .list { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 6px; }
+  .row { display: flex; align-items: center; gap: 12px; height: 42px; padding: 0 6px 0 10px; border-radius: 8px; }
+  .row:hover { background: var(--hover); }
+  .av { width: 22px; height: 22px; border-radius: 6px; display: grid; place-items: center; font-size: 11px; font-weight: 700; color: #fff; flex: none; }
+  a { flex: 0 1 auto; min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; color: var(--text); text-decoration: none; cursor: pointer; }
+  a:hover { text-decoration: underline; text-underline-offset: 3px; }
+  .host { flex: 1 1 0; min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; color: var(--faint); font-size: 12px; }
+  .del { flex: none; width: 28px; height: 28px; border: 0; border-radius: 7px; background: transparent; color: var(--faint); cursor: pointer;
+         display: grid; place-items: center; opacity: 0; transition: opacity .1s; }
+  .row:hover .del, .del:focus-visible { opacity: 1; }
+  .del:hover { background: rgba(248,81,73,.16); color: var(--red); }
+  .empty { text-align: center; color: var(--muted); margin-top: 80px; }
+  .empty svg { width: 40px; height: 40px; color: var(--faint); display: block; margin: 0 auto 12px; }
+</style>
+</head>
+<body>
+<header>
+  <div class="head">
+    <span class="logo"><svg viewBox="0 0 24 24"><path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z"/></svg></span>
+    <h1>Dấu trang</h1><span class="count" id="count"></span>
+    <input id="q" type="search" placeholder="Tìm trong dấu trang" spellcheck="false" autofocus>
+  </div>
+</header>
+<main id="box"></main>
+<script>
+  const $ = (id) => document.getElementById(id);
+  const AV_COLORS = ['#4c8dff', '#3fb950', '#a371f7', '#e3a008', '#2bb3a3', '#e05fa8', '#ff6a3d', '#7c83ff'];
+  const hash = (s) => { let h = 0; for (const c of s) h = (h * 31 + c.charCodeAt(0)) | 0; return Math.abs(h); };
+  const hostOf = (u) => { try { return new URL(u).host.replace(/^www\./, ''); } catch { return ''; } };
+  let all = [];
+
+  function render() {
+    const q = $('q').value.trim().toLowerCase();
+    const items = q ? all.filter(b => (b.title || '').toLowerCase().includes(q) || b.url.toLowerCase().includes(q)) : all;
+    const box = $('box');
+    box.textContent = '';
+    $('count').textContent = all.length ? (q ? `${items.length} / ${all.length}` : String(all.length)) : '';
+    if (!items.length) {
+      const p = document.createElement('div'); p.className = 'empty';
+      p.innerHTML = '<svg viewBox="0 0 24 24"><path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z"/></svg>';
+      p.append(q ? 'Không tìm thấy dấu trang nào.' : 'Chưa có dấu trang. Bấm ★ trên thanh địa chỉ (hoặc Cmd/Ctrl+D) để thêm trang đang xem.');
+      box.appendChild(p);
+      return;
+    }
+    const list = document.createElement('div'); list.className = 'list';
+    for (const b of items) {
+      const row = document.createElement('div'); row.className = 'row';
+      const host = hostOf(b.url);
+      const av = document.createElement('span'); av.className = 'av';
+      av.textContent = (host[0] || '?').toUpperCase();
+      av.style.background = AV_COLORS[hash(host) % AV_COLORS.length];
+      const a = document.createElement('a'); a.textContent = b.title || b.url; a.title = b.url;
+      a.onclick = (e) => { e.preventDefault(); wispBookmarks.open(b.url, e.metaKey || e.ctrlKey); };
+      a.onauxclick = (e) => { if (e.button === 1) { e.preventDefault(); wispBookmarks.open(b.url, true); } };
+      const hs = document.createElement('span'); hs.className = 'host'; hs.textContent = host;
+      const del = document.createElement('button'); del.className = 'del'; del.title = 'Xoá dấu trang';
+      del.innerHTML = '<svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg>';
+      del.onclick = () => wispBookmarks.remove(b.id);
+      row.append(av, a, hs, del);
+      list.appendChild(row);
+    }
+    box.appendChild(list);
+  }
+  async function load() { all = await wispBookmarks.list(); render(); }
+  $('q').oninput = render;
+  wispBookmarks.onChange(load);
+  load();
+</script>
+</body>
+</html>

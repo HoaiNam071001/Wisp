@@ -8,7 +8,7 @@ const { EventEmitter } = require('events');
 const { loadConfig, saveConfig, homeUrl } = require('./config');
 const { FLASH_PATH, FLASH_VERSION } = require('./flash/mode');
 const { normalizeQuality } = require('./flash/quality');
-const { HISTORY_URL, LAUNCHER_URL, displayUrl, isHistoryUrl, normalizeUrl, launcherUrlFor } = require('./app-urls');
+const { HISTORY_URL, BOOKMARKS_URL, LAUNCHER_URL, displayUrl, isHistoryUrl, isBookmarksUrl, normalizeUrl, launcherUrlFor } = require('./app-urls');
 const { addLog } = require('./inspect/store');
 const flashRouter = require('./flash-engine/router');
 const { popupFor } = require('./popup-policy');
@@ -50,11 +50,13 @@ function sendState() {
   });
 }
 
+const isInternalUrl = (u) => isHistoryUrl(u) || isBookmarksUrl(u); // trang nội bộ wisp:// (icon riêng trên thanh tab)
+
 function tabInfo(t) {
   const w = t.view.webContents;
   const url = w.isDestroyed() ? '' : displayUrl(w.getURL());
   return { id: t.id, title: t.title || url || 'Tab mới', url, favicon: t.favicon || '',
-           loading: !w.isDestroyed() && w.isLoading(), history: isHistoryUrl(w.isDestroyed() ? '' : w.getURL()),
+           loading: !w.isDestroyed() && w.isLoading(), history: isInternalUrl(w.isDestroyed() ? '' : w.getURL()),
            audible: !!t.audible, muted: !!t.muted };
 }
 
@@ -97,7 +99,7 @@ function tabPrefs() {
     sandbox: false, // preload cần require('./ghosthand/agent') – chỉ preload, trang web không có Node
     // page-preload.js: cầu nối cho trang Lịch sử / trang chờ Flash + agent Ghosthand
     preload: path.join(__dirname, 'page-preload.js'),
-    additionalArguments: ['--wisp-history=' + HISTORY_URL, '--wisp-launcher=' + LAUNCHER_URL, ...(quality ? ['--flash-quality=' + quality] : [])],
+    additionalArguments: ['--wisp-history=' + HISTORY_URL, '--wisp-bookmarks=' + BOOKMARKS_URL, '--wisp-launcher=' + LAUNCHER_URL, ...(quality ? ['--flash-quality=' + quality] : [])],
     // preload chạy trong mọi frame (kể cả iframe): agent Ghosthand ở frame khác nguồn
     nodeIntegrationInSubFrames: true,
   };

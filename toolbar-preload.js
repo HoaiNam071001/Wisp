@@ -12,6 +12,8 @@ contextBridge.exposeInMainWorld('nav', {
   muteTab: (id) => ipcRenderer.send('tab', 'mute', id),
   onToast: (cb) => ipcRenderer.on('toast', (_e, t) => cb(t)),
   onMenuClosed: (cb) => ipcRenderer.on('menu-closed', () => cb()),
+  toggleBookmark: () => ipcRenderer.send('bookmark:toggle'),
+  onBookmark: (cb) => ipcRenderer.on('bookmark:state', (_e, s) => cb(s)),
   history: () => ipcRenderer.send('nav', 'history'),
   enableFlash: () => ipcRenderer.send('flash:enable'),
   update: () => ipcRenderer.send('nav', 'update'),

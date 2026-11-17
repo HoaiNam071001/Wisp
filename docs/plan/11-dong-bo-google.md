@@ -1,4 +1,4 @@
-# 11. ⬜ Đăng nhập Google để đồng bộ giữa các máy
+# 11. 🔄 Đăng nhập Google để đồng bộ giữa các máy
 
 **Phụ thuộc:** – (đăng nhập + đồng bộ cấu hình làm được ngay trên Electron 11; cookie đợi bước 04 để biết engine nào giữ phiên)
 **Xong khi:** Đăng nhập Google trên máy A → cấu hình, dấu trang, lịch sử, phiên game hiện ở máy B sau khi đăng nhập; đăng xuất thì dừng đồng bộ, dữ liệu máy vẫn còn.
@@ -14,7 +14,7 @@
 - Logic gộp + mã hoá là module thuần (`sync-merge.js`, `sync-crypt.js`) có `test/*.test.js`; phần mạng / Drive tách `sync-drive.js`; đăng nhập `google-auth.js`; điều phối `sync.js`. Mã Node 12 (không `fetch` → dùng `https`).
 
 ## Việc
-- ⬜ **Dấu trang (làm trước, hiện chưa có):** lưu `bookmarks.json` ở userData, nút ★ trên thanh địa chỉ, trang quản lý; sự kiện qua `bookmarks.events`.
+- ✅ **Dấu trang** (2026-11-17: `bookmarks-store.js` thuần + test – mục `{id, url, title, addedAt, updatedAt, deleted?}`, xoá = tombstone sẵn cho gộp; `bookmarks.js` lưu `userData/bookmarks.json`, `bookmarks.events 'changed'`; ★ trên thanh địa chỉ + Cmd/Ctrl+D (menu Trang, menu ⋮); trang `wisp://bookmarks` (`bookmarks.html`: tìm, mở / Cmd+bấm tab mới, xoá). Đã thử trang quản lý trên app dev; chưa thử bấm ★ / Cmd+D). Ý gốc: lưu `bookmarks.json` ở userData, nút ★ trên thanh địa chỉ, trang quản lý; sự kiện qua `bookmarks.events`.
 - ⬜ **Google Cloud (người dùng làm):** tạo OAuth client loại *Desktop app*, bật Drive API, điền consent screen; đưa client ID vào build (client secret loại desktop không bí mật). Cần xác minh app nếu muốn dùng ngoài chế độ test (≤100 người thử).
 - ⬜ **Đăng nhập:** `google-auth.js` – mở `shell.openExternal`, server `127.0.0.1` cổng ngẫu nhiên nhận mã, PKCE, đổi token, làm mới; trang "đăng nhập xong, quay lại Wisp".
 - ⬜ **Lưu token:** `safeStorage`; không có thì từ chối đồng bộ (không lưu thô).

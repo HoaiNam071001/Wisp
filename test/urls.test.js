@@ -57,3 +57,12 @@ test('trang chờ Flash: displayUrl trả địa chỉ thật, launcherUrlFor đ
   assert.strictEqual(displayUrl(u), real);
   assert.strictEqual(isLauncherUrl(real), false);
 });
+
+test('wisp://bookmarks → trang Dấu trang nội bộ', () => {
+  const bm = pathToFileURL(path.join(appDir, 'bookmarks.html')).href;
+  const u = make({ bookmarksUrl: bm });
+  assert.strictEqual(u.normalizeUrl('wisp://bookmarks'), bm);
+  assert.strictEqual(u.displayUrl(bm + '#x'), 'wisp://bookmarks');
+  assert.ok(u.isBookmarksUrl(bm + '?a=1'));
+  assert.ok(!u.isBookmarksUrl('https://a.com'));
+});
