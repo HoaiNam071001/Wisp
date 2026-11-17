@@ -64,3 +64,4 @@ Chạy `npm run dev` (dữ liệu `.dev-data/`), thử như bản 2.3.0:
 - 05 Zoom: phóng to một trang (Cmd+=), mở tab mới vào cùng domain → vẫn phóng; khởi động lại app vẫn nhớ; domain khác 100%; Cmd+0 thì quên. 05 PDF: mở link .pdf local / lớn xem được.
 - 05 Đăng nhập Google: đăng nhập thật 1 tài khoản trên accounts.google.com; nếu báo 'không an toàn' → dùng 'Mở bằng trình duyệt hệ thống' (menu ⋮) và báo lại. 05 Bộ trang thử: chạy `npm run dev` rồi `node scripts/sites-try.js` trước khi phát hành.
 - 11 Dấu trang: bấm ★ (hoặc Cmd/Ctrl+D) trên trang https → ★ vàng + toast; bấm lại bỏ; mở wisp://bookmarks (menu ⋮ → Quản lý dấu trang) thấy trang vừa thêm, bấm mở, Cmd+bấm tab mới, ✕ xoá; khởi động lại app vẫn còn.
+- 11 Google Cloud (người dùng): deploy Vercel (Root Directory site) → điền Homepage / Privacy / Authorised domain → xác minh Search Console → Publish app; tạo google-oauth.local.json chứa Client secret.

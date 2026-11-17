@@ -7,3 +7,4 @@ plugins/*.dll
 plugins/*.json
 .dev-data/
 .dev-data-engine/
+google-oauth.local.json
