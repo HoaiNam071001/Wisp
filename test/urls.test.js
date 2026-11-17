@@ -7,8 +7,9 @@ const { createUrls, PLAYER_PATH } = require('../urls');
 const appDir = path.join(__dirname, '..');
 const historyUrl = pathToFileURL(path.join(appDir, 'history.html')).href;
 const playerUrl = pathToFileURL(path.join(appDir, 'player.html')).href;
+const launcherUrl = pathToFileURL(path.join(appDir, 'flash-launcher.html')).href;
 const make = (over = {}) => createUrls({
-  historyUrl, appDir, homeDir: () => '/Users/test', ruffle: false, isWin: false, exists: () => false, ...over,
+  historyUrl, launcherUrl, appDir, homeDir: () => '/Users/test', ruffle: false, isWin: false, exists: () => false, ...over,
 });
 
 test('normalizeUrl: thêm https:// / http:// cho localhost và IP', () => {
@@ -52,4 +53,13 @@ test('displayUrl: bỏ lớp player.html / ruffle://file, Lịch sử → wisp:/
   assert.ok(isHistoryUrl(historyUrl + '?a=1'));
   assert.ok(!isHistoryUrl('https://a.vn/'));
   assert.strictEqual(displayUrl('https://a.vn/'), 'https://a.vn/');
+});
+
+test('trang chờ Flash: displayUrl trả địa chỉ thật, launcherUrlFor đảo ngược được', () => {
+  const { launcherUrlFor, displayUrl, isLauncherUrl } = make();
+  const real = 'https://cf4vn.bar/play?a=1&b=2';
+  const u = launcherUrlFor(real);
+  assert.ok(isLauncherUrl(u));
+  assert.strictEqual(displayUrl(u), real);
+  assert.strictEqual(isLauncherUrl(real), false);
 });

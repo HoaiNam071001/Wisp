@@ -6,14 +6,21 @@ const { pathToFileURL } = require('url');
 // Trang player.html phục vụ qua ruffle://file (chế độ Ruffle mở file .swf trên máy)
 const PLAYER_PATH = '/__flash_player__.html';
 
-// ctx: { historyUrl, appDir, homeDir(), ruffle, isWin, exists(path) }
+// ctx: { historyUrl, launcherUrl, appDir, homeDir(), ruffle, isWin, exists(path) }
 function createUrls(ctx) {
   // Trang Lịch sử nội bộ; thanh địa chỉ hiện "wisp://history"
   function isHistoryUrl(u) { return String(u || '').split(/[?#]/)[0] === ctx.historyUrl; }
 
-  // Địa chỉ hiển thị trên thanh địa chỉ: bỏ lớp player.html / ruffle://file
+  // Trang chờ của trang Flash thật (flash-launcher.html?url=…): tab hiện địa chỉ thật của trang
+  function isLauncherUrl(u) { return String(u || '').split(/[?#]/)[0] === ctx.launcherUrl; }
+  function launcherUrlFor(url) { return ctx.launcherUrl + '?url=' + encodeURIComponent(url); }
+
+  // Địa chỉ hiển thị trên thanh địa chỉ: bỏ lớp player.html / ruffle://file / trang chờ Flash
   function displayUrl(u) {
     if (isHistoryUrl(u)) return 'wisp://history';
+    if (isLauncherUrl(u)) {
+      try { return new URL(u).searchParams.get('url') || ''; } catch { return ''; }
+    }
     const m = String(u || '').match(/(?:player\.html|__flash_player__\.html)\?src=([^&#]+)/);
     if (m) u = decodeURIComponent(m[1]);
     if (u.startsWith('ruffle://file/')) u = 'file://' + u.slice('ruffle://file'.length);
@@ -37,7 +44,7 @@ function createUrls(ctx) {
     return u;
   }
 
-  return { isHistoryUrl, displayUrl, normalizeUrl };
+  return { isHistoryUrl, isLauncherUrl, launcherUrlFor, displayUrl, normalizeUrl };
 }
 
 module.exports = { PLAYER_PATH, createUrls };

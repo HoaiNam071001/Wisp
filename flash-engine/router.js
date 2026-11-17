@@ -11,8 +11,9 @@ const { FLASH_PATH, FLASH_VERSION } = require('../flash/mode');
 const { engineForUrl } = require('../flash/engine-pick');
 const { addLog } = require('../inspect/store');
 
-const events = new EventEmitter(); // 'leave' (url), 'choose' ({url, engine: 'off'|'ruffle'})
+const events = new EventEmitter(); // 'closed' (cửa sổ Flash đóng), 'leave' (url), 'choose' ({url, engine: 'off'|'ruffle'})
 let client = null;
+let stopping = false; // đang thoát app: không báo 'closed' (tab không bị đóng theo)
 
 // Dev: Electron 11 cài như gói electron-flash. Bản đóng gói: Resources/game (extraResources).
 function engineElectronPath() {
@@ -32,6 +33,7 @@ async function ensure() {
     electronPath: engineElectronPath(), userData: engineUserData(), pluginPath: FLASH_PATH, pluginVersion: FLASH_VERSION,
   }));
   client.on('leave', (d) => events.emit('leave', d.url));
+  client.on('closed', () => { if (!stopping) events.emit('closed'); });
   client.on('choose', (d) => events.emit('choose', d));
   client.on('flash', (d) => addLog('info', 'event', 'Engine Flash: ' + (d.plugin || 'không thấy plugin Flash')));
   client.on('exit', () => addLog('warning', 'event', 'Engine Flash đã thoát'));
@@ -51,6 +53,6 @@ async function open(url) {
 
 function close() { return client && client.running ? client.request('close').catch(() => {}) : Promise.resolve(); }
 
-function stop() { return client ? client.stop() : Promise.resolve(); }
+function stop() { stopping = true; return client ? client.stop() : Promise.resolve(); }
 
 module.exports = { events, wantsFlash, open, close, stop };

@@ -20,6 +20,7 @@ if (SECOND_INSTANCE) app.quit();
 const { FLASH_PATH, wantedMode } = require('./flash/mode');
 const flashRouter = require('./flash-engine/router');
 const siteMenu = require('./flash/site-menu');
+require('./flash/launcher');
 
 const updater = require('./updater');
 const tabs = require('./tabs');

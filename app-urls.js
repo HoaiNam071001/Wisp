@@ -7,11 +7,12 @@ const { PLAYER_PATH, createUrls } = require('./urls');
 const { MODE } = require('./flash/mode');
 
 const HISTORY_URL = pathToFileURL(path.join(__dirname, 'history.html')).href;
+const LAUNCHER_URL = pathToFileURL(path.join(__dirname, 'flash-launcher.html')).href;
 
 module.exports = {
-  HISTORY_URL, PLAYER_PATH,
+  HISTORY_URL, LAUNCHER_URL, PLAYER_PATH,
   ...createUrls({
-    historyUrl: HISTORY_URL, appDir: __dirname, homeDir: () => app.getPath('home'),
+    historyUrl: HISTORY_URL, launcherUrl: LAUNCHER_URL, appDir: __dirname, homeDir: () => app.getPath('home'),
     ruffle: MODE === 'ruffle', isWin: process.platform === 'win32', exists: fs.existsSync,
   }),
 };

@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<title>Trang Flash</title>
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'unsafe-inline'; script-src 'unsafe-inline'">
+<style>
+  :root { --text: #fff; --muted: rgba(255,255,255,.75); --card: rgba(255,255,255,.12); --line: rgba(255,255,255,.22);
+          --g1: #1f1147; --g2: #5b2a9e; --g3: #ff6a3d; --btn: #ff6a3d; --btn-text: #fff; }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; }
+  body { display: grid; place-items: center; color: var(--text); font: 15px system-ui, -apple-system, sans-serif;
+         background: radial-gradient(circle at 20% 15%, var(--g3) 0, transparent 38%), radial-gradient(circle at 85% 90%, #2b6cff 0, transparent 40%),
+                     linear-gradient(135deg, var(--g1), var(--g2)); }
+  .card { width: min(440px, calc(100vw - 32px)); padding: 36px 32px; text-align: center; border-radius: 24px;
+          background: var(--card); border: 1px solid var(--line); backdrop-filter: blur(18px); box-shadow: 0 24px 60px rgba(0,0,0,.35); }
+  .bolt { width: 64px; height: 64px; margin: 0 auto 16px; border-radius: 18px; display: grid; place-items: center;
+          background: linear-gradient(135deg, #ffb347, var(--btn)); box-shadow: 0 8px 24px rgba(255,106,61,.5); }
+  .bolt svg { width: 34px; height: 34px; fill: #fff; }
+  h1 { margin: 0 0 6px; font-size: 22px; }
+  .host { margin: 0 0 20px; color: var(--muted); word-break: break-all; }
+  button { font: inherit; font-weight: 700; font-size: 16px; padding: 13px 28px; border: 0; border-radius: 14px; cursor: pointer;
+           background: var(--btn); color: var(--btn-text); box-shadow: 0 8px 20px rgba(255,106,61,.45); transition: transform .12s; }
+  button:hover { transform: translateY(-1px); }
+  button:active { transform: translateY(1px); }
+  button:focus-visible { outline: 3px solid #fff; outline-offset: 3px; }
+  .hint { margin: 18px 0 0; font-size: 13px; color: var(--muted); line-height: 1.5; }
+</style>
+</head>
+<body>
+  <main class="card">
+    <div class="bolt"><svg viewBox="0 0 24 24"><path d="M13 2 4 14h6l-1 8 9-12h-6z"/></svg></div>
+    <h1>Trang này chạy bằng Flash</h1>
+    <p class="host" id="host"></p>
+    <button id="go" autofocus>Mở game Flash</button>
+    <p class="hint">Game mở ở cửa sổ riêng. Đóng tab này hoặc đóng cửa sổ game thì cái còn lại cũng đóng theo.</p>
+  </main>
+<script>
+  try { document.getElementById('host').textContent = new URL(new URL(location.href).searchParams.get('url')).host; } catch {}
+  document.getElementById('go').onclick = () => window.wispFlash && window.wispFlash.launch();
+</script>
+</body>
+</html>

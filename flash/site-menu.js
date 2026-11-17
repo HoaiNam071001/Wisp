@@ -25,9 +25,8 @@ function apply(host, engine) {
   writeMmsCfg();
   const w = tabs.wc();
   if (!w) return;
-  const url = w.getURL();
-  if (engine === 'flash') flashRouter.open(url);
-  else w.reload(); // Tắt / Ruffle: tải lại tab để preload chèn (hoặc thôi chèn) Ruffle
+  // Qua tabs.load: Flash thật → trang chờ Flash; Tắt / Ruffle → tải lại để preload chèn (hoặc thôi chèn) Ruffle
+  tabs.load(w, displayUrl(w.getURL()));
   tabs.sendState();
 }
 

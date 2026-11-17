@@ -9,7 +9,7 @@ const { loadConfig, saveConfig, homeUrl, flashSites } = require('./config');
 const { siteFor } = require('./flash/site-config');
 const { MODE, FLASH_VERSION, wantedMode } = require('./flash/mode');
 const { normalizeQuality } = require('./flash/quality');
-const { HISTORY_URL, displayUrl, isHistoryUrl, normalizeUrl } = require('./app-urls');
+const { HISTORY_URL, LAUNCHER_URL, displayUrl, isHistoryUrl, normalizeUrl, launcherUrlFor } = require('./app-urls');
 const { addLog } = require('./inspect/store');
 const flashRouter = require('./flash-engine/router');
 
@@ -105,17 +105,16 @@ function tabPrefs() {
     sandbox: false, // preload cần require('./ghosthand/agent') – chỉ preload, trang web không có Node
     // page-preload.js: chèn Ruffle (chế độ Ruffle) + cầu nối cho trang Lịch sử
     preload: path.join(__dirname, 'page-preload.js'),
-    additionalArguments: ['--wisp-history=' + HISTORY_URL, ...(quality ? ['--flash-quality=' + quality] : [])],
+    additionalArguments: ['--wisp-history=' + HISTORY_URL, '--wisp-launcher=' + LAUNCHER_URL, ...(quality ? ['--flash-quality=' + quality] : [])],
     // preload chạy trong mọi frame (kể cả iframe): chèn Ruffle (chế độ Ruffle) + agent Ghosthand ở frame khác nguồn
     nodeIntegrationInSubFrames: true,
   };
 }
 
-// Trang cấu hình Flash thật → engine Flash (cửa sổ riêng); tab này giữ trang trống. Còn lại tải ở tab.
+// Trang cấu hình Flash thật → tab hiện trang chờ có nút mở game ở cửa sổ engine Flash (flash/launcher.js). Còn lại tải ở tab.
 function loadInTab(t, url) {
   const w = t.view.webContents;
-  if (flashRouter.wantsFlash(url)) { flashRouter.open(url); if (!w.getURL()) w.loadURL('about:blank').catch(() => {}); return; }
-  w.loadURL(url).catch(() => {});
+  w.loadURL(flashRouter.wantsFlash(url) ? launcherUrlFor(url) : url).catch(() => {});
 }
 
 function createTab(url, { activate = true, index = tabs.length } = {}) {
@@ -173,6 +172,7 @@ function closeTab(id) {
     if (closedTabs.length > CLOSED_MAX) closedTabs.shift();
   }
   tabs.splice(i, 1);
+  events.emit('tab-closed', t);
   if (activeId === id) activeId = null;
   if (winOk()) win.contentView.removeChildView(t.view);
   try { w.close(); } catch {}
@@ -243,8 +243,8 @@ function wireTab(t) {
   });
 
   ['did-navigate-in-page', 'did-start-loading', 'did-stop-loading'].forEach(ev => w.on(ev, () => { if (isActive()) sendState(); sendTabs(); }));
-  // Bấm link / chuyển hướng sang trang Flash thật → engine Flash, tab ở lại trang cũ
-  const toFlash = (e, url) => { if (/^https?:/i.test(url) && flashRouter.wantsFlash(url)) { e.preventDefault(); flashRouter.open(url); } };
+  // Bấm link / chuyển hướng sang trang Flash thật → trang chờ Flash trong tab này
+  const toFlash = (e, url) => { if (/^https?:/i.test(url) && flashRouter.wantsFlash(url)) { e.preventDefault(); loadInTab(t, url); } };
   w.on('will-navigate', toFlash);
   w.on('will-redirect', toFlash);
   w.on('did-navigate', (_e, url) => {

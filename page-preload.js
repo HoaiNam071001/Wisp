@@ -7,11 +7,14 @@ const { webFrame, contextBridge, ipcRenderer } = require('electron');
 
 const argHistory = process.argv.find(a => a.startsWith('--wisp-history='));
 const HISTORY_URL = argHistory ? argHistory.slice('--wisp-history='.length) : '';
+const argLauncher = process.argv.find(a => a.startsWith('--wisp-launcher='));
+const LAUNCHER_URL = argLauncher ? argLauncher.slice('--wisp-launcher='.length) : '';
+const isLauncherPage = !!LAUNCHER_URL && process.isMainFrame && location.href.split(/[?#]/)[0] === LAUNCHER_URL;
 const isHistoryPage = !!HISTORY_URL && process.isMainFrame && location.href.split(/[?#]/)[0] === HISTORY_URL;
 
 // Đọc được document của khung cha = cùng nguồn
 const crossToParent = () => { try { return !window.parent.document; } catch (e) { return true; } };
-if (!isHistoryPage && (process.isMainFrame || crossToParent())) require('./ghosthand/agent').install(!process.isMainFrame);
+if (!isHistoryPage && !isLauncherPage && (process.isMainFrame || crossToParent())) require('./ghosthand/agent').install(!process.isMainFrame);
 
 // Trang cấu hình Ruffle? Hỏi theo host khung trên cùng (iframe game khác domain vẫn theo trang bọc nó)
 function isRuffleSite() {
@@ -24,7 +27,9 @@ function isRuffleSite() {
 const argQuality = process.argv.find(a => a.startsWith('--flash-quality='));
 if (argQuality && !isHistoryPage) require('./flash/quality-patch').install(argQuality.slice('--flash-quality='.length));
 
-if (isHistoryPage) {
+if (isLauncherPage) {
+  contextBridge.exposeInMainWorld('wispFlash', { launch: () => ipcRenderer.invoke('flash:launch') });
+} else if (isHistoryPage) {
   contextBridge.exposeInMainWorld('wispHistory', {
     list: () => ipcRenderer.invoke('history:list'),
     open: (url, newTab) => ipcRenderer.invoke('history:open', url, !!newTab),
