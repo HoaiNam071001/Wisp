@@ -30,6 +30,13 @@ async function clearCacheReload() {
   hardReload();
   tabs.toast('Đã xoá cache, đang tải lại');
 }
+// Trang đăng nhập Google có thể báo "trình duyệt không an toàn" → mở bằng trình duyệt hệ thống (chỉ http / https)
+function openInSystemBrowser() {
+  const w = tabs.wc();
+  const url = w ? w.getURL() : '';
+  if (siteZoom.hostOf(url)) shell.openExternal(url);
+  else tabs.toast('Chỉ mở được trang http / https bằng trình duyệt hệ thống');
+}
 function printPage() { const w = tabs.wc(); if (w) w.print(); }
 function setHomeHere() {
   const w = tabs.wc();
@@ -61,4 +68,4 @@ async function openSwfFile() {
   if (!r.canceled && r.filePaths[0]) tabs.openNextToActive(normalizeUrl(r.filePaths[0]));
 }
 
-module.exports = { zoomBy, zoomPercent, toggleFullScreen, hardReload, clearCacheReload, printPage, setHomeHere, openShotsDir, screenshotTab, openSwfFile };
+module.exports = { zoomBy, zoomPercent, toggleFullScreen, hardReload, clearCacheReload, printPage, openInSystemBrowser, setHomeHere, openShotsDir, screenshotTab, openSwfFile };

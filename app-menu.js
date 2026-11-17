@@ -117,6 +117,7 @@ function pageSubmenu() {
   const w = () => tabs.wc();
   return [
     { label: 'Mở địa chỉ…', accelerator: 'CmdOrCtrl+L', click: tabs.focusUrlBar },
+    { label: 'Mở trang này bằng trình duyệt hệ thống', click: page.openInSystemBrowser },
     { label: 'Tìm trong trang…', accelerator: 'CmdOrCtrl+F', click: openFindBar },
     { label: 'Quay lại', accelerator: IS_MAC ? 'Cmd+[' : 'Alt+Left', click: () => w() && w().navigationHistory.canGoBack() && w().navigationHistory.goBack() },
     { label: 'Tiến tới', accelerator: IS_MAC ? 'Cmd+]' : 'Alt+Right', click: () => w() && w().navigationHistory.canGoForward() && w().navigationHistory.goForward() },

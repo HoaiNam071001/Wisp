@@ -10,7 +10,7 @@ Trạng thái: ✅ xong · 🔄 đang làm · ⬜ chưa làm
 | [02](02-ghosthand-backend-wisp.md) | Ghosthand dùng Wisp làm trình duyệt | 01 | ✅ |
 | [03](03-tach-main-js.md) | Tách main.js theo việc | – | 🔄 |
 | [04](04-mot-trinh-duyet-flash.md) | Một trình duyệt (Electron mới) + engine Flash cho trang cấu hình Flash | 03 | 🔄 |
-| [05](05-web-nhu-chrome.md) | Trình duyệt như Chrome thường | 04 | ⬜ |
+| [05](05-web-nhu-chrome.md) | Trình duyệt như Chrome thường | 04 | 🔄 |
 | [06](06-chon-element.md) | Chọn element trên Wisp → step Ghosthand | 02, 04 | ⬜ |
 | [07](07-game-ghosthand.md) | Trang Flash với Ghosthand | 04 | ⬜ |
 | [08](08-phat-hanh-3.md) | Phát hành 3.0.0 | 05 | ⬜ |

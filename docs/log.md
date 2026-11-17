@@ -39,3 +39,4 @@ Chỉ thêm dòng bằng `>>`: `- **YYYY-MM-DD** – <việc>. <kết quả ki�
 - **2026-11-17** – Bước 05 Session: giữ session mặc định, thêm menu ⋮ "Xoá cookie và dữ liệu trang…" (browsing-data.js). check + test OK; chưa thử tay.
 - **2026-11-17** – Bước 05: chặn file:// từ trang web (nav-policy.js), In trang Cmd/Ctrl+P; tách PDF / tìm trong trang / zoom theo trang thành việc ⬜. check + test OK; chưa thử tay.
 - **2026-11-17** – Bước 05: tìm trong trang, xem PDF (viewer sẵn, thử bằng http local), zoom nhớ theo domain (site-zoom.js). check + test OK; Cmd+F / zoom chưa thử tay.
+- **2026-11-17** – Bước 05: nút 'Mở bằng trình duyệt hệ thống', bộ trang thử (test/sites.json + scripts/sites-try.js; 8/8 ok trên app dev). check + test OK; đăng nhập Google thật chưa thử.

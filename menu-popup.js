@@ -94,7 +94,7 @@ function menuActions(arg) {
     history: history.openHistory, clearHistory: history.clearHistoryDialog, recent: () => tabs.openUrl(String(arg || '')),
     home: () => w && tabs.load(w, homeUrl()), setHome: page.setHomeHere,
     inspector: () => openInspector(arg ? String(arg) : undefined), devtools: () => w && w.toggleDevTools(),
-    hardReload: page.hardReload, clearCache: page.clearCacheReload, clearData: browsingData.clearBrowsingDataDialog,
+    hardReload: page.hardReload, external: page.openInSystemBrowser, clearCache: page.clearCacheReload, clearData: browsingData.clearBrowsingDataDialog,
     checkFlash: flash.checkFlash, allowSite: flash.allowCurrentSite, plugin: askForFlashPlugin,
     flashMore: flashSettings.openSettings,
     openSwf: page.openSwfFile,

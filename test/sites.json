@@ -1,0 +1,10 @@
+[
+  { "name": "Google", "url": "https://www.google.com/", "expectUrl": "google\\." },
+  { "name": "Google đăng nhập", "url": "https://accounts.google.com/", "expectUrl": "accounts\\.google\\.com" },
+  { "name": "YouTube", "url": "https://www.youtube.com/", "expectUrl": "youtube\\.com" },
+  { "name": "Facebook", "url": "https://www.facebook.com/", "expectUrl": "facebook\\.com" },
+  { "name": "GitHub", "url": "https://github.com/", "expectUrl": "github\\.com" },
+  { "name": "Trang Cloudflare", "url": "https://www.cloudflare.com/", "expectUrl": "cloudflare\\.com" },
+  { "name": "reCAPTCHA demo", "url": "https://www.google.com/recaptcha/api2/demo", "expectUrl": "recaptcha" },
+  { "name": "cf4vn.bar (Flash)", "url": "https://cf4vn.bar/", "expectEngine": "flash", "note": "cần đã bật Flash cho domain; tab hiện trang chờ Flash" }
+]
