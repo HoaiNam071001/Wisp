@@ -1,7 +1,8 @@
 // Engine Flash: chạy bằng Electron 11 (Pepper Flash), một cửa sổ cho trang cấu hình Flash.
 // Vỏ app mở tiến trình này (bỏ ELECTRON_RUN_AS_NODE khỏi env), nói chuyện qua stdin / stdout JSON.
 // Env: WISP_USER_DATA (thư mục dữ liệu), WISP_FLASH_PLUGIN + WISP_FLASH_VERSION (không có → Flash không nạp).
-const { app, BrowserWindow } = require('electron');
+const { app, BrowserWindow, BrowserView, ipcMain } = require('electron');
+const path = require('path');
 const readline = require('readline');
 const { parseLine, reply, fail, event, hostInDomains } = require('./protocol');
 
@@ -14,44 +15,68 @@ if (process.env.WISP_FLASH_PLUGIN) {
 process.stdout.on('error', () => app.quit());
 const send = (s) => { if (!process.stdout.destroyed && process.stdout.writable) process.stdout.write(s); };
 let win = null;
+let view = null; // BrowserView chứa trang game; win.webContents là thanh công cụ (bar.html)
+const BAR_H = 40;
 let domains = []; // trang Flash thật; ra ngoài thì nhờ vỏ app mở bằng engine web
 
 function hostOf(url) { try { return new URL(url).hostname; } catch { return ''; } }
 
+function layoutView() {
+  if (!win || win.isDestroyed() || !view) return;
+  const c = win.getContentBounds();
+  view.setBounds({ x: 0, y: BAR_H, width: c.width, height: Math.max(0, c.height - BAR_H) });
+}
+
+function createWindow() {
+  win = new BrowserWindow({
+    width: 1100, height: 760 + BAR_H,
+    webPreferences: { preload: path.join(__dirname, 'bar-preload.js'), contextIsolation: true, nodeIntegration: false },
+  });
+  win.loadFile(path.join(__dirname, 'bar.html'));
+  view = new BrowserView({ webPreferences: { plugins: true, contextIsolation: true, nodeIntegration: false } });
+  win.setBrowserView(view);
+  layoutView();
+  view.setAutoResize({ width: true, height: true });
+  const wc = view.webContents;
+  // Ra khỏi trang Flash: huỷ và báo vỏ app mở ở cửa sổ chính (engine web)
+  const leave = (e, url) => {
+    if (!/^https?:/i.test(url) || hostInDomains(domains, hostOf(url))) return;
+    e.preventDefault();
+    send(event('leave', { url }));
+  };
+  wc.on('will-navigate', leave);
+  wc.on('will-redirect', leave);
+  wc.on('new-window', (e, url) => { // popup: cùng domain mở trong cửa sổ này, khác domain nhờ vỏ app
+    e.preventDefault();
+    if (hostInDomains(domains, hostOf(url))) wc.loadURL(url).catch(() => {}); else send(event('leave', { url }));
+  });
+  const showHost = (u) => { if (win && !win.isDestroyed()) win.webContents.send('bar:host', hostOf(u)); };
+  win.webContents.on('did-finish-load', () => showHost(wc.getURL()));
+  wc.on('did-navigate', (_e, u) => { showHost(u); send(event('url', { url: u })); });
+  wc.on('did-finish-load', async () => {
+    const info = await wc.executeJavaScript(`(() => { const p = navigator.plugins['Shockwave Flash']; return p ? p.description : ''; })()`).catch(() => '');
+    send(event('flash', { plugin: info }));
+  });
+  wc.on('page-title-updated', (_e, title) => { if (win && !win.isDestroyed()) win.setTitle(title); send(event('title', { title })); });
+  win.on('closed', () => { win = null; view = null; send(event('closed', {})); });
+}
+
+// Nút trên thanh: tải lại, hoặc đổi engine cho trang → nhờ vỏ app lưu cấu hình và mở lại
+ipcMain.on('bar', (e, action) => {
+  if (!win || win.isDestroyed() || e.sender !== win.webContents || !view) return;
+  if (action === 'reload') view.webContents.reload();
+  else if (action === 'off' || action === 'ruffle') send(event('choose', { engine: action, url: view.webContents.getURL() }));
+});
+
 function openWindow(url) {
-  if (!win || win.isDestroyed()) {
-    win = new BrowserWindow({
-      width: 1100, height: 760,
-      webPreferences: { plugins: true, contextIsolation: true, nodeIntegration: false },
-    });
-    const wc = win.webContents;
-    // Ra khỏi trang Flash: huỷ và báo vỏ app mở ở cửa sổ chính (engine web)
-    const leave = (e, url) => {
-      if (!/^https?:/i.test(url) || hostInDomains(domains, hostOf(url))) return;
-      e.preventDefault();
-      send(event('leave', { url }));
-    };
-    wc.on('will-navigate', leave);
-    wc.on('will-redirect', leave);
-    wc.on('new-window', (e, url) => { // popup: cùng domain mở trong cửa sổ này, khác domain nhờ vỏ app
-      e.preventDefault();
-      if (hostInDomains(domains, hostOf(url))) wc.loadURL(url).catch(() => {}); else send(event('leave', { url }));
-    });
-    wc.on('did-navigate', (_e, u) => send(event('url', { url: u })));
-    wc.on('did-finish-load', async () => {
-      const info = await wc.executeJavaScript(`(() => { const p = navigator.plugins['Shockwave Flash']; return p ? p.description : ''; })()`).catch(() => '');
-      send(event('flash', { plugin: info }));
-    });
-    wc.on('page-title-updated', (_e, title) => send(event('title', { title })));
-    win.on('closed', () => { win = null; send(event('closed', {})); });
-  }
-  return win.loadURL(url).catch(() => {});
+  if (!win || win.isDestroyed()) createWindow();
+  return view.webContents.loadURL(url).catch(() => {});
 }
 
 function frameRect() {
   if (!win || win.isDestroyed()) throw Object.assign(new Error('chưa có cửa sổ'), { code: 'no_tab' });
-  const c = win.getContentBounds();
-  return { screenRect: { x: c.x, y: c.y, width: c.width, height: c.height } };
+  const c = win.getContentBounds(); // chỉ vùng trang game, trừ thanh công cụ
+  return { screenRect: { x: c.x, y: c.y + BAR_H, width: c.width, height: Math.max(0, c.height - BAR_H) } };
 }
 
 async function handle(m) {

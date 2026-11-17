@@ -19,6 +19,7 @@ const SECOND_INSTANCE = !app.requestSingleInstanceLock();
 if (SECOND_INSTANCE) app.quit();
 const { FLASH_PATH, wantedMode } = require('./flash/mode');
 const flashRouter = require('./flash-engine/router');
+const siteMenu = require('./flash/site-menu');
 
 const updater = require('./updater');
 const tabs = require('./tabs');
@@ -81,6 +82,7 @@ app.whenReady().then(() => {
   applyAppNap();
   // Trang Flash đi ra ngoài trang đã cấu hình → mở ở cửa sổ chính
   flashRouter.events.on('leave', (url) => tabs.openNextToActive(url));
+  flashRouter.events.on('choose', (d) => siteMenu.applyFromEngine(d.url, d.engine));
   createWindow();
   // Cổng cho Ghosthand (config ghosthandPort: false = tắt; mặc định bật)
   if (loadConfig().ghosthandPort !== false) ghosthand.start();

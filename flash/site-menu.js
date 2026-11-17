@@ -46,4 +46,14 @@ function popup(x, y) {
   ]).popup({ window: win, x: Math.round(x), y: Math.round(y) });
 }
 
-module.exports = { popup, choiceFor, currentHost };
+// Chọn từ thanh của cửa sổ engine Flash: đổi cấu hình, đóng cửa sổ Flash, mở lại trang ở cửa sổ chính
+function applyFromEngine(url, engine) {
+  let host = '';
+  try { host = new URL(url).hostname; } catch { return; }
+  saveFlashSites(setSite(flashSites(), host, engine));
+  writeMmsCfg();
+  flashRouter.close();
+  tabs.openNextToActive(url);
+}
+
+module.exports = { applyFromEngine, popup, choiceFor, currentHost };
