@@ -10,7 +10,9 @@ if (process.env.WISP_FLASH_PLUGIN) {
   app.commandLine.appendSwitch('ppapi-flash-path', process.env.WISP_FLASH_PLUGIN);
   app.commandLine.appendSwitch('ppapi-flash-version', process.env.WISP_FLASH_VERSION || '32.0.0.0');
 }
-const send = (s) => process.stdout.write(s);
+// Vỏ app thoát / đóng ống thì ghi nữa sẽ ném lỗi → bỏ qua, và tự thoát theo vỏ app
+process.stdout.on('error', () => app.quit());
+const send = (s) => { if (!process.stdout.destroyed && process.stdout.writable) process.stdout.write(s); };
 let win = null;
 let domains = []; // trang Flash thật; ra ngoài thì nhờ vỏ app mở bằng engine web
 
