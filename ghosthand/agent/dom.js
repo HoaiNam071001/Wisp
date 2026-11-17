@@ -185,5 +185,5 @@ const rectOf = box => ({ x: Math.round(box.x), y: Math.round(box.y), w: Math.rou
 module.exports = {
   setBase, view, up, inside, allRoots, pathOf, frameContent,
   clean, tag, describe, allDocs, frameOffset, ownText, ariaLabel, IMPLICIT, accName, roleOf,
-  usable, autoLike, cssPath, shown, place, coverOf, rectOf,
+  usable, autoLike, cssPath, shown, place, coverOf, rectOf, topAt,
 };

@@ -66,3 +66,4 @@ Chạy `npm run dev` (dữ liệu `.dev-data/`), thử như bản 2.3.0:
 - 11 Dấu trang: bấm ★ (hoặc Cmd/Ctrl+D) trên trang https → ★ vàng + toast; bấm lại bỏ; mở wisp://bookmarks (menu ⋮ → Quản lý dấu trang) thấy trang vừa thêm, bấm mở, Cmd+bấm tab mới, ✕ xoá; khởi động lại app vẫn còn.
 - 11 Google Cloud (người dùng): deploy Vercel (Root Directory site) → điền Homepage / Privacy / Authorised domain → xác minh Search Console → Publish app; tạo google-oauth.local.json chứa Client secret.
 - 05 Session: thử đăng nhập một trang, thoát hẳn Wisp, mở lại vẫn đăng nhập; menu ⋮ → Xoá cookie và dữ liệu trang… thì bị đăng xuất.
+- 06 Chọn element: bật Ghosthand, mở trang bất kỳ, bấm nút ngắm (hoặc Cmd/Ctrl+Shift+E) → rê chuột thấy khung + nhãn; ↑ / ↓ đổi cha / con; bấm → bảng; đổi selector trong ô thì số khớp đổi; Chép dán được; Esc thoát và trang bấm lại bình thường. Thử cả trang có iframe cùng nguồn.

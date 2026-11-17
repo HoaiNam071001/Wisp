@@ -10,6 +10,7 @@ const { PAGE, resolveRef, info } = require('./elements');
 const { outline } = require('./outline');
 const { readElement, pageText } = require('./read');
 const form = require('./form');
+const pick = require('./pick');
 
 const err = (code, detail) => Object.assign(new Error(detail), { code });
 const REF_RE = /^[a-z0-9]{6}\.\d+$/;
@@ -111,6 +112,7 @@ const FNS = {
   selectResult({ ref, index }) { return form.selectResult(resolveRef(ref), index); },
   checked(args) { const el = target(args, false); return { ref: info(el, false).ref, on: form.checkedOf(el) }; },
   gameRect: form.gameRect,
+  pickToggle: a => pick.toggle(a.on),
   // Ghép nhiều frame (page-call.js): selector đầu tiên có phần tử ở frame này; từng selector có khớp không.
   firstIndex({ sels, visibleOnly = true, scope }) {
     const box = scopeOf(scope);

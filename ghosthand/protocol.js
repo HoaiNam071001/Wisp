@@ -35,10 +35,12 @@ const SPEC = {
   check: { target: '!', on: 'boolean!' },
   settle: { timeoutMs: 'number' },
   frameRect: {},
+  pick: { on: 'boolean' }, // bật / tắt chế độ chọn element (mặc định đảo trạng thái)
+  pickDone: { message: 'string!' }, // Ghosthand báo lại kết quả thêm step → hiện toast trên Wisp
   subscribe: { events: 'string[]!' },
   dialog: { accept: 'boolean!', text: 'string' },
 };
-const EVENTS = ['navigate', 'popup', 'download', 'dialog'];
+const EVENTS = ['navigate', 'popup', 'download', 'dialog', 'pick'];
 
 function typeOk(type, v) {
   if (Array.isArray(type)) return type.includes(v);
@@ -50,7 +52,7 @@ function typeOk(type, v) {
 
 // Trần của đối số: lệnh không chạy mãi / trả về quá lớn (gõ 4MB chữ từng ký tự, chờ 1 ngày…).
 const MAX_NUM = { timeoutMs: 120000, maxNodes: 2000, maxChars: 500000, amount: 20000, count: 3 };
-const MAX_LEN = { text: 10000, url: 8192, selectors: 20, keys: 50, mods: 4, value: 1000, label: 1000 };
+const MAX_LEN = { text: 10000, url: 8192, selectors: 20, keys: 50, mods: 4, value: 1000, label: 1000, message: 300 };
 
 function checkLimits(args) {
   for (const [k, max] of Object.entries(MAX_NUM)) {

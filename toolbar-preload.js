@@ -14,6 +14,7 @@ contextBridge.exposeInMainWorld('nav', {
   onMenuClosed: (cb) => ipcRenderer.on('menu-closed', () => cb()),
   toggleBookmark: () => ipcRenderer.send('bookmark:toggle'),
   onBookmark: (cb) => ipcRenderer.on('bookmark:state', (_e, s) => cb(s)),
+  pick: () => ipcRenderer.send('pick:toggle'),
   history: () => ipcRenderer.send('nav', 'history'),
   enableFlash: () => ipcRenderer.send('flash:enable'),
   update: () => ipcRenderer.send('nav', 'update'),

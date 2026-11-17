@@ -37,10 +37,13 @@ function subscribe(conn, events) {
   return { events };
 }
 
+// Có kết nối nào đang nghe sự kiện này không.
+function listening(event) { return Array.from(subs.values()).some(s => s.has(event)); }
+
 function drop(conn) { if (subs.delete(conn)) syncDialogs(); }
 
 module.exports = {
-  drop,
+  drop, emit, listening,
   commands: {
     subscribe: (a, conn) => subscribe(conn, a.events),
     dialog: a => dialogs.answer(resolveTab(a.tab), a.accept, a.text),

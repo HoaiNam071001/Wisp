@@ -137,6 +137,7 @@
       <input id="url" spellcheck="false" placeholder="Nhập địa chỉ trang web hoặc file .swf rồi Enter">
     </form>
     <button class="nb" id="star" title="Thêm dấu trang (Cmd+D)"><svg class="i" viewBox="0 0 24 24"><path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z"/></svg></button>
+    <button class="nb" id="pick" title="Chọn element cho Ghosthand (Cmd+Shift+E)"><svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="7"/><path d="M12 2v5M12 17v5M2 12h5M17 12h5"/></svg></button>
     <button id="gh" title="Ghosthand đang điều khiển Wisp – bấm để ngắt"><span class="dot"></span><svg class="i x" viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg>Ghosthand</button>
     <button id="task" title=""><svg viewBox="0 0 28 28"><circle class="trk" cx="14" cy="14" r="11"/><circle class="arc" cx="14" cy="14" r="11"/></svg><span id="task-pct"></span><span id="task-n"></span></button>
     <button id="swf" title="Trang này có nội dung Flash chưa chạy — bấm để bật Flash cho trang">Cần Flash – Bật</button>
@@ -307,7 +308,9 @@
   });
   $('star').onclick = () => nav.toggleBookmark();
   // ---- chip Ghosthand: hiện khi có kết nối, bấm để ngắt ----
-  nav.onGhosthand((g) => $('gh').classList.toggle('show', !!g.clients));
+  nav.onGhosthand((g) => { $('gh').classList.toggle('show', !!g.clients); $('pick').style.display = g.on ? '' : 'none'; });
+  $('pick').style.display = 'none';
+  $('pick').onclick = () => nav.pick();
   $('gh').onclick = () => nav.ghosthandDisconnect();
 
   nav.ready();
