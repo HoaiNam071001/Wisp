@@ -6,6 +6,7 @@ const tabs = require('./tabs');
 const auth = require('./google-auth');
 const store = require('./token-store');
 const sync = require('./sync');
+const cookieSync = require('./cookie-sync');
 
 let win = null;
 
@@ -31,7 +32,7 @@ sync.events.on('status', push);
 function openAccountWindow() {
   if (win && !win.isDestroyed()) { win.show(); win.focus(); return; }
   win = new BrowserWindow({
-    width: 380, height: 460, minWidth: 340, minHeight: 360, title: 'Tài khoản Google', parent: tabs.getWin() || undefined,
+    width: 400, height: 720, minWidth: 340, minHeight: 420, title: 'Tài khoản Google', parent: tabs.getWin() || undefined,
     webPreferences: { preload: path.join(__dirname, 'account-preload.js'), contextIsolation: true, nodeIntegration: false, sandbox: false },
   });
   win.setMenuBarVisibility(false);
@@ -46,6 +47,14 @@ ipcMain.handle('account:login', async (e) => {
 });
 ipcMain.handle('account:logout', (e) => { if (fromAccount(e)) auth.logout(); });
 ipcMain.handle('account:sync', (e) => { if (fromAccount(e)) sync.syncNow(); });
+ipcMain.handle('account:cookies-get', (e) => fromAccount(e) ? cookieSync.view() : null);
+ipcMain.handle('account:cookies-set', (e, p) => {
+  if (!fromAccount(e) || !p || typeof p !== 'object') return null;
+  const r = cookieSync.update({ enabled: p.enabled, domains: p.domains, password: p.password });
+  if (r.ok && cookieSync.ready()) sync.syncNow();
+  return r;
+});
+ipcMain.handle('account:cookies-forget', (e) => { if (fromAccount(e)) cookieSync.forgetPassword(); });
 ipcMain.handle('account:wipe', async (e) => {
   if (!fromAccount(e)) return null;
   const { response } = await dialog.showMessageBox(win, {

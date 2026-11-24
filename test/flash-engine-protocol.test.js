@@ -39,3 +39,10 @@ test('parseLine: game resize cần kích thước trong khoảng', () => {
 test('parseLine: lệnh keyRemap hợp lệ', () => {
   assert.ok(p.parseLine('{"id":4,"cmd":"keyRemap","keyRemap":{"enabled":true,"map":{"b":"s"}}}').msg);
 });
+
+test('parseLine: cookies / setCookies cần mảng', () => {
+  assert.strictEqual(p.parseLine('{"id":1,"cmd":"cookies"}').error.code, 'bad_args');
+  assert.strictEqual(p.parseLine('{"id":1,"cmd":"setCookies","cookies":"x"}').error.code, 'bad_args');
+  assert.ok(p.parseLine('{"id":1,"cmd":"cookies","domains":["a.vn"]}').msg);
+  assert.ok(p.parseLine('{"id":1,"cmd":"setCookies","cookies":[]}').msg);
+});

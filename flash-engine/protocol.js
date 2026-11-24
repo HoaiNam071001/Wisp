@@ -1,7 +1,7 @@
 // Giao thức stdin / stdout giữa vỏ app và engine Flash: mỗi dòng một JSON (logic thuần, Node 12).
-// Vỏ → engine: {id, cmd:'open'|'close'|'frameRect'|'game'|'keyRemap'|'quit', url?, domains?, action?, keyRemap?}  (domains: trang Flash thật – đi ra ngoài thì engine báo 'leave')
+// Vỏ → engine: {id, cmd:'open'|'close'|'frameRect'|'game'|'keyRemap'|'cookies'|'setCookies'|'quit', url?, domains?, action?, keyRemap?, cookies?}  (domains: trang Flash thật – đi ra ngoài thì engine báo 'leave')
 // Engine → vỏ: {id, ok, result|error:{code,detail}} (trả lời) hoặc {event:'ready'|'url'|'title'|'flash'|'leave'|'closed', data}
-const CMDS = ['open', 'close', 'frameRect', 'game', 'keyRemap', 'quit'];
+const CMDS = ['open', 'close', 'frameRect', 'game', 'keyRemap', 'cookies', 'setCookies', 'quit'];
 const GAME_ACTIONS = ['reload', 'mute', 'unmute', 'focus', 'resize'];
 const SIZE_RANGE = [200, 4000]; // kích thước vùng game (px) cho resize
 const sizeOk = (n) => typeof n === 'number' && n >= SIZE_RANGE[0] && n <= SIZE_RANGE[1];
@@ -13,6 +13,8 @@ function parseLine(line) {
   if (m.cmd === 'open' && !/^https?:\/\//i.test(String(m.url || ''))) return { error: { code: 'bad_args', detail: 'open cần url http(s)' } };
   if (m.cmd === 'game' && !GAME_ACTIONS.includes(m.action)) return { error: { code: 'bad_args', detail: 'game cần action: ' + GAME_ACTIONS.join(' | ') } };
   if (m.cmd === 'game' && m.action === 'resize' && !(sizeOk(m.width) && sizeOk(m.height))) return { error: { code: 'bad_args', detail: `resize cần width, height trong ${SIZE_RANGE[0]}–${SIZE_RANGE[1]}` } };
+  if (m.cmd === 'cookies' && !Array.isArray(m.domains)) return { error: { code: 'bad_args', detail: 'cookies cần domains (mảng)' } };
+  if (m.cmd === 'setCookies' && !Array.isArray(m.cookies)) return { error: { code: 'bad_args', detail: 'setCookies cần cookies (mảng)' } };
   return { msg: m };
 }
 

@@ -51,3 +51,29 @@ test('runAll: lỗi một loại không chặn loại khác', async () => {
   assert.strictEqual(r.errors.x, 'boom');
   assert.ok(r.ok['b.json']);
 });
+
+// Loại mã hoá: local / merge / apply async, encode tự giữ bản cũ khi nội dung không đổi (salt ngẫu nhiên mỗi lần mã hoá)
+test('kind async + encode: nội dung không đổi thì không ghi lại Drive', async () => {
+  const crypt = require('../sync-crypt');
+  const d = memDrive(null), pw = 'mat-khau-12345';
+  const mk = () => ({
+    name: 's.enc', local: async () => ({ web: ['a'] }),
+    merge: async (l, r) => (r ? JSON.parse(crypt.decrypt(JSON.stringify(r), pw)) : l), apply: async () => {},
+    encode: async (m, prev) => {
+      const plain = JSON.stringify(m);
+      if (prev && crypt.decrypt(prev, pw) === plain) return prev;
+      return crypt.encrypt(plain, pw);
+    },
+  });
+  assert.strictEqual((await runKind(d, mk())).wrote, true);
+  assert.strictEqual((await runKind(d, mk())).wrote, false);
+  assert.strictEqual(d.writes.length, 1);
+});
+
+test('kind mã hoá: sai mật khẩu thì lỗi nói rõ, không ghi đè Drive', async () => {
+  const crypt = require('../sync-crypt');
+  const d = memDrive(crypt.encrypt('{"web":[]}', 'mat-khau-cu-12345'));
+  const k = { name: 's.enc', local: () => ({}), merge: (l, r) => JSON.parse(crypt.decrypt(JSON.stringify(r), 'mat-khau-moi-1234')), apply: () => {} };
+  await assert.rejects(() => runKind(d, k), /Sai mật khẩu/);
+  assert.strictEqual(d.writes.length, 0);
+});

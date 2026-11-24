@@ -1,11 +1,12 @@
 // Engine Flash: chạy bằng Electron 11 (Pepper Flash), một cửa sổ cho trang cấu hình Flash.
 // Vỏ app mở tiến trình này (bỏ ELECTRON_RUN_AS_NODE khỏi env), nói chuyện qua stdin / stdout JSON.
 // Env: WISP_USER_DATA (thư mục dữ liệu), WISP_FLASH_PLUGIN + WISP_FLASH_VERSION (không có → Flash không nạp).
-const { app, BrowserWindow, BrowserView, ipcMain } = require('electron');
+const { app, BrowserWindow, BrowserView, ipcMain, session } = require('electron');
 const path = require('path');
 const readline = require('readline');
 const { createRemapper, normalizeConfig, attach } = require('../keyremap'); // dùng chung với vỏ app (keyremap-main.js)
 const { parseLine, reply, fail, event, hostInDomains } = require('./protocol');
+const syncCookies = require('../sync-cookies');
 
 if (process.env.WISP_USER_DATA) app.setPath('userData', process.env.WISP_USER_DATA);
 if (process.env.WISP_FLASH_PLUGIN) {
@@ -96,7 +97,24 @@ function gameAction(m) {
   return {};
 }
 
+// Đồng bộ phiên game giữa các máy (vỏ app mã hoá + gộp): đọc / nạp cookie của domain đã chọn
+async function readCookies(domains) {
+  return { cookies: syncCookies.pick(await session.defaultSession.cookies.get({}), domains) };
+}
+async function writeCookies(list) {
+  let set = 0;
+  const now = Math.floor(Date.now() / 1000);
+  for (const c of list) {
+    const d = syncCookies.toSetDetails(c, now);
+    if (d) { try { await session.defaultSession.cookies.set(d); set++; } catch { /* cookie hỏng: bỏ qua, không chặn cái khác */ } }
+  }
+  await session.defaultSession.cookies.flushStore();
+  return { set };
+}
+
 async function handle(m) {
+  if (m.cmd === 'cookies') return readCookies(m.domains);
+  if (m.cmd === 'setCookies') return writeCookies(m.cookies);
   if (m.cmd === 'keyRemap') { keyRemap = normalizeConfig(m.keyRemap); return {}; }
   if (m.cmd === 'open') { keyRemap = normalizeConfig(m.keyRemap); domains = Array.isArray(m.domains) ? m.domains : []; await openWindow(m.url); return {}; }
   if (m.cmd === 'close') { if (win && !win.isDestroyed()) win.close(); return {}; }

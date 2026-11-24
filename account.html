@@ -30,6 +30,10 @@
   .state { margin-top: 10px; font-size: 13px; color: var(--muted); }
   .state.ok { color: var(--ok); }
   .err { margin-top: 8px; font-size: 13px; color: var(--red); line-height: 1.45; }
+  .row { display: flex; align-items: center; gap: 8px; }
+  p.small { margin: 8px 0 10px; }
+  .field { display: block; margin-top: 10px; font-size: 13px; color: var(--muted); }
+  .field input, .field textarea { display: block; width: 100%; margin-top: 4px; font: inherit; color: var(--text); background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 7px 10px; resize: vertical; }
   ul.what { margin: 8px 0 0; padding-left: 18px; color: var(--muted); font-size: 13px; line-height: 1.6; }
 </style>
 </head>
@@ -56,11 +60,22 @@
   </div>
   <div class="state">Đăng xuất chỉ dừng đồng bộ trên máy này; dữ liệu trong máy vẫn còn.</div>
 </div>
+<div class="card" id="ck" hidden>
+  <label class="row"><input type="checkbox" id="ckOn"> <b>Đồng bộ phiên game (cookie)</b></label>
+  <p class="sub small">Giữ đăng nhập game giữa các máy. Cookie được mã hoá bằng mật khẩu riêng của bạn trước khi lên Drive – Google chỉ thấy bản mã. <b>Quên mật khẩu này là mất dữ liệu phiên</b> (không khôi phục được). Không bao giờ lấy cookie Google.</p>
+  <label class="field">Mật khẩu đồng bộ (≥ 8 ký tự; máy khác nhập đúng mật khẩu này)
+    <input type="password" id="ckPw" autocomplete="new-password" placeholder="Để trống = giữ mật khẩu hiện có"></label>
+  <label class="field">Domain đồng bộ thêm (mỗi dòng một domain)
+    <textarea id="ckDom" rows="3" placeholder="vd game.example.com"></textarea></label>
+  <div class="state" id="ckFlash"></div>
+  <div class="btns"><button class="primary" id="ckSave">Lưu</button><button class="danger" id="ckForget" hidden>Quên mật khẩu trên máy này</button></div>
+  <div class="err" id="ckErr"></div>
+</div>
 <div class="err" id="kc" hidden>Máy chưa có kho khoá hệ thống (Keychain / DPAPI) nên Wisp không lưu được đăng nhập. Mở khoá Keychain / đăng nhập lại Windows rồi thử lại.</div>
 
 <script>
   const $ = (id) => document.getElementById(id);
-  const KIND = { 'config.json': 'cấu hình', 'bookmarks.json': 'dấu trang', 'history.json': 'lịch sử', all: 'đồng bộ' };
+  const KIND = { 'config.json': 'cấu hình', 'bookmarks.json': 'dấu trang', 'history.json': 'lịch sử', 'sessions.enc': 'phiên game', all: 'đồng bộ' };
   function ago(t) {
     if (!t) return 'chưa đồng bộ lần nào';
     const s = Math.max(0, Math.round((Date.now() - t) / 1000));
@@ -88,8 +103,28 @@
   $('sync').onclick = () => wacc.sync();
   $('logout').onclick = () => wacc.logout();
   $('wipe').onclick = async () => { const r = await wacc.wipe(); if (r && r.error) $('errs').textContent = r.error; };
+  let ckLoaded = false;
+  function renderCookies(c) {
+    if (!c) return;
+    $('ck').hidden = !c.keychain;
+    $('ckOn').checked = c.enabled;
+    if (!ckLoaded) { $('ckDom').value = c.domains.join('\n'); ckLoaded = true; }
+    $('ckPw').placeholder = c.hasPassword ? 'Đã đặt – để trống để giữ' : 'Chưa đặt mật khẩu';
+    $('ckForget').hidden = !c.hasPassword;
+    $('ckFlash').textContent = c.flashDomains.length ? 'Luôn gồm các trang bật Flash: ' + c.flashDomains.join(', ') : '';
+  }
+  $('ckSave').onclick = async () => {
+    $('ckErr').textContent = '';
+    const r = await wacc.setCookies({ enabled: $('ckOn').checked, domains: $('ckDom').value.split('\n'), password: $('ckPw').value });
+    if (r && !r.ok) { $('ckErr').textContent = r.error; $('ckOn').checked = false; }
+    else $('ckPw').value = '';
+    renderCookies(await wacc.cookies());
+  };
+  $('ckForget').onclick = async () => { await wacc.forgetCookiePassword(); renderCookies(await wacc.cookies()); };
+  const showCookies = (v) => { $('ck').hidden = !v.signedIn || !v.keychain; if (v.signedIn) wacc.cookies().then(renderCookies); };
   wacc.onChanged(render);
-  wacc.get().then((v) => v && render(v));
+  wacc.onChanged(showCookies);
+  wacc.get().then((v) => { if (v) { render(v); showCookies(v); } });
 </script>
 </body>
 </html>

@@ -37,6 +37,7 @@ async function ensure() {
   client.on('flash', (d) => addLog('info', 'event', 'Engine Flash: ' + (d.plugin || 'không thấy plugin Flash')));
   client.on('exit', () => addLog('warning', 'event', 'Engine Flash đã thoát'));
   await client.start();
+  if (pendingCookies) { const l = pendingCookies; pendingCookies = null; await client.request('setCookies', { cookies: l }).catch(() => {}); }
   return client;
 }
 
@@ -66,8 +67,20 @@ function syncKeyRemap() {
   if (client && client.running) client.request('keyRemap', { keyRemap: loadConfig().keyRemap }).catch(() => {});
 }
 
+// Phiên game (đồng bộ Drive): đọc cookie khi engine đang chạy (chưa chạy → null, vỏ app bỏ qua phần này);
+// nạp: engine chưa chạy thì giữ lại, nạp ngay sau khi engine khởi động (ensure)
+let pendingCookies = null;
+function cookies(domains) {
+  if (!client || !client.running) return Promise.resolve(null);
+  return client.request('cookies', { domains }).then((r) => r.cookies);
+}
+function setCookies(list) {
+  if (!client || !client.running) { pendingCookies = list; return Promise.resolve(); }
+  return client.request('setCookies', { cookies: list }).then(() => {});
+}
+
 function close() { return client && client.running ? client.request('close').catch(() => {}) : Promise.resolve(); }
 
 function stop() { stopping = true; return client ? client.stop() : Promise.resolve(); }
 
-module.exports = { events, wantsFlash, open, frameRect, game, syncKeyRemap, close, stop };
+module.exports = { events, wantsFlash, open, frameRect, game, cookies, setCookies, syncKeyRemap, close, stop };

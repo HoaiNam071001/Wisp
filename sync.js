@@ -2,7 +2,7 @@
 // Kéo khi khởi động, đẩy sau thay đổi (debounce 30 s), định kỳ 10 phút; lỗi mạng thì thử lại sau 2 phút. Không chặn main (toàn async).
 const fs = require('fs');
 const path = require('path');
-const { app } = require('electron');
+const { app, session } = require('electron');
 const { EventEmitter } = require('events');
 const auth = require('./google-auth');
 const { createDrive } = require('./sync-drive');
@@ -12,6 +12,8 @@ const { loadConfig, saveConfig, saveFlashSites } = require('./config');
 const bookmarks = require('./bookmarks');
 const history = require('./history');
 const keyremap = require('./keyremap-main');
+const cookieSync = require('./cookie-sync');
+const flashRouter = require('./flash-engine/router');
 
 // Chỉ các khoá này lên Drive – không đường dẫn máy, token Ghosthand, cổng, thông tin cập nhật
 const CONFIG_KEYS = ['url', 'flashSites', 'keyRemap'];
@@ -46,12 +48,14 @@ function configKind() {
   };
 }
 
+const stateApi = { get: loadState, set: (patch) => saveState(Object.assign(loadState(), patch)) };
+
 const kinds = () => [
   configKind(),
   { name: 'bookmarks.json', local: () => bookmarks.snapshot(), merge: mergeItems, apply: (m) => { applying = true; try { bookmarks.replaceAll(m); } finally { applying = false; } } },
   { name: 'history.json', local: () => history.snapshot(), merge: (a, b) => mergeHistory(a, b, history.HISTORY_MAX),
     apply: (m) => { applying = true; try { history.replaceAll(m); } finally { applying = false; } } },
-];
+].concat(cookieSync.ready() ? [cookieSync.createKind(stateApi)] : []);
 
 function setStatus(patch) { status = Object.assign({}, status, patch); events.emit('status', status); }
 
@@ -85,6 +89,9 @@ function onLocalChange() {
 function init() {
   bookmarks.events.on('changed', onLocalChange);
   history.events.on('changed', onLocalChange);
+  // phiên game: cookie đổi (engine chính) hoặc cửa sổ game đóng (engine Flash) → đẩy sau
+  session.defaultSession.cookies.on('changed', (_e, cookie) => { if (cookieSync.watching(cookie)) onLocalChange(); });
+  flashRouter.events.on('closed', () => { if (cookieSync.ready()) onLocalChange(); });
   auth.events.on('changed', () => { if (auth.account()) syncNow(); else { clearTimeout(timer); timer = null; setStatus({ errors: {} }); } });
   if (auth.account()) schedule(5000);
 }
