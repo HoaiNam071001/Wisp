@@ -14,7 +14,7 @@ Trạng thái: ✅ xong · 🔄 đang làm · ⬜ chưa làm
 | [06](06-chon-element.md) | Chọn element trên Wisp → step Ghosthand | 02, 04 | ⬜ |
 | [07](07-game-ghosthand.md) | Trang Flash với Ghosthand | 04 | ✅ |
 | [08](08-phat-hanh-3.md) | Phát hành 3.0.0 | 05 | ⬜ |
-| [09](09-doi-phim.md) | Đổi phím (key remap) cho phím hỏng | – | 🔄 |
+| [09](09-doi-phim.md) | Đổi phím (key remap) cho phím hỏng | – | ✅ |
 | [10](10-vong-tien-do.md) | Vòng tròn tiến độ việc nền (cập nhật, cài Flash) | – | ✅ |
 | [11](11-dong-bo-google.md) | Đăng nhập Google, đồng bộ cấu hình / dấu trang / lịch sử / phiên game qua Drive | – | 🔄 |
 
