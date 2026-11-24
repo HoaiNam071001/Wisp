@@ -51,3 +51,4 @@ Chỉ thêm dòng bằng `>>`: `- **YYYY-MM-DD** – <việc>. <kết quả ki�
 - 2026-11-24 Bước 11: sync-drive, sync-run, sync.js (config + dấu trang + lịch sử), nối main.js; test giả Drive
 - 2026-11-24 Bước 11: nút tài khoản + cửa sổ Tài khoản (account-window / account.html), README 4c
 2026-11-24 bước 11: đồng bộ cookie game (web + engine Flash, mã hoá, sessions.enc)
+- 2026-11-24: Claude tự thử cổng Ghosthand trên dev: token sai / Origin → 401, stale_ref, not_found, screenshot fullPage 16000 px – qua; check + test xanh (117/117).

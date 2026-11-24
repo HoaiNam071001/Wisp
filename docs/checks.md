@@ -54,7 +54,7 @@ Chạy `npm run dev` (dữ liệu `.dev-data/`), thử như bản 2.3.0:
 - [ ] 04 (2026-11-17): chuột phải trong tab: trên link (mở tab mới / sao chép), ảnh, chữ chọn (sao chép / tìm Google), ô nhập (cắt / dán…), trống (quay lại / tiến / tải lại, "Chạy bằng Flash" (bật / tắt, có dấu ✓ khi đang bật), kiểm tra phần tử, Bảng kiểm tra) đều chạy đúng
 - [ ] 04 (2026-11-17): bấm "Mở game" ở trang chờ rồi chạy Ghosthand `tabs` (tab đó `engine: "flash"`), `frameRect` (trả `tag: "flash"`, `screenRect` đúng vùng game, trừ thanh), `find` / `click` (lỗi `flash_page`); đóng cửa sổ Flash → tab về `engine: "web"`
 - [ ] 04 (2026-11-17): mở trang có .swf mà chưa bật Flash (không phải cf4vn…) → chip cam "Cần Flash – Bật" cạnh ⋮; bấm → tab chuyển sang trang chờ Flash; chuyển trang khác thì chip mất
-- [ ] 04 (2026-11-17): `screenshot fullPage` qua Ghosthand trên một trang dài → ảnh cả trang (không cắt phần dưới trừ khi > 16000 px)
+- [x] 04 (2026-11-17): `screenshot fullPage` qua Ghosthand trên một trang dài → ảnh cả trang (không cắt phần dưới trừ khi > 16000 px) (Claude thử 2026-11-24: vi.wikipedia.org/wiki/Việt_Nam ra PNG cao đúng 16000 px)
 - [ ] 05 (2026-11-17): trang đòi camera / vị trí (vd https://webcamtests.com) → hộp "Cho phép / Chặn"; chọn xong tải lại trang không hỏi lại
 - [ ] 05: "Đăng nhập bằng Google / Facebook" bằng popup trên vài trang → popup mở, đăng nhập xong tự đóng, trang gốc nhận kết quả
 - [ ] 05: tải một file thật từ trang web → vòng tròn tiến độ, toast, file nằm trong Downloads

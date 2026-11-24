@@ -224,7 +224,8 @@
     inp.classList.toggle('wide', wide);
   }
   $('url').addEventListener('focus', () => { $('sec').style.visibility = 'hidden'; $('url').classList.remove('wide'); $('url').style.paddingLeft = '14px'; });
-  $('url').addEventListener('blur', () => { $('sec').style.visibility = ''; $('url').style.paddingLeft = ''; renderSec(lastUrl); });
+  // Mất focus (kể cả focus sang trang – activeElement vẫn là ô này) thì trả về địa chỉ thật như Chrome, không để ô trống / cũ
+  $('url').addEventListener('blur', () => { $('sec').style.visibility = ''; $('url').style.paddingLeft = ''; $('url').value = lastUrl; renderSec(lastUrl); });
   let lastUrl = '';
 
   let toastTimer = null;
@@ -296,7 +297,7 @@
   nav.onTabs(renderTabs);
   nav.onState((s) => {
     lastUrl = s.url;
-    if (document.activeElement !== $('url')) { $('url').value = s.url; renderSec(s.url); }
+    if (!(document.activeElement === $('url') && document.hasFocus())) { $('url').value = s.url; renderSec(s.url); }
     $('back').disabled = !s.canBack;
     $('fwd').disabled = !s.canForward;
     $('reload').innerHTML = s.loading ? ICON.stop : ICON.reload;
