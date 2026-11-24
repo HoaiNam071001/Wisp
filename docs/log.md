@@ -45,3 +45,4 @@ Chỉ thêm dòng bằng `>>`: `- **YYYY-MM-DD** – <việc>. <kết quả ki�
 2026-11-17 bước 06: phía Wisp (agent pick, nút toolbar, sự kiện pick, lệnh pick / pickDone); còn phía Ghosthand
 2026-11-24 bước 07: lệnh game {reload|mute|unmute|focus} (web + engine Flash)
 2026-11-24 bước 07: game resize + frameRect báo hidden/window (engine Flash)
+2026-11-24 bước 07 xong (phía Ghosthand: vùng tìm Khung game Wisp)
