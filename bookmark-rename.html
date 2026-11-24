@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<title>Sửa tên dấu trang</title>
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'unsafe-inline'; script-src 'unsafe-inline'">
+<style>
+  :root { --bg: #232428; --field: #1a1b1e; --border: #3a3d45; --text: #e8e9eb; --muted: #9da0a8; --accent: #4c8dff; --hover: #36383d; }
+  @media (prefers-color-scheme: light) { :root { --bg: #fff; --field: #f3f4f6; --border: #d6d8de; --text: #1f2328; --muted: #6a6f78; --hover: #eceef2; } }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--bg); color: var(--text); font: 12.5px system-ui, -apple-system, sans-serif; overflow: hidden; }
+  #app { padding: 12px; display: grid; gap: 8px; }
+  label { color: var(--muted); }
+  input { width: 100%; height: 30px; padding: 0 8px; border: 1px solid var(--border); border-radius: 6px; background: var(--field); color: var(--text); font: inherit; outline: none; }
+  input:focus { border-color: var(--accent); }
+  .url { color: var(--muted); overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+  .btns { display: flex; justify-content: flex-end; gap: 6px; }
+  button { height: 28px; padding: 0 12px; border: 1px solid var(--border); border-radius: 6px; background: none; color: var(--text); font: inherit; }
+  button:hover { background: var(--hover); }
+  button.ok { background: var(--accent); border-color: var(--accent); color: #fff; }
+</style>
+</head>
+<body>
+<div id="app">
+  <label for="t">Tên dấu trang</label>
+  <input id="t" maxlength="300" autocomplete="off" spellcheck="false">
+  <div class="url" id="u"></div>
+  <div class="btns"><button id="no">Huỷ</button><button class="ok" id="ok">Lưu</button></div>
+</div>
+<script>
+  const $ = (id) => document.getElementById(id);
+  let lastH = 0;
+  const fit = () => { const h = $('app').offsetHeight; if (h && h !== lastH) { lastH = h; wrename.size(h); } };
+  new ResizeObserver(fit).observe($('app'));
+  const save = () => wrename.save($('t').value);
+  $('ok').onclick = save;
+  $('no').onclick = () => window.close();
+  document.addEventListener('keydown', (e) => { if (e.key === 'Enter') save(); else if (e.key === 'Escape') window.close(); });
+  wrename.get().then((v) => {
+    if (!v) return window.close();
+    $('t').value = v.title; $('u').textContent = v.url; $('t').focus(); $('t').select(); fit();
+  });
+</script>
+</body>
+</html>

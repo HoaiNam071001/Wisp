@@ -7,6 +7,7 @@ const { loadConfig, saveConfig } = require('./config');
 const { isBookmarkable } = require('./bookmarks-store');
 const favicons = require('./favicon-cache');
 const { toggleList } = require('./bookmarks-list-window');
+const { openRename } = require('./bookmark-rename-window');
 
 const enabled = () => loadConfig().bookmarksBar !== false;
 
@@ -29,13 +30,14 @@ ipcMain.on('bar:open', (e, url, inNewTab) => { if (fromToolbar(e) && typeof url 
 ipcMain.on('bar:reorder', (e, id, beforeId) => {
   if (fromToolbar(e) && typeof id === 'string' && (beforeId === null || typeof beforeId === 'string')) bookmarks.reorder(id, beforeId);
 });
-ipcMain.on('bar:menu', (e, id) => {
+ipcMain.on('bar:menu', (e, id, x, y) => {
   if (!fromToolbar(e)) return;
   const it = bookmarks.barItems().find(b => b.id === id);
   if (!it) return;
   Menu.buildFromTemplate([
     { label: 'Mở', click: () => openItem(it.url, false) },
     { label: 'Mở trong tab mới', click: () => openItem(it.url, true) },
+    { label: 'Sửa tên…', click: () => openRename(id, { x: Number(x) || 0, y: Number(y) || 40, w: 0 }) },
     { type: 'separator' },
     { label: 'Xoá dấu trang', click: () => bookmarks.removeItem(id) },
   ]).popup({ window: tabs.getWin() });

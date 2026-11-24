@@ -33,6 +33,14 @@ function reorder(list, id, beforeId, now) {
   return list.map(b => b.id === id ? { ...b, order, updatedAt: now } : b);
 }
 
+// Đổi tên một mục (chỉ sửa mục đó → gộp Drive theo updatedAt). Tên rỗng = quay về tên trang (title cũ không còn → dùng host khi vẽ).
+function rename(list, id, title, now) {
+  const t = String(title || '').trim().slice(0, 300);
+  const me = live(list).find(b => b.id === id);
+  if (!me || me.title === t) return list;
+  return list.map(b => b.id === id ? { ...b, title: t, updatedAt: now } : b);
+}
+
 // Mới → cũ, bỏ mục đã xoá
 function sorted(list) { return live(list).sort((a, b) => b.addedAt - a.addedAt); }
 
@@ -58,4 +66,4 @@ function prune(list) {
   return keep.slice(0, MAX_ITEMS);
 }
 
-module.exports = { clean, isBookmarkable, live, find, has, sorted, barSorted, reorder, toggle, remove, prune, MAX_ITEMS };
+module.exports = { clean, isBookmarkable, live, find, has, sorted, barSorted, reorder, rename, toggle, remove, prune, MAX_ITEMS };

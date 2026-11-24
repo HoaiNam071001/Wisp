@@ -15,7 +15,7 @@
 - ✅ **Thao tác:** mở (hiện tại / tab mới), chuột phải (mở tab mới, sửa tên, xoá), kéo thả đổi thứ tự; thay đổi từ ★ / `wisp://bookmarks` / đồng bộ cập nhật thanh qua `bookmarks.events 'changed'`.
 - ✅ **Bật / tắt:** Cmd/Ctrl+Shift+B + mục trong menu ⋮ (có dấu ✓); khoá `config.json` `bookmarksBar` (mặc định `true`, `config.json` cũ không hỏng); cân nhắc đồng bộ khoá này qua Drive (đang chỉ `url`, `flashSites`, `keyRemap`).
 - ✅ File mới (`bookmarks-bar.js`, `.html`, preload) thêm vào `build.files`.
-- ⬜ README (mục dấu trang) + `docs/checks.md` (thử tay: thêm / mở / kéo thả / xoá, thu nhỏ cửa sổ thấy `»`, bật / tắt, theme tối, đồng bộ sang máy thứ hai, tab Flash toàn màn hình không lòi thanh).
+- ✅ README (mục dấu trang) + `docs/checks.md` (thử tay: thêm / mở / kéo thả / xoá, thu nhỏ cửa sổ thấy `»`, bật / tắt, theme tối, đồng bộ sang máy thứ hai, tab Flash toàn màn hình không lòi thanh).
 
 ## Rủi ro
 - Đổi chiều cao vùng trang khi bật / tắt → tab đang mở phải layout lại; Ghosthand `frameRect` / `screenRect` đã tính theo `TOOLBAR_HEIGHT` thì phải dùng cùng giá trị mới (kiểm lại bước 01 / 07).
@@ -26,5 +26,5 @@
 ## Ghi chú làm (2026-11-24)
 - Làm: `chrome-bookmarks.js` (+test), `bookmarks-import.js` (đọc `Local State` + `Bookmarks`, nút "Nhập…" ở `wisp://bookmarks`), `bookmarks-store.js` thêm `order` / `barSorted` / `reorder` (chỉ sửa một mục khi kéo thả), `bookmarks-bar.js` (bật / tắt, IPC, menu chuột phải + `»` bằng menu hệ thống vì HTML của thanh công cụ không đè lên trang web được), `tabs.toolbarHeight()` thay hằng `TOOLBAR_HEIGHT` (Ghosthand `screenRect` dùng `view.getBounds()` nên tự đúng).
 - Khác kế hoạch: chưa có **sửa tên** dấu trang (Electron không có hộp nhập chữ; cần cửa sổ riêng → ⬜ bước sau); icon: dùng favicon thật – `favicon-cache.js` học khi mở trang (userData/favicons.json, theo host, chỉ cục bộ), chưa mở thì thử `/favicon.ico` của trang, không tải được thì chữ cái đầu màu theo domain; khoá `bookmarksBar` chưa đồng bộ Drive (cài đặt theo máy); hàm "vừa chiều rộng" đo bằng DOM ở `toolbar.html`, không có test thuần.
-- ⬜ Sửa tên dấu trang; ⬜ thư mục dấu trang (bước sau).
+- ✅ Sửa tên dấu trang (chuột phải → *Sửa tên…*, popover `bookmark-rename-window.js`; `store.rename` chỉ sửa một mục nên gộp Drive đúng); ⬜ thư mục dấu trang (bước sau).
 - ✅ *(người dùng yêu cầu 2026-11-24)* Nút `»` và nút **Tất cả dấu trang** (cuối thanh) mở dropdown HTML nhỏ gọn (`bookmarks-list-window.js` + `bookmarks-list.html`, dùng `popover.js`; thay menu hệ thống vì dòng cao cố định / không theo theme tối; icon bằng `<img>`); chỉ hiện tối đa 10 mục, nhiều hơn thì dòng cuối "Hiện tất cả (n)" mở `wisp://bookmarks` (nút Tất cả dấu trang luôn có dòng cuối "Quản lý dấu trang"; chưa có thư mục). Nút chọn element (bước 06) đổi màu cam khi tab đang ở chế độ chọn (`gh:pick-state` từ agent; tắt khi trang tải lại / đóng tab).

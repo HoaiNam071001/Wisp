@@ -14,7 +14,7 @@ contextBridge.exposeInMainWorld('nav', {
   toggleBookmark: () => ipcRenderer.send('bookmark:toggle'),
   barOpen: (url, newTab) => ipcRenderer.send('bar:open', url, !!newTab),
   barReorder: (id, beforeId) => ipcRenderer.send('bar:reorder', id, beforeId),
-  barMenu: (id) => ipcRenderer.send('bar:menu', id),
+  barMenu: (id, x, y) => ipcRenderer.send('bar:menu', id, x, y),
   barAll: (x, y) => ipcRenderer.send('bar:all', x, y),
   barOverflow: (ids, x, y) => ipcRenderer.send('bar:overflow', ids, x, y),
   onBar: (cb) => ipcRenderer.on('bookmark:bar', (_e, s) => cb(s)),

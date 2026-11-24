@@ -358,7 +358,7 @@
       el.append(av, t);
       el.onclick = (e) => nav.barOpen(b.url, e.metaKey || e.ctrlKey);
       el.onauxclick = (e) => { if (e.button === 1) { e.preventDefault(); nav.barOpen(b.url, true); } };
-      el.oncontextmenu = (e) => { e.preventDefault(); nav.barMenu(b.id); };
+      el.oncontextmenu = (e) => { e.preventDefault(); const r = el.getBoundingClientRect(); nav.barMenu(b.id, r.left, r.bottom); };
       list.appendChild(el);
     }
     fitBar();

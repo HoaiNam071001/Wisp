@@ -72,3 +72,11 @@ test('reorder: chỉ sửa đúng một mục, order nằm giữa hai bên', () 
 test('clean giữ order', () => {
   assert.strictEqual(s.clean([{ id: 'a', url: 'https://a', updatedAt: 1, order: 5 }])[0].order, 5);
 });
+
+test('rename: chỉ sửa đúng một mục, cắt khoảng trắng, không đổi thì giữ nguyên danh sách', () => {
+  const list = [{ id: 'a', url: 'https://a', title: 'A', addedAt: 1, updatedAt: 1 }, { id: 'b', url: 'https://b', title: 'B', addedAt: 2, updatedAt: 2 }];
+  const r = s.rename(list, 'a', '  Tên mới ', 50);
+  assert.deepStrictEqual(r.map(b => [b.id, b.title, b.updatedAt]), [['a', 'Tên mới', 50], ['b', 'B', 2]]);
+  assert.strictEqual(s.rename(list, 'a', 'A', 50), list);
+  assert.strictEqual(s.rename(list, 'none', 'x', 50), list);
+});
