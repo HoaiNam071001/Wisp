@@ -74,4 +74,17 @@ function createRemapper(getState) {
   return { handle };
 }
 
-module.exports = { normalizeKey, accelOf, normalizeMap, normalizeConfig, createRemapper };
+// Gắn vào webContents (dùng chung cho tab engine web và cửa sổ engine Flash): chặn phím rồi gửi phím thay.
+function attach(w, remapper) {
+  let sending = false; // sendInputEvent có thể kích hoạt lại before-input-event → không đổi phím vừa gửi
+  w.on('before-input-event', (event, input) => {
+    if (sending) return;
+    const events = remapper.handle(input);
+    if (!events) return;
+    event.preventDefault();
+    sending = true;
+    try { for (const ev of events) w.sendInputEvent(ev); } catch (e) { console.error('Đổi phím:', e); } finally { sending = false; }
+  });
+}
+
+module.exports = { normalizeKey, accelOf, normalizeMap, normalizeConfig, createRemapper, attach };

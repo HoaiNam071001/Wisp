@@ -35,3 +35,7 @@ test('parseLine: game resize cần kích thước trong khoảng', () => {
   assert.strictEqual(p.parseLine('{"id":1,"cmd":"game","action":"resize","width":99999,"height":600}').error.code, 'bad_args');
   assert.ok(p.parseLine('{"id":1,"cmd":"game","action":"resize","width":1000,"height":600}').msg);
 });
+
+test('parseLine: lệnh keyRemap hợp lệ', () => {
+  assert.ok(p.parseLine('{"id":4,"cmd":"keyRemap","keyRemap":{"enabled":true,"map":{"b":"s"}}}').msg);
+});

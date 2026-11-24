@@ -33,6 +33,7 @@ Làm trên Electron 11 hiện tại (tab thường) để chốt API sớm; lên
 | Chờ | `waitFor {selectors[], state:"visible"\|"hidden"\|"enabled", timeoutMs}` | element hoặc `timeout` |
 | | `settle {timeoutMs}` | chờ hết điều hướng / mạng / DOM đổi |
 | Game | `frameRect {tab}` | khung game trên **màn hình** (toạ độ thật, có tỉ lệ màn hình) để Ghosthand OCR đúng vùng |
+| | `game {action:"reload\|mute\|unmute\|focus\|resize", width?, height?, tab}` | kịch bản tự xử lý game treo; `resize` (200–4000 px, vùng game) chỉ cho engine Flash; `frameRect` thêm `window{minimized,visible,focused}` + `hidden` cho game Flash |
 | Sự kiện | `subscribe {events:["navigate","dialog","popup","download"]}` | Wisp đẩy sự kiện; hộp thoại `alert/confirm` trả bằng `dialog {accept, text}`; hộp đóng (client trả lời / người dùng tự bấm) → `dialog {tab, closed: true}` |
 
 **Bên trong**

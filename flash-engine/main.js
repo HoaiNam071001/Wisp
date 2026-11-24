@@ -4,6 +4,7 @@
 const { app, BrowserWindow, BrowserView, ipcMain } = require('electron');
 const path = require('path');
 const readline = require('readline');
+const { createRemapper, normalizeConfig, attach } = require('../keyremap'); // dùng chung với vỏ app (keyremap-main.js)
 const { parseLine, reply, fail, event, hostInDomains } = require('./protocol');
 
 if (process.env.WISP_USER_DATA) app.setPath('userData', process.env.WISP_USER_DATA);
@@ -17,6 +18,8 @@ const send = (s) => { if (!process.stdout.destroyed && process.stdout.writable) 
 let win = null;
 let view = null; // BrowserView chứa trang game; win.webContents là thanh công cụ (bar.html)
 const BAR_H = 40;
+let keyRemap = normalizeConfig(null); // cấu hình đổi phím do vỏ app gửi (open / keyRemap)
+const remapper = createRemapper(() => keyRemap);
 let domains = []; // trang Flash thật; ra ngoài thì nhờ vỏ app mở bằng engine web
 
 function hostOf(url) { try { return new URL(url).hostname; } catch { return ''; } }
@@ -38,6 +41,7 @@ function createWindow() {
   layoutView();
   view.setAutoResize({ width: true, height: true });
   const wc = view.webContents;
+  attach(wc, remapper); // đổi phím trong trang game (thanh công cụ không đổi)
   // Ra khỏi trang Flash: huỷ và báo vỏ app mở ở cửa sổ chính (engine web)
   const leave = (e, url) => {
     if (!/^https?:/i.test(url) || hostInDomains(domains, hostOf(url))) return;
@@ -93,7 +97,8 @@ function gameAction(m) {
 }
 
 async function handle(m) {
-  if (m.cmd === 'open') { domains = Array.isArray(m.domains) ? m.domains : []; await openWindow(m.url); return {}; }
+  if (m.cmd === 'keyRemap') { keyRemap = normalizeConfig(m.keyRemap); return {}; }
+  if (m.cmd === 'open') { keyRemap = normalizeConfig(m.keyRemap); domains = Array.isArray(m.domains) ? m.domains : []; await openWindow(m.url); return {}; }
   if (m.cmd === 'close') { if (win && !win.isDestroyed()) win.close(); return {}; }
   if (m.cmd === 'frameRect') return frameRect();
   if (m.cmd === 'game') return gameAction(m);

@@ -1,6 +1,7 @@
 // Giao thức cổng Ghosthand (docs/plan/01-cong-ghosthand.md): đọc lệnh JSON, kiểm tra đối số, mã lỗi.
 // Logic thuần, không require('electron').
 const { parseSelector } = require('./selector');
+const { SIZE_RANGE } = require('../flash-engine/protocol'); // một nguồn cho ngưỡng resize
 
 const API = 1;
 const CODES = ['not_found', 'not_visible', 'covered', 'not_focused', 'stale_ref', 'timeout', 'no_tab', 'flash_page', 'bad_args', 'internal'];
@@ -106,7 +107,7 @@ function checkArgs(cmd, args) {
   if (cmd === 'game') {
     if (args.action === undefined) fail('bad_args', 'thiếu “action” (reload | mute | unmute | focus | resize)');
     const size = [args.width, args.height];
-    if (args.action === 'resize' && !size.every(n => n >= 200 && n <= 4000)) fail('bad_args', 'resize cần width, height trong 200–4000 (px, vùng game)');
+    if (args.action === 'resize' && !size.every(n => n >= SIZE_RANGE[0] && n <= SIZE_RANGE[1])) fail('bad_args', `resize cần width, height trong ${SIZE_RANGE[0]}–${SIZE_RANGE[1]} (px, vùng game)`);
     if (args.action !== 'resize' && size.some(n => n !== undefined)) fail('bad_args', 'width / height chỉ đi với resize');
   }
   if (cmd === 'select' && (args.value === undefined) === (args.label === undefined)) fail('bad_args', 'ghi một trong value / label');

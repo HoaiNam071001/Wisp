@@ -1,7 +1,7 @@
 // Giao thức stdin / stdout giữa vỏ app và engine Flash: mỗi dòng một JSON (logic thuần, Node 12).
-// Vỏ → engine: {id, cmd:'open'|'close'|'frameRect'|'game'|'quit', url?, domains?, action?}  (domains: trang Flash thật – đi ra ngoài thì engine báo 'leave')
+// Vỏ → engine: {id, cmd:'open'|'close'|'frameRect'|'game'|'keyRemap'|'quit', url?, domains?, action?, keyRemap?}  (domains: trang Flash thật – đi ra ngoài thì engine báo 'leave')
 // Engine → vỏ: {id, ok, result|error:{code,detail}} (trả lời) hoặc {event:'ready'|'url'|'title'|'flash'|'leave'|'closed', data}
-const CMDS = ['open', 'close', 'frameRect', 'game', 'quit'];
+const CMDS = ['open', 'close', 'frameRect', 'game', 'keyRemap', 'quit'];
 const GAME_ACTIONS = ['reload', 'mute', 'unmute', 'focus', 'resize'];
 const SIZE_RANGE = [200, 4000]; // kích thước vùng game (px) cho resize
 const sizeOk = (n) => typeof n === 'number' && n >= SIZE_RANGE[0] && n <= SIZE_RANGE[1];

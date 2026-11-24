@@ -6,7 +6,7 @@ const { EventEmitter } = require('events');
 const { EngineClient } = require('./client');
 const { launchFor } = require('./launch');
 const { engineUserData, writeMmsCfg } = require('../flash/mms-cfg');
-const { flashSites } = require('../config');
+const { flashSites, loadConfig } = require('../config');
 const { FLASH_PATH, FLASH_VERSION } = require('../flash/mode');
 const { engineForUrl } = require('../flash/engine-pick');
 const { addLog } = require('../inspect/store');
@@ -43,7 +43,7 @@ async function ensure() {
 async function open(url) {
   try {
     const c = await ensure();
-    await c.request('open', { url, domains: domains() });
+    await c.request('open', { url, domains: domains(), keyRemap: loadConfig().keyRemap });
   } catch (e) {
     addLog('error', 'event', 'Không mở được engine Flash: ' + e.message);
     events.emit('leave', url); // dự phòng: mở ở engine web (Flash không chạy nhưng thấy trang)
@@ -61,8 +61,13 @@ function game(action, size) {
   return client.request('game', Object.assign({ action }, size));
 }
 
+// Cấu hình đổi phím vừa lưu → báo engine đang chạy (engine mới mở nhận qua 'open')
+function syncKeyRemap() {
+  if (client && client.running) client.request('keyRemap', { keyRemap: loadConfig().keyRemap }).catch(() => {});
+}
+
 function close() { return client && client.running ? client.request('close').catch(() => {}) : Promise.resolve(); }
 
 function stop() { stopping = true; return client ? client.stop() : Promise.resolve(); }
 
-module.exports = { events, wantsFlash, open, frameRect, game, close, stop };
+module.exports = { events, wantsFlash, open, frameRect, game, syncKeyRemap, close, stop };

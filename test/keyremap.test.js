@@ -1,6 +1,6 @@
 const test = require('node:test');
 const assert = require('node:assert');
-const { normalizeKey, accelOf, normalizeMap, normalizeConfig, createRemapper } = require('../keyremap');
+const { normalizeKey, accelOf, normalizeMap, normalizeConfig, createRemapper, attach } = require('../keyremap');
 
 test('accelOf: chữ, số, phím tên, F-key, phím lạ', () => {
   assert.strictEqual(accelOf('B'), 'B');
@@ -65,3 +65,14 @@ test('handle: phím đích không in được (mũi tên) không gửi char', ()
 });
 
 test('normalizeKey', () => assert.strictEqual(normalizeKey('B'), 'b'));
+
+test('attach: chặn phím, gửi phím thay, không đổi lại sự kiện do chính mình gửi', () => {
+  let handler; const sent = []; let prevented = 0;
+  const w = { on: (_n, f) => { handler = f; }, sendInputEvent: (ev) => { sent.push(ev.type); handler({ preventDefault() { prevented++; } }, down('s')); } };
+  attach(w, make({ enabled: true, map: { b: 's', s: 'b' } })); // hoán đổi: s gửi lại không bị đổi tiếp
+  handler({ preventDefault() { prevented++; } }, down('b'));
+  assert.deepStrictEqual(sent, ['keyDown', 'char']);
+  assert.strictEqual(prevented, 1);
+  handler({ preventDefault() { prevented++; } }, down('x')); // phím ngoài bảng đi tiếp
+  assert.strictEqual(prevented, 1);
+});

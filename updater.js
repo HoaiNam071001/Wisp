@@ -21,7 +21,7 @@ const IS_WIN = process.platform === 'win32';
 // Tên file đính kèm trên GitHub Release cho từng hệ điều hành
 const ASSET = IS_WIN ? /-win-setup\.exe$/ : /-mac\.zip$/;
 
-let ctx = null;          // { getWin, toast, addLog, loadConfig, saveConfig, notify }
+let ctx = null;          // { getWin, addLog, loadConfig, saveConfig, notify }
 let latest = null;       // { version, tag, notes, url, zip, sha }
 let busy = false;
 
@@ -155,19 +155,14 @@ async function install() {
   const work = fs.mkdtempSync(path.join(app.getPath('temp'), 'wisp-update-'));
   try {
     const zip = path.join(work, latest.zipName);
-    ctx.toast(`Đang tải Wisp ${latest.version}…`);
     tasks.set(TASK, `Đang tải Wisp ${latest.version}`, 0);
-    let last = 0;
     const sum = await download(latest.zip, zip, (f) => {
       tasks.set(TASK, `Đang tải Wisp ${latest.version}`, f);
-      const pct = Math.floor(f * 100);
-      if (pct >= last + 10) { last = pct; ctx.toast(`Đang tải Wisp ${latest.version}… ${pct}%`); }
     });
     if (latest.sha) {
       const want = (await getText(latest.sha)).trim().split(/\s+/)[0].toLowerCase();
       if (want !== sum) throw new Error(`File tải về sai sha256 (${sum.slice(0, 12)}…, cần ${want.slice(0, 12)}…)`);
     }
-    ctx.toast('Đang giải nén…');
     tasks.set(TASK, 'Đang giải nén Wisp', null);
     const out = path.join(work, 'x');
     await new Promise((res, rej) => execFile('/usr/bin/ditto', ['-x', '-k', zip, out], (e) => e ? rej(e) : res()));
@@ -222,13 +217,9 @@ async function installWin() {
   const work = fs.mkdtempSync(path.join(app.getPath('temp'), 'wisp-update-'));
   try {
     const exe = path.join(work, latest.zipName);
-    ctx.toast(`Đang tải Wisp ${latest.version}…`);
     tasks.set(TASK, `Đang tải Wisp ${latest.version}`, 0);
-    let last = 0;
     const sum = await download(latest.zip, exe, (f) => {
       tasks.set(TASK, `Đang tải Wisp ${latest.version}`, f);
-      const pct = Math.floor(f * 100);
-      if (pct >= last + 10) { last = pct; ctx.toast(`Đang tải Wisp ${latest.version}… ${pct}%`); }
     });
     if (!latest.sha) throw new Error('Bản phát hành thiếu file .sha256, không kiểm tra được bộ cài');
     const want = (await getText(latest.sha)).trim().split(/\s+/)[0].toLowerCase();

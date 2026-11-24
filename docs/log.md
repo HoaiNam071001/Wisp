@@ -46,3 +46,4 @@ Chỉ thêm dòng bằng `>>`: `- **YYYY-MM-DD** – <việc>. <kết quả ki�
 2026-11-24 bước 07: lệnh game {reload|mute|unmute|focus} (web + engine Flash)
 2026-11-24 bước 07: game resize + frameRect báo hidden/window (engine Flash)
 2026-11-24 bước 07 xong (phía Ghosthand: vùng tìm Khung game Wisp)
+- 2026-11-24 Bước 09: xong – đổi phím chạy cả ở engine Flash (open / keyRemap qua giao thức); bỏ toast tiến độ cập nhật; review bước 07 (bảng lệnh game, SIZE_RANGE dùng chung, check searchArea game + element)

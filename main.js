@@ -90,7 +90,7 @@ app.whenReady().then(() => {
   // Cổng cho Ghosthand (config ghosthandPort: false = tắt; mặc định bật)
   if (loadConfig().ghosthandPort !== false) ghosthand.start();
   updater.init({
-    getWin: tabs.getWin, toast: tabs.toast, addLog, loadConfig, saveConfig,
+    getWin: tabs.getWin, addLog, loadConfig, saveConfig,
     notify: (st) => { const win = tabs.getWin(); if (win) win.webContents.send('update', st); scheduleMenu(); },
   });
   if (process.env.WISP_INSPECT) openInspector();

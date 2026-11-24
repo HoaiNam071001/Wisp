@@ -1,4 +1,4 @@
-# 09. ⬜ Đổi phím (key remap)
+# 09. ✅ Đổi phím (key remap)
 
 Phụ thuộc: – (làm được ngay trên Electron 11; sau bước 04 phải chạy ở cả hai engine)
 
@@ -11,4 +11,4 @@ Yêu cầu *(người dùng yêu cầu 2026-11-16)*: có phím bị hư, cần b
 - ✅ **Phạm vi:** chỉ gắn vào tab nội dung, không gắn vào toolbar / menu / thanh địa chỉ; ô nhập trong trang web vẫn đổi (phím hỏng thì ô chat cũng cần phím thay).
 - ✅ **Config:** khoá `keyRemap: { enabled: false, map: {} }` mặc định trong `config.js`; đọc khi tạo tab và nghe thay đổi để áp dụng ngay, không cần khởi động lại.
 - ✅ **Giao diện Cài đặt:** cửa sổ riêng `keys.html` mở từ menu ⋮ / Tuỳ chọn → Đổi phím… (app chưa có trang Cài đặt): công tắc bật / tắt, danh sách cặp, nút **Thêm** (nhấn phím hỏng → nhấn phím thay thế), nút xoá từng cặp. Màu theo biến CSS + theme tối; chữ tiếng Việt, báo cách khắc phục khi phím trùng / vòng. File mới thêm vào `build.files`.
-- ⬜ **Sau bước 04:** module dùng chung cho engine web (Electron mới) và engine Flash (Electron 11); ghi rõ API nào chỉ ở một engine.
+- ✅ **Engine Flash (sau bước 04):** `keyremap.js` dùng chung (`attach(webContents, remapper)`); engine Flash (Electron 11, tiến trình riêng) gắn vào BrowserView game, không gắn vào thanh công cụ. Cấu hình đi qua giao thức: `open {keyRemap}` khi mở + lệnh `keyRemap {keyRemap}` khi người dùng đổi (`router.syncKeyRemap`), nên đổi xong áp dụng ngay không cần mở lại game. Chưa thử tay vào game Flash thật (docs/checks.md).
