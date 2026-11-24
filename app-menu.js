@@ -86,6 +86,8 @@ function optionsSubmenu() {
     item('restoreTabs', 'Mở lại các tab lần trước khi mở app'),
     item('preventAppNap', IS_MAC ? 'Chống App Nap (game không bị chậm khi ẩn cửa sổ)' : 'Không cho máy ngủ khi đang mở Wisp'),
     item('pingGame', 'Theo dõi ping máy chủ game'),
+    item('adblock', 'Chặn quảng cáo và theo dõi bên thứ ba (tắt riêng từng trang ở biểu tượng khoá)'),
+    item('sendGpc', 'Gửi tín hiệu "không bán dữ liệu" (Global Privacy Control)'),
     item('sleepTabs', 'Cho tab nền ngủ sau 30 phút để tiết kiệm RAM'),
     item('lazyRestore', 'Chỉ nạp tab đang xem khi mở lại các tab lần trước'),
     { label: 'Công cụ tìm kiếm', submenu: Object.entries(ENGINES).map(([id, e]) => ({
@@ -104,6 +106,7 @@ function aboutWin() {
 function fileSubmenu() {
   return [
     { label: 'Tab mới', accelerator: 'CmdOrCtrl+T', click: tabs.newTab },
+    { label: 'Tab ẩn danh mới', accelerator: 'Shift+CmdOrCtrl+N', click: () => require('./incognito').newIncognitoTab() },
     { label: 'Mở file .swf…', accelerator: 'CmdOrCtrl+O', click: page.openSwfFile },
     { type: 'separator' },
     { label: 'Đóng tab', accelerator: 'CmdOrCtrl+W', click: tabs.closeActiveByShortcut },

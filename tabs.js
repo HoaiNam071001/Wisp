@@ -70,7 +70,7 @@ function tabInfo(t) {
   const url = tabUrl(t);
   return { id: t.id, title: t.title || url || 'Tab mới', url, favicon: t.favicon || '', sleeping: !!t.sleeping,
            loading: !w.isDestroyed() && w.isLoading(), history: isInternalUrl(rawUrl(t)),
-           audible: !!t.audible, muted: !!t.muted, pinned: !!t.pinned };
+           audible: !!t.audible, muted: !!t.muted, pinned: !!t.pinned, incognito: !!t.incognito };
 }
 
 // Gom nhiều thay đổi (đang tải, đổi tiêu đề…) rồi mới vẽ lại thanh tab + menu Tab
@@ -107,9 +107,10 @@ function layout() {
   }
 }
 
-function tabPrefs() {
+function tabPrefs(incognito) {
   const quality = normalizeQuality(loadConfig().flashQuality);
   return {
+    ...(incognito ? { partition: 'incognito' } : {}), // không có 'persist:' = session trong bộ nhớ (incognito.js)
     contextIsolation: true,
     nodeIntegration: false,
     sandbox: false, // preload cần require('./ghosthand/agent') – chỉ preload, trang web không có Node
@@ -128,9 +129,9 @@ function loadInTab(t, url) {
 }
 
 // lazy = { title }: tab của phiên cũ, chưa nạp trang tới khi bấm vào (tab-sleep.js)
-function createTab(url, { activate = true, index = tabs.length, lazy = null, pinned = false } = {}) {
-  const view = new WebContentsView({ webPreferences: tabPrefs() });
-  const t = { id: ++tabSeq, view, title: '', favicon: '', htmlFull: false, hist: null, audible: false, muted: false, lastActive: Date.now(), pinned };
+function createTab(url, { activate = true, index = tabs.length, lazy = null, pinned = false, incognito = false } = {}) {
+  const view = new WebContentsView({ webPreferences: tabPrefs(incognito) });
+  const t = { id: ++tabSeq, view, title: '', favicon: '', htmlFull: false, hist: null, audible: false, muted: false, lastActive: Date.now(), pinned, incognito };
   if (lazy) { t.sleeping = true; t.sleepUrl = url; t.title = lazy.title || ''; }
   tabs.splice(Math.max(0, Math.min(index, tabs.length)), 0, t);
   // Game ở tab khác vẫn chạy bình thường (không bị Chromium hãm timer khi tab ẩn)
@@ -182,7 +183,7 @@ function closeTab(id) {
   if (i < 0) return;
   const t = tabs[i];
   const w = t.view.webContents;
-  if (rawUrl(t)) {
+  if (rawUrl(t) && !t.incognito) {
     closedTabs.push({ url: rawUrl(t), index: i });
     if (closedTabs.length > CLOSED_MAX) closedTabs.shift();
   }
@@ -253,7 +254,7 @@ function tabMenu(id) {
   Menu.buildFromTemplate([
     { label: 'Tải lại', click: () => t.view.webContents.reload() },
     { label: t.pinned ? 'Bỏ ghim tab' : 'Ghim tab', click: () => togglePin(id) },
-    { label: 'Nhân bản tab', click: () => createTab(rawUrl(t), { index: i + 1 }) },
+    { label: 'Nhân bản tab', click: () => createTab(rawUrl(t), { index: i + 1, incognito: t.incognito }) },
     { label: t.muted ? 'Bật tiếng tab' : 'Tắt tiếng tab', click: () => toggleMute(id) },
     { type: 'separator' },
     { label: 'Đóng tab', click: () => closeTab(id) },
@@ -278,9 +279,9 @@ function wireTab(t) {
     const pop = popupFor({ url, disposition, features });
     if (pop.popup) return { action: 'allow', overrideBrowserWindowOptions: {
       width: pop.width, height: pop.height, autoHideMenuBar: true,
-      webPreferences: { sandbox: false }, // cùng mức sandbox với tab (tabPrefs) thì popup mới giữ window.opener
+      webPreferences: { sandbox: false, ...(t.incognito ? { partition: 'incognito' } : {}) }, // cùng mức sandbox với tab (tabPrefs) thì popup mới giữ window.opener
     } };
-    events.emit('opened', createTab(url, { index: tabs.indexOf(t) + 1, activate: disposition !== 'background-tab' }), t, url);
+    events.emit('opened', createTab(url, { index: tabs.indexOf(t) + 1, activate: disposition !== 'background-tab', incognito: t.incognito }), t, url);
     return { action: 'deny' };
   });
 
@@ -291,6 +292,8 @@ function wireTab(t) {
   // Bấm link / chuyển hướng sang trang Flash thật → trang chờ Flash trong tab này
   const toFlash = (e, url) => { if (/^https?:/i.test(url) && flashRouter.wantsFlash(url)) { e.preventDefault(); loadInTab(t, url); } };
   const noFile = (e, url) => { if (blockedNavigation(w.getURL(), url)) e.preventDefault(); };
+  // Nút trên trang lỗi (net-error.js) là link wisp-error:… – chặn điều hướng, báo cho module xử lý
+  w.on('will-navigate', (e, url) => { if (/^wisp-error:/i.test(url)) { e.preventDefault(); events.emit('error-action', t, url); } });
   w.on('will-navigate', noFile);
   w.on('will-redirect', noFile);
   w.on('will-navigate', toFlash);
@@ -312,9 +315,10 @@ function wireTab(t) {
     if (isActive()) updateTitle();
     sendTabs();
   });
-  w.on('page-favicon-updated', (_e, favicons) => { t.favicon = favicons[0] || ''; events.emit('favicon', w.getURL(), t.favicon); sendTabs(); });
+  w.on('page-favicon-updated', (_e, favicons) => { t.favicon = favicons[0] || ''; if (!t.incognito) events.emit('favicon', w.getURL(), t.favicon); sendTabs(); });
   w.on('did-fail-load', (_e, code, desc, url, isMain) => {
     if (isMain && code !== -3) console.warn('Lỗi tải trang', code, desc, url);
+    if (isMain && !t.sleeping) events.emit('load-failed', t, { code, desc, url }); // net-error.js hiện trang lỗi
   });
   w.on('render-process-gone', (_e, d) => {
     if (!isCrash(d.reason) || t.sleeping) return;
@@ -361,7 +365,7 @@ function attachWindow(w) {
 let lastSessionJson = '';
 function saveSession(force = false) {
   if (!tabs.length) return;
-  const live = tabs.filter(t => tabUrl(t));
+  const live = tabs.filter(t => tabUrl(t) && !t.incognito);
   const data = { tabs: live.map(tabUrl), titles: live.map(t => t.title || ''), pinned: live.map(t => !!t.pinned), active: Math.max(0, tabs.indexOf(activeTab())) };
   const json = JSON.stringify(data);
   if (!force && json === lastSessionJson) return;

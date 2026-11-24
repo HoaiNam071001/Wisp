@@ -45,6 +45,8 @@ const { ensureMenuWin } = require('./menu-popup');
 const ghosthand = require('./ghosthand/server');
 require('./toolbar-ipc');
 require('./omnibox-window');
+require('./net-error');
+require('./incognito');
 
 const IS_MAC = process.platform === 'darwin';
 let pendingFile = null; // file .swf mở trước khi app sẵn sàng (macOS "Open With")
@@ -86,7 +88,9 @@ app.whenReady().then(() => {
   // Một số trang chặn UA có chữ "Electron" / lệch UA Chrome thật → chỉnh cho giống Chrome thường (ua.js)
   app.userAgentFallback = chromeUserAgent(app.userAgentFallback);
 
-  installRequestLog(session.defaultSession);
+  const blocker = require('./content-blocker');
+  installRequestLog(session.defaultSession, blocker.decide);
+  blocker.installGpc(session.defaultSession);
   require('./permissions').install(session.defaultSession);
   require('./downloads').install(session.defaultSession);
 

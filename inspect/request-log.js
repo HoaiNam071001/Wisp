@@ -16,10 +16,12 @@ function ownWebContents(id) {
   return (win && win.webContents.id === id) || (insp && insp.id === id);
 }
 
-function installRequestLog(ses) {
+// decide(d) → true thì huỷ request (chặn quảng cáo – content-blocker.js)
+function installRequestLog(ses, decide) {
   const wr = ses.webRequest;
   wr.onBeforeRequest((d, cb) => {
-    cb({});
+    const cancel = !!decide && decide(d);
+    cb({ cancel });
     if (/^(devtools|chrome-extension|data|blob):/i.test(d.url) || ownWebContents(d.webContentsId)) return;
     // file giao diện của chính app (toolbar.html, inspect.html…), trừ player.html bọc file .swf
     if (d.url.startsWith(APP_FILE_URL) && !d.url.startsWith(APP_FILE_URL + 'player.html')) return;

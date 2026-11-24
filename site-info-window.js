@@ -4,6 +4,7 @@ const { ipcMain } = require('electron');
 const tabs = require('./tabs');
 const popover = require('./popover');
 const { loadConfig, saveConfig } = require('./config');
+const { toggleSite } = require('./blocklist');
 const { describe, listPermissions, setPermission, resetPermissions, cookieMatchesHost } = require('./site-info');
 
 let keepOpen = false;
@@ -16,7 +17,10 @@ function current() {
 
 function view() {
   const { info } = current();
-  return { kind: info.kind, host: info.host, perms: info.openable ? listPermissions(loadConfig().sitePermissions, info.host) : [] };
+  const t = tabs.activeTab();
+  const cfg = loadConfig();
+  const block = { on: cfg.adblock !== false && !(cfg.adblockOff || []).includes(info.host), count: (t && t.blocked) || 0 };
+  return { kind: info.kind, host: info.host, block, perms: info.openable ? listPermissions(loadConfig().sitePermissions, info.host) : [] };
 }
 
 function toggleSiteInfo(anchor) {
@@ -41,6 +45,14 @@ ipcMain.handle('siteinfo:set', (e, key, state) => {
   const { info } = current();
   if (!info.openable) return null;
   saveConfig({ sitePermissions: setPermission(loadConfig().sitePermissions, info.host, String(key), String(state)) });
+  return view();
+});
+ipcMain.handle('siteinfo:block', (e) => {
+  if (!fromPopup(e)) return null;
+  const { w, info } = current();
+  if (!info.openable) return null;
+  saveConfig({ adblockOff: toggleSite(loadConfig().adblockOff, info.host) });
+  if (w) w.reload(); // áp dụng ngay cho trang đang xem
   return view();
 });
 ipcMain.handle('siteinfo:reset', (e) => {

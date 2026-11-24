@@ -42,6 +42,9 @@
   <div class="top"><h1 id="host"></h1><button class="x" id="close" title="Đóng (Esc)"><svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg></button></div>
   <div class="conn" id="conn"><svg viewBox="0 0 24 24" id="ic"></svg><div><span id="ct"></span><small id="cs"></small></div></div>
   <hr>
+  <h2>Quảng cáo và theo dõi</h2>
+  <label class="perm"><span class="n" id="blockT"></span><input type="checkbox" id="block"></label>
+  <hr>
   <h2>Quyền của trang</h2>
   <div id="perms"></div>
   <div class="note" id="note" hidden>Quyền đã cấp cho trang đang mở có hiệu lực đầy đủ sau khi tải lại trang.</div>
@@ -85,7 +88,10 @@
       row.append(n, sel); box.appendChild(row);
     }
     $('reset').hidden = !v.perms.length;
+    $('block').checked = v.block.on;
+    $('blockT').textContent = v.block.on ? `Đang chặn bên thứ ba${v.block.count ? ' · đã chặn ' + v.block.count : ''}` : 'Không chặn ở trang này';
   }
+  $('block').onchange = async () => render(await wsite.toggleBlock());
   $('reset').onclick = async () => { render(await wsite.reset()); $('note').hidden = false; };
   let armed = false;
   $('clear').onclick = async () => {

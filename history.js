@@ -38,6 +38,7 @@ function historyChanged() {
 }
 
 function recordVisit(t, rawUrl) {
+  if (t.incognito) return;
   const url = displayUrl(rawUrl);
   if (!/^(https?|file):/i.test(url) || isHistoryUrl(rawUrl) || isBookmarksUrl(rawUrl)) return;
   const h = loadHistory();

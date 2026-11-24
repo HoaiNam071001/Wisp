@@ -102,3 +102,10 @@ Chạy `npm run dev` (dữ liệu `.dev-data/`), thử như bản 2.3.0:
 - ⬜ Gõ tên tab đang mở → dòng "Chuyển sang tab" chuyển đúng tab; Cmd/Ctrl+K đưa con trỏ vào ô địa chỉ.
 - ⬜ Chuột phải tab → Ghim tab: tab thu nhỏ còn icon, đứng đầu, Cmd+W không đóng; mở lại app vẫn ghim.
 - ⬜ Kéo tab sang trái / phải đổi chỗ; kéo tab thường vào vùng tab ghim không chen được.
+
+## Bước 16 – riêng tư / an toàn (2026-11-24)
+- ⬜ Mở trang nhiều quảng cáo (báo, blog): ít quảng cáo hơn, trang không vỡ; bấm khoá → "Quảng cáo và theo dõi" hiện số đã chặn; tắt công tắc → trang tải lại và quảng cáo hiện.
+- ⬜ Tệp → Tab ẩn danh mới: đăng nhập một trang, đóng tab ẩn danh, mở lại tab ẩn danh → chưa đăng nhập; lịch sử không có trang đã xem; thoát / mở lại app không thấy tab ẩn danh.
+- ⬜ Mở https://expired.badssl.com/ → trang "Kết nối không riêng tư"; Nâng cao → Vẫn tiếp tục mở được trang; mở https://nonexistent.invalid/ → "Không tìm thấy trang".
+- ⬜ Mở https://httpbin.org/headers → thấy `Sec-Gpc: 1`; tắt ở Tuỳ chọn thì không còn.
+- ⬜ Trang Flash (cf4vn.bar) vẫn vào game bình thường khi bật chặn quảng cáo.

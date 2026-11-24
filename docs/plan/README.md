@@ -21,7 +21,7 @@ Trạng thái: ✅ xong · 🔄 đang làm · ⬜ chưa làm
 | [13](13-thong-tin-trang.md) | Thông tin trang (bấm khoá): kết nối, quyền theo trang, xoá dữ liệu trang | 05 | 🔄 |
 | [14](14-toi-uu-toc-do-ram.md) | Tối ưu tốc độ & RAM: khởi động nhanh, tab ngủ, khôi phục lười, tab crash | 05 | 🔄 |
 | [15](15-omnibox-tab-nang-cao.md) | Thanh địa chỉ gợi ý, chuột phải, ghim / kéo tab, Ctrl+K | 11, 12 | 🔄 |
-| [16](16-rieng-tu-an-toan.md) | Riêng tư & an toàn: chặn quảng cáo, ẩn danh, HTTPS-first, trang lỗi | 05, 13 | ⬜ |
+| [16](16-rieng-tu-an-toan.md) | Riêng tư & an toàn: chặn quảng cáo, ẩn danh, HTTPS-first, trang lỗi | 05, 13 | 🔄 |
 
 Thêm bước mới: tạo `NN-ten-ngan.md` (số tiếp theo, mẫu như các file có sẵn: tiêu đề + trạng thái, **Phụ thuộc**, **Xong khi**, danh sách việc ⬜) rồi thêm một dòng vào bảng trên. Bước dài làm xong một phần thì tick ngay trong file của bước, đổi trạng thái ở bảng.
 
