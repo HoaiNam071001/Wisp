@@ -34,7 +34,7 @@ ipcMain.on('nav', (_e, action, arg) => {
   else if (action === 'history') { openHistory(); }
   else if (action === 'update') { updater.promptUpdate(true); }
 });
-ipcMain.on('account:open', (e) => { if (fromToolbar(e)) accountWin.openAccountWindow(); });
+ipcMain.on('account:open', (e, r) => { if (fromToolbar(e)) accountWin.toggleAccountPopup(r); });
 ipcMain.on('menu', (e, x, y) => { if (fromToolbar(e)) showMainMenu(x, y); });
 ipcMain.on('ghosthand-disconnect', (e) => { if (fromToolbar(e)) ghosthand.disconnect(); });
 ipcMain.on('tab', (e, action, id) => {

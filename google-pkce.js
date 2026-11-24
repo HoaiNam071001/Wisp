@@ -36,4 +36,10 @@ function readIdToken(idToken) {
   } catch { return { email: '', name: '', picture: '' }; }
 }
 
-module.exports = { SCOPES, newPkce, authUrl, parseCallback, readIdToken };
+// Google cho người dùng bỏ tích từng quyền ở màn hình đồng ý → token có thể thiếu quyền Drive
+function missingScopes(granted) {
+  const have = String(granted || '').split(/\s+/);
+  return SCOPES.filter(s => s !== 'openid' && s !== 'email' && !have.includes(s));
+}
+
+module.exports = { missingScopes, SCOPES, newPkce, authUrl, parseCallback, readIdToken };

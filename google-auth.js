@@ -6,7 +6,7 @@ const https = require('https');
 const fs = require('fs');
 const path = require('path');
 const { EventEmitter } = require('events');
-const { newPkce, authUrl, parseCallback, readIdToken } = require('./google-pkce');
+const { missingScopes, newPkce, authUrl, parseCallback, readIdToken } = require('./google-pkce');
 const store = require('./token-store');
 
 const CLIENT_ID = '413793643993-qa50gkndk565ok0v7ko9s0lei0guulf9.apps.googleusercontent.com';
@@ -74,6 +74,7 @@ function login() {
       try {
         const redirectUri = 'http://127.0.0.1:' + server.address().port;
         const t = await postForm(tokenBody({ code: r.code, code_verifier: pkce.verifier, grant_type: 'authorization_code', redirect_uri: redirectUri }));
+        if (t.scope && missingScopes(t.scope).length) throw new Error('Chưa cấp quyền Google Drive – đăng nhập lại và tích ô “See, create, and delete its own configuration data in your Google Drive”');
         if (!t.refresh_token) throw new Error('Google không cấp quyền truy cập lâu dài – thử đăng nhập lại');
         const who = readIdToken(t.id_token);
         store.save(Object.assign({ refreshToken: t.refresh_token }, who));

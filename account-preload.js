@@ -10,5 +10,6 @@ contextBridge.exposeInMainWorld('wacc', {
   cookies: () => ipcRenderer.invoke('account:cookies-get'),
   setCookies: (p) => ipcRenderer.invoke('account:cookies-set', p),
   forgetCookiePassword: () => ipcRenderer.invoke('account:cookies-forget'),
+  size: (h) => ipcRenderer.send('account:size', h),
   onChanged: (cb) => ipcRenderer.on('account:changed', (_e, v) => cb(v)),
 });

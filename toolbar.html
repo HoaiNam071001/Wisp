@@ -116,12 +116,6 @@
   #upd svg { width: 14px; height: 14px; }
   #more.open { background: var(--hover); color: #fff; }
 
-  #toast { position: fixed; right: 52px; top: 42px; height: 32px; display: flex; align-items: center; gap: 8px; padding: 0 12px 0 10px;
-           border-radius: 8px; background: #1d3a27; border: 1px solid #2d6a3e; color: #d6f5df; font-size: 12.5px; white-space: nowrap;
-           opacity: 0; transform: translateY(-4px); pointer-events: none; transition: opacity .18s, transform .18s; }
-  #toast svg { width: 15px; height: 15px; color: var(--green); }
-  #toast.show { opacity: 1; transform: none; }
-
   @media (max-width: 760px) { #home { display: none; } }
 </style>
 </head>
@@ -151,7 +145,6 @@
       <svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="5" r="1.2"/><circle cx="12" cy="12" r="1.2"/><circle cx="12" cy="19" r="1.2"/></svg>
     </button>
   </div>
-  <div id="toast"><svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.5 2.5 5.5-6"/></svg><span id="toast-t"></span></div>
 <script>
   const $ = (id) => document.getElementById(id);
   const ICON = {
@@ -227,14 +220,6 @@
   // Mất focus (kể cả focus sang trang – activeElement vẫn là ô này) thì trả về địa chỉ thật như Chrome, không để ô trống / cũ
   $('url').addEventListener('blur', () => { $('sec').style.visibility = ''; $('url').style.paddingLeft = ''; $('url').value = lastUrl; renderSec(lastUrl); });
   let lastUrl = '';
-
-  let toastTimer = null;
-  nav.onToast((text) => {
-    $('toast-t').textContent = text;
-    $('toast').classList.add('show');
-    clearTimeout(toastTimer);
-    toastTimer = setTimeout(() => $('toast').classList.remove('show'), 2500);
-  });
 
   // ---- vẽ thanh tab ----
   function renderTabs({ tabs, active }) {
@@ -319,7 +304,7 @@
     $('acct-i').textContent = a.signedIn ? a.initial : '';
     $('acct').title = a.signedIn ? 'Tài khoản Google: ' + a.email : 'Tài khoản Google – đăng nhập để đồng bộ';
   });
-  $('acct').onclick = () => nav.account();
+  $('acct').onclick = () => { const r = $('acct').getBoundingClientRect(); nav.account({ x: r.left, y: r.bottom, w: r.width }); };
   // ---- chip Ghosthand: hiện khi có kết nối, bấm để ngắt ----
   nav.onGhosthand((g) => { $('gh').classList.toggle('show', !!g.clients); $('pick').style.display = g.on ? '' : 'none'; });
   $('pick').style.display = 'none';
