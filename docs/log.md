@@ -53,3 +53,4 @@ Chỉ thêm dòng bằng `>>`: `- **YYYY-MM-DD** – <việc>. <kết quả ki�
 2026-11-24 bước 11: đồng bộ cookie game (web + engine Flash, mã hoá, sessions.enc)
 - 2026-11-24: Claude tự thử cổng Ghosthand trên dev: token sai / Origin → 401, stale_ref, not_found, screenshot fullPage 16000 px – qua; check + test xanh (117/117).
 - **2026-11-24** – Kế hoạch (người dùng yêu cầu): bước 12 thanh dấu trang như Chrome (luôn hiện, Cmd+Shift+B, chưa thư mục, chỉ engine web); chưa code.
+- **2026-11-24** – Kế hoạch (người dùng yêu cầu): bước 12 thêm việc nhập dấu trang từ Chrome (đọc file Bookmarks trên máy) + từ file HTML; chưa code.
