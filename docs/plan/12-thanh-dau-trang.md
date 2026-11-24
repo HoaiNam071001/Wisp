@@ -1,0 +1,23 @@
+# 12. ⬜ Thanh dấu trang như Chrome
+
+**Phụ thuộc:** bước 11 phần Dấu trang (`bookmarks.js`, `bookmarks-store.js`, `wisp://bookmarks`) – đã ✅.
+
+*(người dùng yêu cầu 2026-11-24)* Chốt: thanh dấu trang **luôn hiện** dưới thanh địa chỉ, bật / tắt bằng Cmd/Ctrl+Shift+B (lưu `config.json`, mặc định bật); **bản đầu chưa có thư mục** (thanh phẳng); **chỉ engine web** – cửa sổ Flash (Electron 11) giữ nguyên, không mất chiều cao game.
+
+**Xong khi:** dấu trang đã thêm bằng ★ hiện thành nút (biểu tượng trang + tên) trên thanh dưới địa chỉ; bấm mở trong tab hiện tại, Cmd/Ctrl+bấm hoặc bấm giữa mở tab mới; chuột phải: mở tab mới / sửa tên / xoá; kéo thả đổi thứ tự; thừa chỗ thì gom vào nút `»`; Cmd/Ctrl+Shift+B ẩn / hiện; dấu trang đồng bộ Drive vẫn dùng được trên thanh (cả thứ tự).
+
+## Việc
+- ⬜ **Bố cục:** `TOOLBAR_HEIGHT` (tabs.js:17) hiện 80 = tab 36 + địa chỉ 44 → thêm chiều cao thanh dấu trang (~32) khi bật; `layoutActive` và mọi chỗ dùng hằng này (vd `find-window.js:28`, popup menu / tài khoản đặt theo toolbar) đọc chiều cao hiện tại thay vì hằng; trang Flash toàn màn hình vẫn ẩn cả thanh.
+- ⬜ **UI** `bookmarks-bar.html` + preload riêng (hoặc một vùng trong `toolbar.html` nếu không làm chậm vẽ thanh tab): màu bằng biến CSS + theme tối; favicon từ cache favicon của tab / chữ cái đầu khi chưa có; tên rút gọn bằng `…`; nút `»` xổ danh sách phần bị che; trạng thái trống: dòng gợi ý "Bấm ★ để thêm dấu trang".
+- ⬜ **Logic thuần** `bookmarks-bar.js` (không `require('electron')`) + `test/bookmarks-bar.test.js`: chọn mục vừa chiều rộng / mục tràn vào `»`, đổi thứ tự (cập nhật `order` / `updatedAt`), rút gọn tên.
+- ⬜ **Dữ liệu:** thêm `order` (số) cho mục dấu trang, mục cũ chưa có `order` xếp theo `addedAt`; đổi thứ tự là sửa mục → đi qua `mergeItems` của `sync-merge.js` (mốc `updatedAt` từng mục), không làm hỏng `bookmarks.json` cũ / bản đã đồng bộ.
+- ⬜ **Thao tác:** mở (hiện tại / tab mới), chuột phải (mở tab mới, sửa tên, xoá), kéo thả đổi thứ tự; thay đổi từ ★ / `wisp://bookmarks` / đồng bộ cập nhật thanh qua `bookmarks.events 'changed'`.
+- ⬜ **Bật / tắt:** Cmd/Ctrl+Shift+B + mục trong menu ⋮ (có dấu ✓); khoá `config.json` `bookmarksBar` (mặc định `true`, `config.json` cũ không hỏng); cân nhắc đồng bộ khoá này qua Drive (đang chỉ `url`, `flashSites`, `keyRemap`).
+- ⬜ File mới (`bookmarks-bar.js`, `.html`, preload) thêm vào `build.files`.
+- ⬜ README (mục dấu trang) + `docs/checks.md` (thử tay: thêm / mở / kéo thả / xoá, thu nhỏ cửa sổ thấy `»`, bật / tắt, theme tối, đồng bộ sang máy thứ hai, tab Flash toàn màn hình không lòi thanh).
+
+## Rủi ro
+- Đổi chiều cao vùng trang khi bật / tắt → tab đang mở phải layout lại; Ghosthand `frameRect` / `screenRect` đã tính theo `TOOLBAR_HEIGHT` thì phải dùng cùng giá trị mới (kiểm lại bước 01 / 07).
+- Cửa sổ Flash (Electron 11) không có thanh → tab game không thấy dấu trang; chấp nhận (đã chốt).
+- Thư mục dấu trang để bước sau (cần đổi cấu trúc `bookmarks.json` + luật gộp Drive).
+- Không mâu thuẫn `docs/decisions.md`; không đụng cổng Ghosthand (không cần sửa phía `../autoclicker`).
