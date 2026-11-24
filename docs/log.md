@@ -60,3 +60,4 @@ Chỉ thêm dòng bằng `>>`: `- **YYYY-MM-DD** – <việc>. <kết quả ki�
 - **2026-11-24** – Bước 12: menu » có icon, nút Tất cả dấu trang; nút chọn element đổi màu khi đang chọn (bước 06). check + test 130/130 xanh; chụp màn hình thấy nút mới, chưa bấm thử menu.
 - **2026-11-24** – Bước 12: dropdown » / Tất cả dấu trang chuyển từ menu hệ thống sang popover HTML nhỏ gọn có icon (bỏ favicon-image.js). check + test 130/130 xanh; chưa bấm thử.
 - **2026-11-24** – Bước 12: dropdown dấu trang tối đa 10 mục + dòng "Hiện tất cả (n)". check + test xanh; chưa bấm thử.
+- **2026-11-24** – Kế hoạch (người dùng yêu cầu): thêm bước 14 (tối ưu tốc độ / RAM), 15 (omnibox + tab nâng cao), 16 (riêng tư / an toàn) – học Chrome / Edge / Firefox / Brave / Arc; chờ người dùng chốt phạm vi.
