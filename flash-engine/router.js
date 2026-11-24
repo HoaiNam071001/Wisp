@@ -50,15 +50,15 @@ async function open(url) {
   }
 }
 
-// Khung game trên màn hình ({x, y, width, height}) – engine trừ thanh công cụ. Chưa mở cửa sổ → no_tab.
+// Khung game trên màn hình ({screenRect: {x, y, width, height}, state}) – engine trừ thanh công cụ. Chưa mở cửa sổ → no_tab.
 function frameRect() {
   if (!client || !client.running) return Promise.reject(Object.assign(new Error('chưa mở cửa sổ engine Flash'), { code: 'no_tab' }));
-  return client.request('frameRect').then((r) => r.screenRect);
+  return client.request('frameRect');
 }
 
-function game(action) {
+function game(action, size) {
   if (!client || !client.running) return Promise.reject(Object.assign(new Error('chưa mở cửa sổ engine Flash'), { code: 'no_tab' }));
-  return client.request('game', { action });
+  return client.request('game', Object.assign({ action }, size));
 }
 
 function close() { return client && client.running ? client.request('close').catch(() => {}) : Promise.resolve(); }

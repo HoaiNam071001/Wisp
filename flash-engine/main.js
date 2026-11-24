@@ -75,14 +75,18 @@ function openWindow(url) {
 function frameRect() {
   if (!win || win.isDestroyed()) throw Object.assign(new Error('chưa có cửa sổ'), { code: 'no_tab' });
   const c = win.getContentBounds(); // chỉ vùng trang game, trừ thanh công cụ
-  return { screenRect: { x: c.x, y: c.y + BAR_H, width: c.width, height: Math.max(0, c.height - BAR_H) } };
+  // state: để kịch bản biết cửa sổ có đang thu nhỏ / ẩn (khi đó ảnh chụp màn hình không thấy game)
+  const state = { minimized: win.isMinimized(), visible: win.isVisible(), focused: win.isFocused() };
+  return { screenRect: { x: c.x, y: c.y + BAR_H, width: c.width, height: Math.max(0, c.height - BAR_H) }, state };
 }
 
 // Việc cho kịch bản tự xử lý game treo: tải lại / tắt tiếng / đưa cửa sổ lên trước
-function gameAction(action) {
+function gameAction(m) {
+  const action = m.action;
   if (!win || win.isDestroyed() || !view) throw Object.assign(new Error('chưa có cửa sổ'), { code: 'no_tab' });
   const wc = view.webContents;
   if (action === 'reload') wc.reload();
+  else if (action === 'resize') { if (win.isMaximized() || win.isFullScreen()) { win.unmaximize(); win.setFullScreen(false); } win.setContentSize(m.width, m.height + BAR_H); }
   else if (action === 'mute' || action === 'unmute') wc.setAudioMuted(action === 'mute');
   else { if (win.isMinimized()) win.restore(); win.show(); win.focus(); wc.focus(); }
   return {};
@@ -92,7 +96,7 @@ async function handle(m) {
   if (m.cmd === 'open') { domains = Array.isArray(m.domains) ? m.domains : []; await openWindow(m.url); return {}; }
   if (m.cmd === 'close') { if (win && !win.isDestroyed()) win.close(); return {}; }
   if (m.cmd === 'frameRect') return frameRect();
-  if (m.cmd === 'game') return gameAction(m.action);
+  if (m.cmd === 'game') return gameAction(m);
   app.quit();
   return {};
 }

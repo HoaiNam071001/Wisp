@@ -89,3 +89,10 @@ test('game: action bắt buộc, chỉ giá trị đã liệt kê', () => {
   assert.strictEqual(codeOf(() => checkArgs('game', { action: 'nổ' })), 'bad_args');
   assert.strictEqual(checkArgs('game', { action: 'mute', tab: '1' }).action, 'mute');
 });
+
+test('game resize: cần width + height hợp lý, không dùng cho action khác', () => {
+  assert.strictEqual(codeOf(() => checkArgs('game', { action: 'resize' })), 'bad_args');
+  assert.strictEqual(codeOf(() => checkArgs('game', { action: 'resize', width: 10, height: 600 })), 'bad_args');
+  assert.strictEqual(codeOf(() => checkArgs('game', { action: 'mute', width: 1000 })), 'bad_args');
+  assert.strictEqual(checkArgs('game', { action: 'resize', width: 1000, height: 600 }).width, 1000);
+});

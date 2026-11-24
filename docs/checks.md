@@ -68,3 +68,4 @@ Chạy `npm run dev` (dữ liệu `.dev-data/`), thử như bản 2.3.0:
 - 05 Session: thử đăng nhập một trang, thoát hẳn Wisp, mở lại vẫn đăng nhập; menu ⋮ → Xoá cookie và dữ liệu trang… thì bị đăng xuất.
 - 06 Chọn element: bật Ghosthand, mở trang bất kỳ, bấm nút ngắm (hoặc Cmd/Ctrl+Shift+E) → rê chuột thấy khung + nhãn; ↑ / ↓ đổi cha / con; bấm → bảng; đổi selector trong ô thì số khớp đổi; Chép dán được; Esc thoát và trang bấm lại bình thường. Thử cả trang có iframe cùng nguồn.
 - 07 Lệnh game: mở cf4vn.bar (engine Flash) rồi chạy `game` qua cổng Ghosthand: reload tải lại game, mute / unmute tắt / bật tiếng, focus đưa cửa sổ game lên trước (cả khi đang thu nhỏ).
+- 07 Cỡ cửa sổ game: gọi `game {action:"resize", width:1000, height:600}` trên tab game Flash → vùng game đúng cỡ; thu nhỏ cửa sổ rồi `frameRect` phải báo `hidden: true`.

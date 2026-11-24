@@ -44,3 +44,4 @@ Chỉ thêm dòng bằng `>>`: `- **YYYY-MM-DD** – <việc>. <kết quả ki�
 - **2026-11-17** – Bước 11: Google Cloud (project ghosthand, OAuth client Desktop, scope drive.appdata + openid + email), PRIVACY.md, thư mục site/ cho Vercel, logo; ghi quyết định publish. Chưa viết google-auth.js (chờ Client secret + domain).
 2026-11-17 bước 06: phía Wisp (agent pick, nút toolbar, sự kiện pick, lệnh pick / pickDone); còn phía Ghosthand
 2026-11-24 bước 07: lệnh game {reload|mute|unmute|focus} (web + engine Flash)
+2026-11-24 bước 07: game resize + frameRect báo hidden/window (engine Flash)

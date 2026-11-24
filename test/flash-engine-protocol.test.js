@@ -29,3 +29,9 @@ test('parseLine: game cần action hợp lệ', () => {
   assert.strictEqual(p.parseLine('{"id":1,"cmd":"game","action":"x"}').error.code, 'bad_args');
   assert.ok(p.parseLine('{"id":1,"cmd":"game","action":"reload"}').msg);
 });
+
+test('parseLine: game resize cần kích thước trong khoảng', () => {
+  assert.strictEqual(p.parseLine('{"id":1,"cmd":"game","action":"resize"}').error.code, 'bad_args');
+  assert.strictEqual(p.parseLine('{"id":1,"cmd":"game","action":"resize","width":99999,"height":600}').error.code, 'bad_args');
+  assert.ok(p.parseLine('{"id":1,"cmd":"game","action":"resize","width":1000,"height":600}').msg);
+});

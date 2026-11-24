@@ -31,7 +31,11 @@ module.exports = {
   // Khung game trên màn hình (Ghosthand OCR / bấm chuột thật đúng vùng). Game Flash: hỏi engine Flash (không có DOM).
   async frameRect(a) {
     const t = resolveTab(a.tab, { flashOk: true });
-    if (launcher.isFlashTab(t.id)) return { tag: 'flash', rect: null, screenRect: flashScreenRect(await flashRouter.frameRect()) };
+    if (launcher.isFlashTab(t.id)) {
+      const r = await flashRouter.frameRect();
+      // hidden: cửa sổ game thu nhỏ / ẩn → ảnh / chữ trên màn hình không thấy game (bị cửa sổ khác đè thì chưa biết được)
+      return { tag: 'flash', rect: null, screenRect: flashScreenRect(r.screenRect), window: r.state, hidden: r.state.minimized || !r.state.visible };
+    }
     const r = await callPage(t.view.webContents, 'gameRect', {});
     return { tag: r.tag, rect: r.rect, screenRect: screenRect(t, r.rect) };
   },
