@@ -59,3 +59,4 @@ Chỉ thêm dòng bằng `>>`: `- **YYYY-MM-DD** – <việc>. <kết quả ki�
 - **2026-11-24** – Bước 13: popover thông tin trang (bấm khoá): kết nối, quyền theo trang đổi / đặt lại, xoá cookie + dữ liệu trang; tách popover.js dùng chung với Tài khoản. check + test 130/130 xanh; chưa bấm thử trên app (không điều khiển chuột được).
 - **2026-11-24** – Bước 12: menu » có icon, nút Tất cả dấu trang; nút chọn element đổi màu khi đang chọn (bước 06). check + test 130/130 xanh; chụp màn hình thấy nút mới, chưa bấm thử menu.
 - **2026-11-24** – Bước 12: dropdown » / Tất cả dấu trang chuyển từ menu hệ thống sang popover HTML nhỏ gọn có icon (bỏ favicon-image.js). check + test 130/130 xanh; chưa bấm thử.
+- **2026-11-24** – Bước 12: dropdown dấu trang tối đa 10 mục + dòng "Hiện tất cả (n)". check + test xanh; chưa bấm thử.

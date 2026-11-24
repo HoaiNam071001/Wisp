@@ -9,7 +9,6 @@
   * { box-sizing: border-box; }
   html, body { margin: 0; background: var(--bg); color: var(--text); font: 12.5px system-ui, -apple-system, sans-serif; overflow: hidden; user-select: none; }
   #app { padding: 4px; }
-  #list { max-height: 420px; overflow-y: auto; }
   .row { display: flex; align-items: center; gap: 10px; width: 100%; height: 28px; padding: 0 10px; border: 0; border-radius: 6px; background: none; color: inherit; font: inherit; text-align: left; cursor: default; }
   .row:hover, .row:focus-visible { background: var(--hover); outline: none; }
   .row .t { flex: 1; min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
@@ -17,6 +16,7 @@
   .fav { object-fit: contain; }
   .av { display: grid; place-items: center; font-size: 9.5px; font-weight: 700; color: #fff; }
   .manage { color: var(--muted); }
+  .manage:hover { color: var(--text); }
   .manage svg { flex: none; width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
   hr { border: 0; border-top: 1px solid var(--border); margin: 4px 6px; }
   .empty { color: var(--faint); padding: 8px 10px; }
@@ -26,14 +26,15 @@
 </head>
 <body>
 <div id="app">
-  <button class="row manage" id="manage" hidden><svg viewBox="0 0 24 24"><path d="M6 3h12v18l-6-4-6 4z"/></svg><span class="t">Mở trang quản lý dấu trang</span></button>
-  <hr id="sep" hidden>
   <div id="list"></div>
+  <hr id="sep" hidden>
+  <button class="row manage" id="manage" hidden><svg viewBox="0 0 24 24"><path d="M6 3h12v18l-6-4-6 4z"/></svg><span class="t" id="manageT"></span></button>
 </div>
 <script>
   const $ = (id) => document.getElementById(id);
   const AV_COLORS = ['#4c8dff', '#3fb950', '#a371f7', '#e3a008', '#2bb3a3', '#e05fa8', '#ff6a3d', '#7c83ff'];
   const hostOf = (u) => { try { return new URL(u).host.replace(/^www\./, ''); } catch { return ''; } };
+  const MAX_ROWS = 10; // dropdown gọn: tầm chục mục, nhiều hơn thì dòng "Hiện tất cả"
   let lastH = 0;
   const fit = () => { const h = $('app').offsetHeight; if (h && h !== lastH) { lastH = h; wlist.size(h); } };
   new ResizeObserver(fit).observe($('app'));
@@ -65,10 +66,13 @@
   }
   wlist.get().then((v) => {
     if (!v) return;
-    $('manage').hidden = !v.all; $('sep').hidden = !v.all;
     const box = $('list');
     if (!v.items.length) { const d = document.createElement('div'); d.className = 'empty'; d.textContent = 'Chưa có dấu trang nào.'; box.appendChild(d); }
-    for (const b of v.items) box.appendChild(row(b));
+    for (const b of v.items.slice(0, MAX_ROWS)) box.appendChild(row(b));
+    // Quá MAX_ROWS thì có dòng "Hiện tất cả" mở trang quản lý; nút "Tất cả dấu trang" luôn có lối vào trang quản lý
+    const more = v.items.length > MAX_ROWS;
+    $('manage').hidden = $('sep').hidden = !(more || v.all);
+    $('manageT').textContent = more ? `Hiện tất cả (${v.items.length})` : 'Quản lý dấu trang';
     fit();
   });
 </script>
