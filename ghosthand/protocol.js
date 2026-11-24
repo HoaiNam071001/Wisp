@@ -35,6 +35,7 @@ const SPEC = {
   check: { target: '!', on: 'boolean!' },
   settle: { timeoutMs: 'number' },
   frameRect: {},
+  game: { action: ['reload', 'mute', 'unmute', 'focus'] }, // bắt buộc (kiểm riêng – mảng không ghi được '!')
   pick: { on: 'boolean' }, // bật / tắt chế độ chọn element (mặc định đảo trạng thái)
   pickDone: { message: 'string!' }, // Ghosthand báo lại kết quả thêm step → hiện toast trên Wisp
   subscribe: { events: 'string[]!' },
@@ -102,6 +103,7 @@ function checkArgs(cmd, args) {
     if (k !== 'target' && typeof t === 'string' && t.endsWith('!') && args[k] === undefined) fail('bad_args', `thiếu “${k}”`);
   }
   checkLimits(args);
+  if (cmd === 'game' && args.action === undefined) fail('bad_args', 'thiếu “action” (reload | mute | unmute | focus)');
   if (cmd === 'select' && (args.value === undefined) === (args.label === undefined)) fail('bad_args', 'ghi một trong value / label');
   if (cmd === 'subscribe') {
     const bad = args.events.filter(e => !EVENTS.includes(e));

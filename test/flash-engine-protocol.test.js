@@ -23,3 +23,9 @@ test('hostInDomains: domain gốc, subdomain, danh sách rỗng', () => {
   assert.strictEqual(p.hostInDomains(['cf4vn.bar'], 'youtube.com'), false);
   assert.strictEqual(p.hostInDomains([], 'bất kỳ'), true);
 });
+
+test('parseLine: game cần action hợp lệ', () => {
+  assert.strictEqual(p.parseLine('{"id":1,"cmd":"game"}').error.code, 'bad_args');
+  assert.strictEqual(p.parseLine('{"id":1,"cmd":"game","action":"x"}').error.code, 'bad_args');
+  assert.ok(p.parseLine('{"id":1,"cmd":"game","action":"reload"}').msg);
+});

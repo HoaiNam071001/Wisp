@@ -78,10 +78,21 @@ function frameRect() {
   return { screenRect: { x: c.x, y: c.y + BAR_H, width: c.width, height: Math.max(0, c.height - BAR_H) } };
 }
 
+// Việc cho kịch bản tự xử lý game treo: tải lại / tắt tiếng / đưa cửa sổ lên trước
+function gameAction(action) {
+  if (!win || win.isDestroyed() || !view) throw Object.assign(new Error('chưa có cửa sổ'), { code: 'no_tab' });
+  const wc = view.webContents;
+  if (action === 'reload') wc.reload();
+  else if (action === 'mute' || action === 'unmute') wc.setAudioMuted(action === 'mute');
+  else { if (win.isMinimized()) win.restore(); win.show(); win.focus(); wc.focus(); }
+  return {};
+}
+
 async function handle(m) {
   if (m.cmd === 'open') { domains = Array.isArray(m.domains) ? m.domains : []; await openWindow(m.url); return {}; }
   if (m.cmd === 'close') { if (win && !win.isDestroyed()) win.close(); return {}; }
   if (m.cmd === 'frameRect') return frameRect();
+  if (m.cmd === 'game') return gameAction(m.action);
   app.quit();
   return {};
 }

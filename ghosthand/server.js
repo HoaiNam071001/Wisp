@@ -12,7 +12,7 @@ const pushEvents = require('./events');
 
 // Lệnh nhận (args, conn); conn.send – đẩy sự kiện cho đúng kết nối (subscribe).
 const COMMANDS = Object.assign({}, require('./commands/tabs'), require('./commands/read'), require('./commands/act'),
-  require('./commands/form'), require('./commands/wait'), pushEvents.commands, require('./pick').commands);
+  require('./commands/form'), require('./commands/wait'), require('./commands/game'), pushEvents.commands, require('./pick').commands);
 
 // Người dùng bấm ngắt (chip trên toolbar / tắt cổng) → đóng với mã này: Ghosthand không tự nối lại.
 const CLOSE_BY_USER = 4000;

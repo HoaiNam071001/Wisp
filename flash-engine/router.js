@@ -56,8 +56,13 @@ function frameRect() {
   return client.request('frameRect').then((r) => r.screenRect);
 }
 
+function game(action) {
+  if (!client || !client.running) return Promise.reject(Object.assign(new Error('chưa mở cửa sổ engine Flash'), { code: 'no_tab' }));
+  return client.request('game', { action });
+}
+
 function close() { return client && client.running ? client.request('close').catch(() => {}) : Promise.resolve(); }
 
 function stop() { stopping = true; return client ? client.stop() : Promise.resolve(); }
 
-module.exports = { events, wantsFlash, open, frameRect, close, stop };
+module.exports = { events, wantsFlash, open, frameRect, game, close, stop };

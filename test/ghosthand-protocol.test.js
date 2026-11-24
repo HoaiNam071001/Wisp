@@ -83,3 +83,9 @@ test('textEvents: mỗi ký tự một char, xuống dòng = Enter', () => {
   assert.deepStrictEqual(textEvents('Việt').map(e => e.keyCode), ['V', 'i', 'ệ', 't']);
   assert.deepStrictEqual(textEvents('a\nb').map(e => e.type), ['char', 'keyDown', 'char', 'keyUp', 'char']);
 });
+
+test('game: action bắt buộc, chỉ giá trị đã liệt kê', () => {
+  assert.strictEqual(codeOf(() => checkArgs('game', {})), 'bad_args');
+  assert.strictEqual(codeOf(() => checkArgs('game', { action: 'nổ' })), 'bad_args');
+  assert.strictEqual(checkArgs('game', { action: 'mute', tab: '1' }).action, 'mute');
+});
