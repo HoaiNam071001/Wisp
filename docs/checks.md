@@ -12,7 +12,7 @@ Mới nhất ở trên, nhóm `## <NN> – <tên bước> · [link](plan/<NN>-<t
 - [ ] 12 (2026-11-24): `wisp://bookmarks` → "Nhập…" → chọn hồ sơ Chrome → thấy "Đã nhập n dấu trang"; nhập lần hai báo "tất cả đã có"; "File HTML" nhập được file xuất từ Chrome
 - [ ] 12: thanh dấu trang hiện dưới thanh địa chỉ đúng thứ tự thanh Chrome; bấm mở tab hiện tại, Cmd/Ctrl+bấm hoặc bấm giữa mở tab mới; chuột phải: Mở / Tab mới / Xoá; kéo thả đổi thứ tự (khởi động lại vẫn giữ)
 - [ ] 12: thanh dấu trang hiện icon thật của trang (mở trang một lần là học icon; trang chưa mở thử /favicon.ico; không có thì chữ cái màu); khởi động lại vẫn giữ icon
-- [ ] 12: bấm "Tất cả dấu trang" (cuối thanh) → menu có icon từng trang, bấm mở đúng trang; mục đầu mở trang quản lý; menu » cũng có icon (lần đầu có thể chậm ~vài giây)
+- [ ] 12: bấm "Tất cả dấu trang" (cuối thanh) → dropdown nhỏ gọn (dòng 28px, nền tối, cuộn khi dài) có icon từng trang, bấm mở đúng trang (Cmd/Ctrl+bấm hoặc bấm giữa = tab mới); mục đầu mở trang quản lý; nút » cũng mở dropdown cùng kiểu; Esc / bấm ra ngoài đóng
 - [ ] 06/12: bật chọn element (Cmd+Shift+E hoặc nút) → nút đổi màu cam; Esc / ✕ trong bảng chọn / tải lại trang → nút trở lại bình thường; đổi sang tab khác nút theo tab đang xem
 - [ ] 12: thu nhỏ cửa sổ → nút » hiện, bấm ra menu các dấu trang bị che; Cmd/Ctrl+Shift+B (và menu ⋮) ẩn / hiện, trang bên dưới co giãn đúng, khởi động lại nhớ trạng thái; Flash / video toàn màn hình không lòi thanh
 - [ ] 12: đồng bộ: kéo thả ở máy A, "Đồng bộ ngay", máy B thấy thứ tự mới; theme sáng không dùng (app chỉ tối) – bỏ qua

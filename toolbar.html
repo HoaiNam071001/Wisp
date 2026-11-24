@@ -372,11 +372,10 @@
     let over = false;
     for (const e of els) { if (over || e.offsetLeft + e.offsetWidth > max) { over = true; e.style.display = 'none'; bmHidden.push(e.dataset.id); } }
     $('bm-more').classList.toggle('none', !bmHidden.length);
-    if (bmHidden.length) nav.barWarm(bmHidden);
   }
   window.addEventListener('resize', fitBar);
-  $('bm-all').onclick = () => { const r = $('bm-all').getBoundingClientRect(); nav.barAll(r.right - 280, r.bottom); };
-  $('bm-more').onclick = () => { const r = $('bm-more').getBoundingClientRect(); nav.barOverflow(bmHidden, r.left, r.bottom); };
+  $('bm-all').onclick = () => { const r = $('bm-all').getBoundingClientRect(); nav.barAll(r.right - 340, r.bottom); };
+  $('bm-more').onclick = () => { const r = $('bm-more').getBoundingClientRect(); nav.barOverflow(bmHidden, r.right - 340, r.bottom); };
   // Kéo thả đổi thứ tự: thả lên mục nào thì đứng trước mục đó, thả vào chỗ trống thì xuống cuối
   let dragId = null;
   $('bm-list').addEventListener('dragstart', (e) => { const b = e.target.closest('.bmi'); if (b) { dragId = b.dataset.id; e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', dragId); } });
