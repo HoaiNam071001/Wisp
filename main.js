@@ -89,6 +89,7 @@ app.whenReady().then(() => {
   createWindow();
   // Cổng cho Ghosthand (config ghosthandPort: false = tắt; mặc định bật)
   if (loadConfig().ghosthandPort !== false) ghosthand.start();
+  require('./sync').init();
   updater.init({
     getWin: tabs.getWin, addLog, loadConfig, saveConfig,
     notify: (st) => { const win = tabs.getWin(); if (win) win.webContents.send('update', st); scheduleMenu(); },

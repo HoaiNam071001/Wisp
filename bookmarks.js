@@ -77,4 +77,8 @@ ipcMain.handle('bookmarks:remove', (e, id) => {
   changed();
 });
 
-module.exports = { events, toggleActive, openBookmarks, saveNow, pushStar };
+// Đồng bộ (sync.js): đọc toàn bộ (kèm tombstone) / thay bằng bản đã gộp
+function snapshot() { return load().slice(); }
+function replaceAll(list) { items = store.prune(store.clean(list)); changed(); }
+
+module.exports = { events, toggleActive, openBookmarks, saveNow, pushStar, snapshot, replaceAll };

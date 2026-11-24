@@ -114,4 +114,12 @@ ipcMain.handle('history:remove', (e, ids) => {
 });
 ipcMain.handle('history:clear', (e) => fromHistoryPage(e) ? clearHistoryDialog() : false);
 
-module.exports = { events, saveHistoryNow, recentHistory, clearHistoryDialog, openHistory };
+// Đồng bộ (sync.js): bỏ id cục bộ khi đưa lên; nhận bản gộp thì cấp id mới
+function snapshot() { return loadHistory().map(({ url, title, time }) => ({ url, title, time })); }
+function replaceAll(list) {
+  history = list.map(h => ({ id: ++histSeq, url: h.url, title: h.title || '', time: h.time })).slice(-HISTORY_MAX);
+  for (const t of tabs.list()) t.hist = null; // tham chiếu mục cũ không còn trong danh sách
+  historyChanged();
+}
+
+module.exports = { events, snapshot, replaceAll, HISTORY_MAX, saveHistoryNow, recentHistory, clearHistoryDialog, openHistory };

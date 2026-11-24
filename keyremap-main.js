@@ -34,4 +34,10 @@ ipcMain.handle('keys:set', (e, raw) => {
   return state;
 });
 
-module.exports = { openKeysWindow };
+// Cấu hình đổi từ nơi khác (đồng bộ Google) → nạp lại từ config.json
+function reload() {
+  state = normalizeConfig(loadConfig().keyRemap);
+  flashRouter.syncKeyRemap();
+}
+
+module.exports = { openKeysWindow, reload };
