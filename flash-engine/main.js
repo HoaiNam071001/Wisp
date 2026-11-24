@@ -101,10 +101,12 @@ function gameAction(m) {
 async function readCookies(domains) {
   return { cookies: syncCookies.pick(await session.defaultSession.cookies.get({}), domains) };
 }
-async function writeCookies(list) {
+async function writeCookies(list, onlyMissing) {
   let set = 0;
+  const have = new Set(onlyMissing ? (await session.defaultSession.cookies.get({})).map(syncCookies.keyOf) : []);
   const now = Math.floor(Date.now() / 1000);
   for (const c of list) {
+    if (onlyMissing && have.has(syncCookies.keyOf(c))) continue;
     const d = syncCookies.toSetDetails(c, now);
     if (d) { try { await session.defaultSession.cookies.set(d); set++; } catch { /* cookie hỏng: bỏ qua, không chặn cái khác */ } }
   }
@@ -114,7 +116,7 @@ async function writeCookies(list) {
 
 async function handle(m) {
   if (m.cmd === 'cookies') return readCookies(m.domains);
-  if (m.cmd === 'setCookies') return writeCookies(m.cookies);
+  if (m.cmd === 'setCookies') return writeCookies(m.cookies, m.onlyMissing === true);
   if (m.cmd === 'keyRemap') { keyRemap = normalizeConfig(m.keyRemap); return {}; }
   if (m.cmd === 'open') { keyRemap = normalizeConfig(m.keyRemap); domains = Array.isArray(m.domains) ? m.domains : []; await openWindow(m.url); return {}; }
   if (m.cmd === 'close') { if (win && !win.isDestroyed()) win.close(); return {}; }

@@ -104,11 +104,10 @@
   $('logout').onclick = () => wacc.logout();
   $('wipe').onclick = async () => { const r = await wacc.wipe(); if (r && r.error) $('errs').textContent = r.error; };
   let ckLoaded = false;
-  function renderCookies(c) {
+  function renderCookies(c, force) {
     if (!c) return;
     $('ck').hidden = !c.keychain;
-    $('ckOn').checked = c.enabled;
-    if (!ckLoaded) { $('ckDom').value = c.domains.join('\n'); ckLoaded = true; }
+    if (!ckLoaded || force) { $('ckOn').checked = c.enabled; $('ckDom').value = c.domains.join('\n'); ckLoaded = true; }
     $('ckPw').placeholder = c.hasPassword ? 'Đã đặt – để trống để giữ' : 'Chưa đặt mật khẩu';
     $('ckForget').hidden = !c.hasPassword;
     $('ckFlash').textContent = c.flashDomains.length ? 'Luôn gồm các trang bật Flash: ' + c.flashDomains.join(', ') : '';
@@ -118,9 +117,9 @@
     const r = await wacc.setCookies({ enabled: $('ckOn').checked, domains: $('ckDom').value.split('\n'), password: $('ckPw').value });
     if (r && !r.ok) { $('ckErr').textContent = r.error; $('ckOn').checked = false; }
     else $('ckPw').value = '';
-    renderCookies(await wacc.cookies());
+    renderCookies(await wacc.cookies(), true);
   };
-  $('ckForget').onclick = async () => { await wacc.forgetCookiePassword(); renderCookies(await wacc.cookies()); };
+  $('ckForget').onclick = async () => { await wacc.forgetCookiePassword(); renderCookies(await wacc.cookies(), true); };
   const showCookies = (v) => { $('ck').hidden = !v.signedIn || !v.keychain; if (v.signedIn) wacc.cookies().then(renderCookies); };
   wacc.onChanged(render);
   wacc.onChanged(showCookies);

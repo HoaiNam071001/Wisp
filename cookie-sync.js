@@ -12,14 +12,24 @@ const router = require('./flash-engine/router');
 const passwordStore = createStore('sync-password.bin');
 const FILE = 'sessions.enc';
 
-const settings = () => {
+// Cache trong bộ nhớ: sự kiện cookie 'changed' đến liên tục (mỗi trang), không được đọc đĩa / Keychain mỗi lần.
+// Mọi chỗ đổi cấu hình đi qua update / forgetPassword (xoá cache); allowDomains đổi thì tối đa trễ CACHE_MS.
+const CACHE_MS = 5000;
+let cache = null;
+const fresh = () => {
+  if (cache && Date.now() - cache.at < CACHE_MS) return cache;
   const c = loadConfig().cookieSync || {};
-  return { enabled: !!c.enabled, domains: sc.normalizeDomains(c.domains).domains };
+  const p = passwordStore.load();
+  const s = { enabled: !!c.enabled, userDomains: sc.normalizeDomains(c.domains).domains, password: p && p.password };
+  // Domain được đồng bộ = trang bật Flash + domain người dùng thêm (không bao giờ Google – sc.normalizeDomains lọc)
+  s.domains = sc.normalizeDomains(allowDomains().concat(s.userDomains)).domains;
+  cache = Object.assign(s, { at: Date.now() });
+  return cache;
 };
-const password = () => { const p = passwordStore.load(); return p && p.password; };
-// Domain được đồng bộ = trang bật Flash + domain người dùng thêm (không bao giờ Google – sc.normalizeDomains lọc)
-const domains = () => sc.normalizeDomains(allowDomains().concat(settings().domains)).domains;
-const ready = () => settings().enabled && !!password();
+const settings = () => { const s = fresh(); return { enabled: s.enabled, domains: s.userDomains }; };
+const password = () => fresh().password;
+const domains = () => fresh().domains;
+const ready = () => { const s = fresh(); return s.enabled && !!s.password; };
 
 // Cho UI: không bao giờ trả mật khẩu
 function view() {
@@ -29,6 +39,7 @@ function view() {
 
 // { enabled?, domains?: string[], password? } → { ok, error? }. Bật khi chưa có mật khẩu → từ chối.
 function update(p) {
+  cache = null;
   const patch = Object.assign({}, loadConfig().cookieSync);
   if (Array.isArray(p.domains)) {
     const n = sc.normalizeDomains(p.domains);
@@ -45,11 +56,12 @@ function update(p) {
     patch.enabled = !!p.enabled;
   }
   saveConfig({ cookieSync: patch });
+  cache = null;
   return { ok: true };
 }
 
 // Quên mật khẩu trên máy này (không xoá dữ liệu trên Drive) – tắt luôn đồng bộ
-function forgetPassword() { passwordStore.clear(); saveConfig({ cookieSync: Object.assign({}, loadConfig().cookieSync, { enabled: false }) }); }
+function forgetPassword() { cache = null; passwordStore.clear(); saveConfig({ cookieSync: Object.assign({}, loadConfig().cookieSync, { enabled: false }) }); }
 
 const sameCookie = (a, b) => a && b && a.value === b.value && a.expirationDate === b.expirationDate;
 const diff = (merged, local) => {

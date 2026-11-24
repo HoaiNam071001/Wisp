@@ -37,7 +37,7 @@ async function ensure() {
   client.on('flash', (d) => addLog('info', 'event', 'Engine Flash: ' + (d.plugin || 'không thấy plugin Flash')));
   client.on('exit', () => addLog('warning', 'event', 'Engine Flash đã thoát'));
   await client.start();
-  if (pendingCookies) { const l = pendingCookies; pendingCookies = null; await client.request('setCookies', { cookies: l }).catch(() => {}); }
+  if (pendingCookies) { const l = pendingCookies; pendingCookies = null; await client.request('setCookies', { cookies: l, onlyMissing: true }).catch(() => {}); }
   return client;
 }
 
@@ -68,7 +68,8 @@ function syncKeyRemap() {
 }
 
 // Phiên game (đồng bộ Drive): đọc cookie khi engine đang chạy (chưa chạy → null, vỏ app bỏ qua phần này);
-// nạp: engine chưa chạy thì giữ lại, nạp ngay sau khi engine khởi động (ensure)
+// nạp: engine chưa chạy thì giữ lại, nạp ngay sau khi engine khởi động (ensure) – chỉ cookie máy này chưa có
+// (cookie máy này đã có có thể mới hơn; lần đồng bộ sau gộp ba chiều đúng cách)
 let pendingCookies = null;
 function cookies(domains) {
   if (!client || !client.running) return Promise.resolve(null);
