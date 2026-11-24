@@ -28,6 +28,23 @@ ipcMain.on('gh:pick', (e, raw) => {
   tabs.toast('Đã gửi cho Ghosthand…');
 });
 
+// Trạng thái "đang chọn" theo tab → nút trên thanh công cụ đổi màu khi tab đang xem đang ở chế độ chọn.
+// Trang tải lại / chuyển trang / đóng tab làm mất phiên chọn mà agent không kịp báo → xoá ở đó.
+const picking = new Set();
+function pushState() {
+  const win = tabs.getWin();
+  if (win) win.webContents.send('pick:state', picking.has(tabs.getActiveId()));
+}
+ipcMain.on('gh:pick-state', (e, on) => {
+  const t = tabs.list().find(x => x.view.webContents === e.sender);
+  if (!t) return;
+  if (on) picking.add(t.id); else picking.delete(t.id);
+  pushState();
+});
+tabs.events.on('navigated', (t) => { if (picking.delete(t.id)) pushState(); });
+tabs.events.on('tab-closed', (t) => { picking.delete(t.id); });
+tabs.events.on('changed', pushState);
+
 ipcMain.on('pick:toggle', e => { const w = tabs.getWin(); if (w && e.sender === w.webContents) toggleActive(); });
 
 module.exports = {

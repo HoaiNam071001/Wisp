@@ -61,6 +61,9 @@
   #bm-more { flex: none; width: 26px; height: 26px; border-radius: 7px; display: grid; place-items: center; color: var(--muted); }
   #bm-more:hover { background: var(--surface); color: #fff; }
   #bm-more.none { visibility: hidden; }
+  #bm-sep { flex: none; width: 1px; height: 16px; background: var(--border); margin: 0 4px; }
+  #bm-all { flex: none; height: 26px; display: flex; align-items: center; gap: 6px; padding: 0 8px; border-radius: 7px; font-size: 12.5px; color: #d6d8db; white-space: nowrap; }
+  #bm-all:hover { background: var(--surface); color: #fff; }
   #bm-empty { color: var(--faint); font-size: 12px; padding: 0 8px; }
 
   /* ---- thanh địa chỉ ---- */
@@ -69,6 +72,8 @@
   .nb:hover:not(:disabled) { background: var(--surface); color: #fff; }
   .nb:active:not(:disabled) { background: var(--hover); }
   .nb:disabled { opacity: .3; cursor: default; }
+  #pick.on { background: var(--brand); color: #fff; box-shadow: 0 0 0 3px rgba(255,106,61,.28); }
+  #pick.on:hover { background: var(--brand); }
   #reload.stop { color: var(--red); }
   #home:hover { color: var(--amber) !important; }
   #acct #acct-i { display: none; }
@@ -164,7 +169,7 @@
       <svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="5" r="1.2"/><circle cx="12" cy="12" r="1.2"/><circle cx="12" cy="19" r="1.2"/></svg>
     </button>
   </div>
-  <div id="bm"><div id="bm-list"></div><button id="bm-more" class="none" title="Các dấu trang khác"><svg class="i" viewBox="0 0 24 24"><path d="M7 7l5 5-5 5M13 7l5 5-5 5"/></svg></button></div>
+  <div id="bm"><div id="bm-list"></div><button id="bm-more" class="none" title="Các dấu trang khác"><svg class="i" viewBox="0 0 24 24"><path d="M7 7l5 5-5 5M13 7l5 5-5 5"/></svg></button><span id="bm-sep"></span><button id="bm-all" title="Tất cả dấu trang"><svg class="i" viewBox="0 0 24 24"><path d="M3 6.5A1.5 1.5 0 0 1 4.5 5H9l2 2.5h8.5A1.5 1.5 0 0 1 21 9v9.5a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 18.5z"/></svg>Tất cả dấu trang</button></div>
 <script>
   const $ = (id) => document.getElementById(id);
   const ICON = {
@@ -367,8 +372,10 @@
     let over = false;
     for (const e of els) { if (over || e.offsetLeft + e.offsetWidth > max) { over = true; e.style.display = 'none'; bmHidden.push(e.dataset.id); } }
     $('bm-more').classList.toggle('none', !bmHidden.length);
+    if (bmHidden.length) nav.barWarm(bmHidden);
   }
   window.addEventListener('resize', fitBar);
+  $('bm-all').onclick = () => { const r = $('bm-all').getBoundingClientRect(); nav.barAll(r.right - 280, r.bottom); };
   $('bm-more').onclick = () => { const r = $('bm-more').getBoundingClientRect(); nav.barOverflow(bmHidden, r.left, r.bottom); };
   // Kéo thả đổi thứ tự: thả lên mục nào thì đứng trước mục đó, thả vào chỗ trống thì xuống cuối
   let dragId = null;
@@ -400,6 +407,7 @@
   nav.onGhosthand((g) => { $('gh').classList.toggle('show', !!g.clients); $('pick').style.display = g.on ? '' : 'none'; });
   $('pick').style.display = 'none';
   $('pick').onclick = () => nav.pick();
+  nav.onPickState((on) => { $('pick').classList.toggle('on', !!on); $('pick').title = on ? 'Đang chọn element – bấm hoặc nhấn Esc để thoát' : 'Chọn element cho Ghosthand (Cmd+Shift+E)'; });
   $('gh').onclick = () => nav.ghosthandDisconnect();
 
   nav.ready();

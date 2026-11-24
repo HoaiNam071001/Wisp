@@ -94,6 +94,7 @@
       "site-info-preload.js",
       "site-info.html",
       "favicon-cache.js",
+      "favicon-image.js",
       "chrome-bookmarks.js",
       "bookmarks.html",
       "site-zoom.js",

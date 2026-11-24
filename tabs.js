@@ -261,6 +261,7 @@ function wireTab(t) {
   w.on('will-redirect', toFlash);
   w.on('did-navigate', (_e, url) => {
     t.favicon = '';
+    events.emit('navigated', t, url); // tải trang thật (khác 'visit': không gồm chuyển trang trong cùng trang)
     events.emit('visit', t, url);
     if (isActive()) sendState();
     sendTabs();

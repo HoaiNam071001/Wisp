@@ -179,6 +179,7 @@ function start() {
   els.close.onclick = stop;
   for (const b of els.btns) b.onclick = () => send(b.dataset.a);
   document.documentElement.appendChild(host);
+  ipcRenderer.send('gh:pick-state', true);
 }
 
 function stop() {
@@ -187,6 +188,7 @@ function stop() {
   clearTimeout(ses.timer);
   ses.host.remove();
   ses = null;
+  ipcRenderer.send('gh:pick-state', false);
 }
 
 // Bật / tắt (want: true / false ép về trạng thái đó; không ghi = đảo); trả trạng thái mới.

@@ -6,6 +6,7 @@ const bookmarks = require('./bookmarks');
 const { loadConfig, saveConfig } = require('./config');
 const { isBookmarkable } = require('./bookmarks-store');
 const favicons = require('./favicon-cache');
+const { iconFor } = require('./favicon-image');
 
 const enabled = () => loadConfig().bookmarksBar !== false;
 
@@ -40,12 +41,29 @@ ipcMain.on('bar:menu', (e, id) => {
   ]).popup({ window: tabs.getWin() });
 });
 // Danh sách bị che bởi nút » → menu hệ thống (cửa sổ HTML của thanh công cụ không đè lên trang web được)
+// Thanh báo các mục đang bị che → tải sẵn icon để bấm » là có ngay
+ipcMain.on('bar:warm', (e, ids) => {
+  if (!fromToolbar(e) || !Array.isArray(ids)) return;
+  const byId = new Map(bookmarks.barItems().map(b => [b.id, b]));
+  for (const id of ids.slice(0, 200)) { const b = byId.get(id); if (b) iconFor(b.url); }
+});
+// Menu danh sách dấu trang có icon (lần đầu tải icon song song, tối đa vài giây; sau đó có sẵn trong bộ nhớ)
+async function popupList(list, x, y, head) {
+  const icons = await Promise.all(list.map(b => iconFor(b.url)));
+  const tpl = (head || []).concat(list.map((b, i) => ({ label: (b.title || b.url).slice(0, 60), ...(icons[i] ? { icon: icons[i] } : {}), click: () => openItem(b.url, false) })));
+  if (tpl.length) Menu.buildFromTemplate(tpl).popup({ window: tabs.getWin(), x: Math.round(x) || undefined, y: Math.round(y) || undefined });
+}
 ipcMain.on('bar:overflow', (e, ids, x, y) => {
   if (!fromToolbar(e) || !Array.isArray(ids)) return;
   const byId = new Map(bookmarks.barItems().map(b => [b.id, b]));
-  const tpl = ids.map(id => byId.get(id)).filter(Boolean).slice(0, 200)
-    .map(b => ({ label: (b.title || b.url).slice(0, 60), click: () => openItem(b.url, false) }));
-  if (tpl.length) Menu.buildFromTemplate(tpl).popup({ window: tabs.getWin(), x: Math.round(x) || undefined, y: Math.round(y) || undefined });
+  popupList(ids.map(id => byId.get(id)).filter(Boolean).slice(0, 200), x, y);
+});
+// Nút "Tất cả dấu trang": mở trang quản lý + toàn bộ danh sách
+ipcMain.on('bar:all', (e, x, y) => {
+  if (!fromToolbar(e)) return;
+  popupList(bookmarks.barItems().slice(0, 300), x, y, [
+    { label: 'Mở trang quản lý dấu trang', click: bookmarks.openBookmarks }, { type: 'separator' },
+  ]);
 });
 
 bookmarks.events.on('changed', push);
