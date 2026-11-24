@@ -95,3 +95,10 @@ Chạy `npm run dev` (dữ liệu `.dev-data/`), thử như bản 2.3.0:
 - ⬜ Tab đang phát tiếng / tab game Flash không bị ngủ.
 - ⬜ Thoát rồi mở lại app: chỉ tab đang xem nạp ngay, tab khác mờ tới khi bấm.
 - ⬜ Làm tab crash (vd `chrome://crash` gõ vào ô địa chỉ hoặc kill tiến trình tab) → hiện trang "Tab bị dừng", bấm Tải lại nạp lại được.
+
+## Bước 15 – thanh địa chỉ gợi ý, ghim / kéo tab (2026-11-24)
+- ⬜ Gõ "wiki" vào ô địa chỉ → danh sách gợi ý hiện dưới ô, ↑↓ chọn, Enter mở; bấm vào dòng mở được; Esc / bấm ra ngoài đóng.
+- ⬜ Gõ "cách nấu phở" → dòng đầu "Tìm bằng Google" (đổi được ở Tuỳ chọn → Công cụ tìm kiếm); gõ "example.com" → mở thẳng.
+- ⬜ Gõ tên tab đang mở → dòng "Chuyển sang tab" chuyển đúng tab; Cmd/Ctrl+K đưa con trỏ vào ô địa chỉ.
+- ⬜ Chuột phải tab → Ghim tab: tab thu nhỏ còn icon, đứng đầu, Cmd+W không đóng; mở lại app vẫn ghim.
+- ⬜ Kéo tab sang trái / phải đổi chỗ; kéo tab thường vào vùng tab ghim không chen được.

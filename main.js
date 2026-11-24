@@ -44,6 +44,7 @@ const { buildMenu, scheduleMenu } = require('./app-menu');
 const { ensureMenuWin } = require('./menu-popup');
 const ghosthand = require('./ghosthand/server');
 require('./toolbar-ipc');
+require('./omnibox-window');
 
 const IS_MAC = process.platform === 'darwin';
 let pendingFile = null; // file .swf mở trước khi app sẵn sàng (macOS "Open With")

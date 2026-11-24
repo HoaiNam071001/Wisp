@@ -4,7 +4,6 @@ const updater = require('./updater');
 const tabs = require('./tabs');
 const { openHistory } = require('./history');
 const { saveConfig, homeUrl } = require('./config');
-const { normalizeUrl } = require('./app-urls');
 const { openInspector } = require('./inspect/window');
 const { showMainMenu } = require('./menu-popup');
 const ghosthand = require('./ghosthand/server');
@@ -26,8 +25,7 @@ function fromToolbar(e) { const win = tabs.getWin(); return !!win && e.sender ==
 ipcMain.on('nav', (_e, action, arg) => {
   const w = tabs.wc();
   if (!w) return;
-  if (action === 'go') { const u = normalizeUrl(arg); if (u) tabs.load(w, u); }
-  else if (action === 'back') { if (w.navigationHistory.canGoBack()) w.navigationHistory.goBack(); }
+  if (action === 'back') { if (w.navigationHistory.canGoBack()) w.navigationHistory.goBack(); }
   else if (action === 'forward') { if (w.navigationHistory.canGoForward()) w.navigationHistory.goForward(); }
   else if (action === 'reload') { w.isLoading() ? w.stop() : w.reload(); }
   else if (action === 'home') { tabs.load(w, homeUrl()); }
@@ -40,13 +38,14 @@ ipcMain.on('siteinfo:open', (e, r) => { if (fromToolbar(e)) siteInfoWin.toggleSi
 ipcMain.on('account:open', (e, r) => { if (fromToolbar(e)) accountWin.toggleAccountPopup(r); });
 ipcMain.on('menu', (e, x, y) => { if (fromToolbar(e)) showMainMenu(x, y); });
 ipcMain.on('ghosthand-disconnect', (e) => { if (fromToolbar(e)) ghosthand.disconnect(); });
-ipcMain.on('tab', (e, action, id) => {
+ipcMain.on('tab', (e, action, id, arg) => {
   if (!fromToolbar(e)) return;
   if (action === 'new') tabs.newTab();
   else if (action === 'close') tabs.closeTab(id);
   else if (action === 'switch') tabs.activateTab(id);
   else if (action === 'menu') tabs.tabMenu(id);
   else if (action === 'mute') tabs.toggleMute(id);
+  else if (action === 'move') tabs.moveTabBefore(id, arg);
 });
 ipcMain.on('ready', () => {
   tabs.sendState(); tabs.sendTabs();

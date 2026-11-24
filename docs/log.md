@@ -62,3 +62,4 @@ Chỉ thêm dòng bằng `>>`: `- **YYYY-MM-DD** – <việc>. <kết quả ki�
 - **2026-11-24** – Bước 12: dropdown dấu trang tối đa 10 mục + dòng "Hiện tất cả (n)". check + test xanh; chưa bấm thử.
 - **2026-11-24** – Kế hoạch (người dùng yêu cầu): thêm bước 14 (tối ưu tốc độ / RAM), 15 (omnibox + tab nâng cao), 16 (riêng tư / an toàn) – học Chrome / Edge / Firefox / Brave / Arc; chờ người dùng chốt phạm vi.
 - **2026-11-24** – Bước 14: tab ngủ, khôi phục tab lười, trang tab crash, log thời gian khởi động. check + test xanh; thử app dev: tab lười hiện mờ đúng. Chưa thử ngủ thật / crash thật.
+- **2026-11-24** – Bước 15: gợi ý ô địa chỉ + tìm kiếm khi gõ chữ + chọn công cụ tìm kiếm, ghim tab, kéo đổi chỗ tab, Cmd+K. check + test 143/143 xanh; app dev mở không lỗi; chưa thử tay dropdown (không gõ phím giả được trên máy này).

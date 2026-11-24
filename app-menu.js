@@ -18,6 +18,7 @@ const { applyAppNap } = require('./perf');
 const { clearPings } = require('./ping');
 const { openInspector } = require('./inspect/window');
 const { shorten } = require('./util');
+const { ENGINES, engineOf } = require('./omnibox');
 const ghosthand = require('./ghosthand/server');
 
 const IS_MAC = process.platform === 'darwin';
@@ -85,6 +86,10 @@ function optionsSubmenu() {
     item('restoreTabs', 'Mở lại các tab lần trước khi mở app'),
     item('preventAppNap', IS_MAC ? 'Chống App Nap (game không bị chậm khi ẩn cửa sổ)' : 'Không cho máy ngủ khi đang mở Wisp'),
     item('pingGame', 'Theo dõi ping máy chủ game'),
+    item('sleepTabs', 'Cho tab nền ngủ sau 30 phút để tiết kiệm RAM'),
+    item('lazyRestore', 'Chỉ nạp tab đang xem khi mở lại các tab lần trước'),
+    { label: 'Công cụ tìm kiếm', submenu: Object.entries(ENGINES).map(([id, e]) => ({
+      label: e.name, type: 'radio', checked: engineOf(cfg.searchEngine) === id, click: () => saveConfig({ searchEngine: id }) })) },
     item('ghosthandPort', 'Cổng Ghosthand (cho Ghosthand điều khiển trang)'),
     { type: 'separator' },
     { label: 'Đổi phím…', click: keyremap.openKeysWindow },
@@ -101,7 +106,7 @@ function fileSubmenu() {
     { label: 'Tab mới', accelerator: 'CmdOrCtrl+T', click: tabs.newTab },
     { label: 'Mở file .swf…', accelerator: 'CmdOrCtrl+O', click: page.openSwfFile },
     { type: 'separator' },
-    { label: 'Đóng tab', accelerator: 'CmdOrCtrl+W', click: () => tabs.activeTab() && tabs.closeTab(tabs.getActiveId()) },
+    { label: 'Đóng tab', accelerator: 'CmdOrCtrl+W', click: tabs.closeActiveByShortcut },
     { label: 'Mở lại tab vừa đóng', accelerator: 'Shift+CmdOrCtrl+T', click: tabs.reopenClosedTab },
     { type: 'separator' },
     { label: 'In trang…', accelerator: 'CmdOrCtrl+P', click: page.printPage },
@@ -120,6 +125,7 @@ function pageSubmenu() {
   const w = () => tabs.wc();
   return [
     { label: 'Mở địa chỉ…', accelerator: 'CmdOrCtrl+L', click: tabs.focusUrlBar },
+    { label: 'Tìm tab, dấu trang, lịch sử…', accelerator: 'CmdOrCtrl+K', click: tabs.focusUrlBar },
     { label: 'Thêm / bỏ dấu trang', accelerator: 'CmdOrCtrl+D', click: bookmarks.toggleActive },
     { label: 'Hiện / ẩn thanh dấu trang', accelerator: 'Shift+CmdOrCtrl+B', click: bookmarksBar.toggle },
     { label: 'Quản lý dấu trang', accelerator: IS_MAC ? 'Alt+Cmd+B' : 'Ctrl+Shift+O', click: bookmarks.openBookmarks },

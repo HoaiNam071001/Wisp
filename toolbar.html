@@ -43,6 +43,9 @@
   .snd.muted { color: var(--red); }
   .snd:hover { background: var(--hover); }
   .tab.sleeping:not(.active) .title, .tab.sleeping:not(.active) .fav { opacity: .55; } /* tab ngủ: mờ đi */
+  .tab.pinned { flex: none; width: 38px; padding: 0 0 0 11px; }
+  .tab.pinned .title, .tab.pinned .x { display: none; }
+  .tab.dropbefore { box-shadow: inset 2px 0 0 var(--brand); }
   .tab.narrow .title { display: none; }
   .tab.narrow:not(.active) .x { display: none; }
   #newtab { flex: none; width: 28px; height: 26px; margin: 0 0 2px 4px; border-radius: 7px; display: grid; place-items: center; color: var(--muted); }
@@ -194,6 +197,8 @@
   $('f').onsubmit = (e) => { e.preventDefault(); nav.go($('url').value); $('url').blur(); };
   $('newtab').onclick = () => nav.newTab();
   // bấm đúp vào chỗ trống trên thanh tab → tab mới
+  $('tabs').ondragover = (e) => { if (dragTab != null && e.target === $('tabs')) e.preventDefault(); };
+  $('tabs').ondrop = (e) => { if (dragTab != null && e.target === $('tabs')) { e.preventDefault(); nav.moveTab(dragTab, null); dragTab = null; } };
   $('tabs').ondblclick = (e) => { if (e.target === $('tabs')) nav.newTab(); };
   $('more').onclick = () => {
     const r = $('more').getBoundingClientRect();
@@ -244,17 +249,25 @@
   }
   $('sec').onclick = () => { if ($('sec').classList.contains('https') || $('sec').classList.contains('http')) { const r = $('sec').getBoundingClientRect(); nav.siteInfo({ x: r.left, y: r.bottom, w: 320 }); } };
   $('url').addEventListener('focus', () => { $('sec').style.visibility = 'hidden'; $('url').classList.remove('wide'); $('url').style.paddingLeft = '14px'; });
+  // Gợi ý dưới ô địa chỉ (omnibox-window.js): gõ → gợi ý, ↑↓ chọn, Esc đóng
+  $('url').addEventListener('input', () => { const r = $('url').getBoundingClientRect(); nav.omniQuery($('url').value, { x: r.left, y: r.top, w: r.width, h: r.height }); });
+  $('url').addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') { e.preventDefault(); nav.omniKey(e.key === 'ArrowDown' ? 'down' : 'up'); }
+    else if (e.key === 'Escape') nav.omniHide();
+  });
+  $('url').addEventListener('blur', () => nav.omniHide());
   // Mất focus (kể cả focus sang trang – activeElement vẫn là ô này) thì trả về địa chỉ thật như Chrome, không để ô trống / cũ
   $('url').addEventListener('blur', () => { $('sec').style.visibility = ''; $('url').style.paddingLeft = ''; $('url').value = lastUrl; renderSec(lastUrl); });
   let lastUrl = '';
 
+  let dragTab = null;
   // ---- vẽ thanh tab ----
   function renderTabs({ tabs, active }) {
     const box = $('tabs');
     for (const old of box.querySelectorAll('.tab')) old.remove();
     for (const t of tabs) {
       const el = document.createElement('div');
-      el.className = 'tab' + (t.id === active ? ' active' : '') + (t.sleeping ? ' sleeping' : '');
+      el.className = 'tab' + (t.id === active ? ' active' : '') + (t.sleeping ? ' sleeping' : '') + (t.pinned ? ' pinned' : '');
       el.title = t.title + (t.url && t.url !== t.title ? '\n' + t.url : '');
 
       const fav = document.createElement('span');
@@ -295,7 +308,14 @@
       el.appendChild(x);
 
       el.onmousedown = (e) => { if (e.button === 0) nav.switchTab(t.id); };
-      el.onauxclick = (e) => { if (e.button === 1) nav.closeTab(t.id); }; // bấm chuột giữa → đóng
+      // kéo thả đổi chỗ tab (tab ghim chỉ đổi chỗ trong nhóm ghim – tab-order.js ở main)
+      el.draggable = true;
+      el.ondragstart = (e) => { dragTab = t.id; e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', String(t.id)); };
+      el.ondragover = (e) => { if (dragTab == null || dragTab === t.id) return; e.preventDefault(); el.classList.add('dropbefore'); };
+      el.ondragleave = () => el.classList.remove('dropbefore');
+      el.ondrop = (e) => { e.preventDefault(); el.classList.remove('dropbefore'); if (dragTab != null && dragTab !== t.id) nav.moveTab(dragTab, t.id); dragTab = null; };
+      el.ondragend = () => { dragTab = null; };
+      el.onauxclick = (e) => { if (e.button === 1 && !t.pinned) nav.closeTab(t.id); }; // bấm chuột giữa → đóng
       el.oncontextmenu = (e) => { e.preventDefault(); nav.tabMenu(t.id); };
       box.insertBefore(el, $('newtab'));
     }

@@ -1,0 +1,38 @@
+<!doctype html>
+<meta charset="utf-8">
+<style>
+  :root { --bg: #fff; --fg: #202124; --mut: #5f6368; --sel: #e8f0fe; --line: #dadce0; }
+  @media (prefers-color-scheme: dark) { :root { --bg: #292a2d; --fg: #e8eaed; --mut: #9aa0a6; --sel: #3c4043; --line: #3c4043; } }
+  html, body { margin: 0; height: 100%; background: var(--bg); color: var(--fg); font: 13px system-ui, sans-serif; overflow: hidden; user-select: none; }
+  #list { padding: 4px; }
+  .row { height: 40px; box-sizing: border-box; display: flex; align-items: center; gap: 10px; padding: 0 10px; border-radius: 6px; cursor: default; }
+  .row.sel { background: var(--sel); }
+  .ico { width: 20px; text-align: center; color: var(--mut); flex: none; }
+  .main { flex: 1; min-width: 0; display: flex; gap: 8px; align-items: baseline; }
+  .t { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .u { color: var(--mut); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 12px; }
+  .tag { color: var(--mut); font-size: 11px; flex: none; }
+</style>
+<div id="list"></div>
+<script>
+  const ICON = { go: '→', search: '🔍', tab: '⇄', bookmark: '★', history: '🕘' };
+  const TAG = { tab: 'Chuyển sang tab', bookmark: 'Dấu trang' };
+  const list = document.getElementById('list');
+  omni.onItems(({ items, selected }) => {
+    list.textContent = '';
+    items.forEach((it, i) => {
+      const row = document.createElement('div');
+      row.className = 'row' + (i === selected ? ' sel' : '');
+      const ico = document.createElement('span'); ico.className = 'ico'; ico.textContent = ICON[it.type] || '';
+      const main = document.createElement('span'); main.className = 'main';
+      const t = document.createElement('span'); t.className = 't';
+      t.textContent = it.type === 'search' ? `${it.title} – tìm bằng ${it.engine}` : it.title;
+      main.append(t);
+      if (it.type !== 'search' && it.type !== 'go') { const u = document.createElement('span'); u.className = 'u'; u.textContent = it.url.replace(/^https?:\/\//, ''); main.append(u); }
+      row.append(ico, main);
+      if (TAG[it.type]) { const g = document.createElement('span'); g.className = 'tag'; g.textContent = TAG[it.type]; row.append(g); }
+      row.onmousedown = (e) => { e.preventDefault(); omni.pick(i); };
+      list.append(row);
+    });
+  });
+</script>

@@ -2,7 +2,10 @@ const { contextBridge, ipcRenderer } = require('electron');
 require('./platform-ui');
 
 contextBridge.exposeInMainWorld('nav', {
-  go: (url) => ipcRenderer.send('nav', 'go', url),
+  go: (url) => ipcRenderer.send('omni:go', url),
+  omniQuery: (text, rect) => ipcRenderer.send('omni:query', text, rect),
+  omniKey: (key) => ipcRenderer.send('omni:key', key),
+  omniHide: () => ipcRenderer.send('omni:hide'),
   back: () => ipcRenderer.send('nav', 'back'),
   forward: () => ipcRenderer.send('nav', 'forward'),
   reload: () => ipcRenderer.send('nav', 'reload'),
@@ -32,6 +35,7 @@ contextBridge.exposeInMainWorld('nav', {
   newTab: () => ipcRenderer.send('tab', 'new'),
   closeTab: (id) => ipcRenderer.send('tab', 'close', id),
   switchTab: (id) => ipcRenderer.send('tab', 'switch', id),
+  moveTab: (id, beforeId) => ipcRenderer.send('tab', 'move', id, beforeId),
   tabMenu: (id) => ipcRenderer.send('tab', 'menu', id),
   onState: (cb) => ipcRenderer.on('state', (_e, s) => cb(s)),
   onTabs: (cb) => ipcRenderer.on('tabs', (_e, t) => cb(t)),

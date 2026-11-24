@@ -13,6 +13,7 @@ const { addLog } = require('./inspect/store');
 const flashRouter = require('./flash-engine/router');
 const { popupFor } = require('./popup-policy');
 const { blockedNavigation } = require('./nav-policy');
+const { moveTab, setPinned } = require('./tab-order');
 const { isCrash, crashedPageUrl, isCrashedPage } = require('./tab-crashed');
 
 const TOOLBAR_BASE = 80; // thanh tab (36) + thanh địa chỉ (44)
@@ -69,7 +70,7 @@ function tabInfo(t) {
   const url = tabUrl(t);
   return { id: t.id, title: t.title || url || 'Tab mới', url, favicon: t.favicon || '', sleeping: !!t.sleeping,
            loading: !w.isDestroyed() && w.isLoading(), history: isInternalUrl(rawUrl(t)),
-           audible: !!t.audible, muted: !!t.muted };
+           audible: !!t.audible, muted: !!t.muted, pinned: !!t.pinned };
 }
 
 // Gom nhiều thay đổi (đang tải, đổi tiêu đề…) rồi mới vẽ lại thanh tab + menu Tab
@@ -127,9 +128,9 @@ function loadInTab(t, url) {
 }
 
 // lazy = { title }: tab của phiên cũ, chưa nạp trang tới khi bấm vào (tab-sleep.js)
-function createTab(url, { activate = true, index = tabs.length, lazy = null } = {}) {
+function createTab(url, { activate = true, index = tabs.length, lazy = null, pinned = false } = {}) {
   const view = new WebContentsView({ webPreferences: tabPrefs() });
-  const t = { id: ++tabSeq, view, title: '', favicon: '', htmlFull: false, hist: null, audible: false, muted: false, lastActive: Date.now() };
+  const t = { id: ++tabSeq, view, title: '', favicon: '', htmlFull: false, hist: null, audible: false, muted: false, lastActive: Date.now(), pinned };
   if (lazy) { t.sleeping = true; t.sleepUrl = url; t.title = lazy.title || ''; }
   tabs.splice(Math.max(0, Math.min(index, tabs.length)), 0, t);
   // Game ở tab khác vẫn chạy bình thường (không bị Chromium hãm timer khi tab ẩn)
@@ -196,6 +197,25 @@ function closeTab(id) {
   else sendTabs();
 }
 
+// Sắp xếp lại mảng tabs theo danh sách id (tab ghim luôn đứng đầu – tab-order.js)
+function applyOrder(ids) { tabs = ids.map(tabOf).filter(Boolean); sendTabs(); }
+function togglePin(id) {
+  const t = tabOf(id);
+  if (!t) return;
+  applyOrder(setPinned(tabs.map(x => ({ id: x.id, pinned: x.pinned })), id, !t.pinned));
+  t.pinned = !t.pinned;
+  sendTabs();
+}
+function moveTabBefore(id, beforeId) { applyOrder(moveTab(tabs.map(x => ({ id: x.id, pinned: x.pinned })), id, beforeId)); }
+
+// Đóng tab đang xem bằng phím tắt: tab ghim thì không đóng (tránh lỡ tay), phải bỏ ghim hoặc bấm menu Đóng tab
+function closeActiveByShortcut() {
+  const t = activeTab();
+  if (!t) return;
+  if (t.pinned) toast('Tab đã ghim – bỏ ghim (chuột phải) rồi mới đóng bằng phím tắt');
+  else closeTab(t.id);
+}
+
 function reopenClosedTab() {
   const c = closedTabs.pop();
   if (c) createTab(c.url, { index: c.index });
@@ -232,6 +252,7 @@ function tabMenu(id) {
   const i = tabs.indexOf(t);
   Menu.buildFromTemplate([
     { label: 'Tải lại', click: () => t.view.webContents.reload() },
+    { label: t.pinned ? 'Bỏ ghim tab' : 'Ghim tab', click: () => togglePin(id) },
     { label: 'Nhân bản tab', click: () => createTab(rawUrl(t), { index: i + 1 }) },
     { label: t.muted ? 'Bật tiếng tab' : 'Tắt tiếng tab', click: () => toggleMute(id) },
     { type: 'separator' },
@@ -341,7 +362,7 @@ let lastSessionJson = '';
 function saveSession(force = false) {
   if (!tabs.length) return;
   const live = tabs.filter(t => tabUrl(t));
-  const data = { tabs: live.map(tabUrl), titles: live.map(t => t.title || ''), active: Math.max(0, tabs.indexOf(activeTab())) };
+  const data = { tabs: live.map(tabUrl), titles: live.map(t => t.title || ''), pinned: live.map(t => !!t.pinned), active: Math.max(0, tabs.indexOf(activeTab())) };
   const json = JSON.stringify(data);
   if (!force && json === lastSessionJson) return;
   lastSessionJson = json;
@@ -357,7 +378,7 @@ function openStartTabs(startUrl, explicit) {
     const active = Math.min(cfg.session.active || 0, saved.length - 1);
     // Tab không xem chỉ nạp khi bấm (http/https; trang nội bộ / Flash nạp luôn như trước)
     const lazyOk = (u) => /^https?:/i.test(u) && !flashRouter.wantsFlash(u) && cfg.lazyRestore !== false;
-    saved.forEach((u, i) => createTab(u, { activate: false, lazy: i !== active && lazyOk(u) ? { title: titles[i] } : null }));
+    saved.forEach((u, i) => createTab(u, { activate: false, pinned: !!(cfg.session.pinned || [])[i], lazy: i !== active && lazyOk(u) ? { title: titles[i] } : null }));
     activateTab(tabs[active].id);
   } else createTab(startUrl);
 }
@@ -366,6 +387,6 @@ module.exports = {
   rawUrl, toolbarHeight, setBookmarkBar, events,
   winOk, getWin, list, getActiveId, tabOf, activeTab, wc, canReopen, toast,
   sendState, tabInfo, load, sendTabs, createTab, openNextToActive, openUrl, activateTab, closeTab,
-  reopenClosedTab, cycleTab, newTab, focusUrlBar, toggleMute, tabMenu,
+  reopenClosedTab, togglePin, moveTabBefore, closeActiveByShortcut, cycleTab, newTab, focusUrlBar, toggleMute, tabMenu,
   attachWindow, saveSession, openStartTabs,
 };
