@@ -20,6 +20,8 @@ contextBridge.exposeInMainWorld('nav', {
   update: () => ipcRenderer.send('nav', 'update'),
   onTasks: (cb) => ipcRenderer.on('tasks', (_e, s) => cb(s)),
   onUpdate: (cb) => ipcRenderer.on('update', (_e, s) => cb(s)),
+  account: () => ipcRenderer.send('account:open'),
+  onAccount: (cb) => ipcRenderer.on('account', (_e, s) => cb(s)),
   newTab: () => ipcRenderer.send('tab', 'new'),
   closeTab: (id) => ipcRenderer.send('tab', 'close', id),
   switchTab: (id) => ipcRenderer.send('tab', 'switch', id),

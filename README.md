@@ -166,6 +166,10 @@ Lệnh làm lần lượt: tăng `version` → `npm run check` + `npm test` → 
 
 Lưu ý: `--dry` vẫn đổi `version` trong `package.json` – bỏ bằng `git checkout package.json package-lock.json`. Lỗi giữa chừng (trước bước commit) thì `git checkout package.json package-lock.json`, sửa lỗi rồi chạy lại – lệnh chỉ chạy khi cây git sạch. Bản `-personal` (kèm plugin Flash) không nằm trong lệnh này và không phát hành công khai.
 
+## 4c. Tài khoản Google (đồng bộ)
+
+Nút hình người cạnh ⋮ → *Đăng nhập bằng Google* (mở trình duyệt hệ thống, không nhập mật khẩu trong Wisp). Đồng bộ cấu hình (trang chủ, trang bật Flash, đổi phím), dấu trang và lịch sử qua thư mục dữ liệu riêng của Wisp trên Google Drive – Wisp chỉ có quyền `drive.appdata`, không thấy file Drive khác. Token lưu bằng Keychain / DPAPI. *Đăng xuất* chỉ dừng đồng bộ trên máy này; *Xoá dữ liệu trên Drive* xoá bản đã đồng bộ (dữ liệu trong máy vẫn còn). Bản tự build cần `google-oauth.local.json` (`{"clientSecret": "…"}`, đã gitignore) hoặc biến `WISP_GOOGLE_SECRET`.
+
 ## 5. Đóng gói `.dmg`
 
 ```bash

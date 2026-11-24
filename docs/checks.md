@@ -71,3 +71,4 @@ Chạy `npm run dev` (dữ liệu `.dev-data/`), thử như bản 2.3.0:
 - 07 Cỡ cửa sổ game: gọi `game {action:"resize", width:1000, height:600}` trên tab game Flash → vùng game đúng cỡ; thu nhỏ cửa sổ rồi `frameRect` phải báo `hidden: true`.
 - ⬜ **Đăng nhập Google (bước 11):** có Client secret trong google-oauth.local.json rồi thử gọi login() – trình duyệt mở, bấm cho phép, trang 'Đăng nhập xong', token nằm ở google-token.bin (chưa có nút trên UI, thử bằng dev console).
 - ⬜ **Đồng bộ Drive (bước 11):** sau khi đăng nhập được, thêm dấu trang ở máy A, đợi ~30 s hoặc gọi sync.syncNow(); máy B đăng nhập thấy dấu trang; xoá ở A → mất ở B; đổi trang chủ ở A → B nhận.
+- ⬜ **Nút tài khoản (bước 11):** nút hình người cạnh ⋮ → cửa sổ Tài khoản mở, bố cục / theme tối đẹp; đăng nhập xong nút thành chữ cái đầu; đăng xuất về hình người; thử Windows (tường lửa hỏi loopback?).

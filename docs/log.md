@@ -49,3 +49,4 @@ Chỉ thêm dòng bằng `>>`: `- **YYYY-MM-DD** – <việc>. <kết quả ki�
 - 2026-11-24 Bước 09: xong – đổi phím chạy cả ở engine Flash (open / keyRemap qua giao thức); bỏ toast tiến độ cập nhật; review bước 07 (bảng lệnh game, SIZE_RANGE dùng chung, check searchArea game + element)
 - 2026-11-24 Bước 11: sync-merge, sync-crypt, google-pkce, google-auth, token-store (+ test); chưa có UI / Drive
 - 2026-11-24 Bước 11: sync-drive, sync-run, sync.js (config + dấu trang + lịch sử), nối main.js; test giả Drive
+- 2026-11-24 Bước 11: nút tài khoản + cửa sổ Tài khoản (account-window / account.html), README 4c

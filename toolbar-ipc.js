@@ -9,6 +9,7 @@ const { openInspector } = require('./inspect/window');
 const { showMainMenu } = require('./menu-popup');
 const ghosthand = require('./ghosthand/server');
 const tasks = require('./progress-tasks');
+const accountWin = require('./account-window');
 
 // Vòng tiến độ ở thanh công cụ + thanh tiến độ trên Dock / taskbar (fraction null = chưa biết → quay, 2 = không xác định)
 tasks.events.on('changed', (sum) => {
@@ -33,6 +34,7 @@ ipcMain.on('nav', (_e, action, arg) => {
   else if (action === 'history') { openHistory(); }
   else if (action === 'update') { updater.promptUpdate(true); }
 });
+ipcMain.on('account:open', (e) => { if (fromToolbar(e)) accountWin.openAccountWindow(); });
 ipcMain.on('menu', (e, x, y) => { if (fromToolbar(e)) showMainMenu(x, y); });
 ipcMain.on('ghosthand-disconnect', (e) => { if (fromToolbar(e)) ghosthand.disconnect(); });
 ipcMain.on('tab', (e, action, id) => {
@@ -46,5 +48,5 @@ ipcMain.on('tab', (e, action, id) => {
 ipcMain.on('ready', () => {
   tabs.sendState(); tabs.sendTabs();
   const win = tabs.getWin();
-  if (win) { win.webContents.send('update', updater.state()); win.webContents.send('ghosthand', ghosthand.state()); win.webContents.send('tasks', tasks.summary()); }
+  if (win) { win.webContents.send('update', updater.state()); win.webContents.send('ghosthand', ghosthand.state()); win.webContents.send('tasks', tasks.summary()); accountWin.push(); }
 });

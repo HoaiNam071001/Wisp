@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<title>Tài khoản Google</title>
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'unsafe-inline'; script-src 'unsafe-inline'">
+<style>
+  :root {
+    --bg: #f6f6f7; --card: #fff; --hover: #eef0f3; --border: #dcdee3; --text: #1d1e21; --muted: #5f636b;
+    --brand: #ff6a3d; --brand-text: #fff; --red: #d92d20; --ok: #1a7f37;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #1b1c1f; --card: #232428; --hover: #2c2e33; --border: #33363c; --text: #e8e9eb; --muted: #9da0a8; --red: #f85149; --ok: #3fb950; }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; padding: 20px; background: var(--bg); color: var(--text); font: 14px system-ui, -apple-system, sans-serif; }
+  h1 { margin: 0 0 4px; font-size: 18px; }
+  p.sub { margin: 0 0 16px; color: var(--muted); font-size: 13px; line-height: 1.45; }
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 14px; margin-bottom: 14px; }
+  .who { display: flex; align-items: center; gap: 12px; }
+  .av { width: 44px; height: 44px; border-radius: 50%; background: var(--brand); color: var(--brand-text); display: grid; place-items: center; font-size: 20px; font-weight: 600; flex: none; }
+  .who b { display: block; }
+  .who span { color: var(--muted); font-size: 13px; word-break: break-all; }
+  button { font: inherit; cursor: pointer; border: 1px solid var(--border); background: var(--card); color: var(--text); border-radius: 8px; padding: 7px 14px; }
+  button:hover:not(:disabled) { background: var(--hover); }
+  button:disabled { opacity: .5; cursor: default; }
+  button.primary { background: var(--brand); border-color: var(--brand); color: var(--brand-text); }
+  button.danger { color: var(--red); }
+  .btns { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+  .state { margin-top: 10px; font-size: 13px; color: var(--muted); }
+  .state.ok { color: var(--ok); }
+  .err { margin-top: 8px; font-size: 13px; color: var(--red); line-height: 1.45; }
+  ul.what { margin: 8px 0 0; padding-left: 18px; color: var(--muted); font-size: 13px; line-height: 1.6; }
+</style>
+</head>
+<body>
+<h1>Tài khoản Google</h1>
+<p class="sub">Đồng bộ cấu hình, dấu trang và lịch sử giữa các máy qua thư mục dữ liệu riêng của Wisp trên Google Drive. Wisp không thấy file Drive khác của bạn.</p>
+
+<div class="card" id="out" hidden>
+  <div>Chưa đăng nhập.</div>
+  <ul class="what"><li>Cấu hình: trang chủ, trang bật Flash, đổi phím</li><li>Dấu trang và lịch sử duyệt web</li></ul>
+  <div class="btns"><button class="primary" id="login">Đăng nhập bằng Google</button></div>
+  <div class="state" id="wait" hidden>Đang chờ bạn đăng nhập trong trình duyệt… (tối đa 3 phút)</div>
+  <div class="err" id="lerr"></div>
+</div>
+
+<div class="card" id="in" hidden>
+  <div class="who"><div class="av" id="av"></div><div><b id="name"></b><span id="email"></span></div></div>
+  <div class="state" id="st"></div>
+  <div class="err" id="errs"></div>
+  <div class="btns">
+    <button class="primary" id="sync">Đồng bộ ngay</button>
+    <button id="logout">Đăng xuất</button>
+    <button class="danger" id="wipe">Xoá dữ liệu trên Drive</button>
+  </div>
+  <div class="state">Đăng xuất chỉ dừng đồng bộ trên máy này; dữ liệu trong máy vẫn còn.</div>
+</div>
+<div class="err" id="kc" hidden>Máy chưa có kho khoá hệ thống (Keychain / DPAPI) nên Wisp không lưu được đăng nhập. Mở khoá Keychain / đăng nhập lại Windows rồi thử lại.</div>
+
+<script>
+  const $ = (id) => document.getElementById(id);
+  const KIND = { 'config.json': 'cấu hình', 'bookmarks.json': 'dấu trang', 'history.json': 'lịch sử', all: 'đồng bộ' };
+  function ago(t) {
+    if (!t) return 'chưa đồng bộ lần nào';
+    const s = Math.max(0, Math.round((Date.now() - t) / 1000));
+    return s < 60 ? 'vừa xong' : s < 3600 ? Math.round(s / 60) + ' phút trước' : new Date(t).toLocaleString('vi-VN');
+  }
+  function render(v) {
+    $('out').hidden = v.signedIn; $('in').hidden = !v.signedIn; $('kc').hidden = v.keychain;
+    $('login').disabled = !v.keychain;
+    if (!v.signedIn) return;
+    $('av').textContent = ((v.name || v.email || '?').trim()[0] || '?').toUpperCase();
+    $('name').textContent = v.name || v.email; $('email').textContent = v.name ? v.email : '';
+    const bad = Object.keys(v.errors || {});
+    $('st').textContent = v.syncing ? 'Đang đồng bộ…' : 'Đồng bộ lần cuối: ' + ago(v.lastSync);
+    $('st').className = 'state' + (!v.syncing && !bad.length && v.lastSync ? ' ok' : '');
+    $('errs').textContent = bad.map(k => (KIND[k] || k) + ': ' + v.errors[k]).join('\n');
+    $('errs').style.whiteSpace = 'pre-line';
+    $('sync').disabled = v.syncing;
+  }
+  $('login').onclick = async () => {
+    $('lerr').textContent = ''; $('wait').hidden = false; $('login').disabled = true;
+    const r = await wacc.login();
+    $('wait').hidden = true; $('login').disabled = false;
+    if (r && !r.ok) $('lerr').textContent = r.error + ' Bấm Đăng nhập để thử lại.';
+  };
+  $('sync').onclick = () => wacc.sync();
+  $('logout').onclick = () => wacc.logout();
+  $('wipe').onclick = async () => { const r = await wacc.wipe(); if (r && r.error) $('errs').textContent = r.error; };
+  wacc.onChanged(render);
+  wacc.get().then((v) => v && render(v));
+</script>
+</body>
+</html>

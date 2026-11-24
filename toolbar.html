@@ -55,6 +55,10 @@
   .nb:disabled { opacity: .3; cursor: default; }
   #reload.stop { color: var(--red); }
   #home:hover { color: var(--amber) !important; }
+  #acct #acct-i { display: none; }
+  #acct.in { background: var(--brand); color: #fff; border-radius: 50%; width: 28px; height: 28px; margin: 0 2px; font-size: 13px; font-weight: 600; }
+  #acct.in svg { display: none; }
+  #acct.in #acct-i { display: block; }
   #star:disabled { opacity: .3; }
   #star.on { color: var(--amber); }
   #star.on svg { fill: currentColor; }
@@ -142,6 +146,7 @@
     <button id="task" title=""><svg viewBox="0 0 28 28"><circle class="trk" cx="14" cy="14" r="11"/><circle class="arc" cx="14" cy="14" r="11"/></svg><span id="task-pct"></span><span id="task-n"></span></button>
     <button id="swf" title="Trang này có nội dung Flash chưa chạy — bấm để bật Flash cho trang">Cần Flash – Bật</button>
     <button id="upd" title="Có bản Wisp mới — bấm để xem và cập nhật"><svg class="i" viewBox="0 0 24 24"><path d="M12 3v12M7 10l5 5 5-5"/><path d="M4 17v3h16v-3"/></svg><span id="upd-t">Cập nhật</span></button>
+    <button class="nb" id="acct" title="Tài khoản Google – đăng nhập để đồng bộ"><svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.5"/><path d="M5 20c.6-3.6 3.4-5.5 7-5.5s6.4 1.9 7 5.5"/></svg><span id="acct-i"></span></button>
     <button class="nb" id="more" title="Menu: lịch sử, chụp màn hình, hiệu năng, Flash, tuỳ chọn…">
       <svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="5" r="1.2"/><circle cx="12" cy="12" r="1.2"/><circle cx="12" cy="19" r="1.2"/></svg>
     </button>
@@ -307,6 +312,13 @@
     $('star').title = b.starred ? 'Bỏ dấu trang (Cmd+D)' : 'Thêm dấu trang (Cmd+D)';
   });
   $('star').onclick = () => nav.toggleBookmark();
+  // ---- nút tài khoản: chữ cái đầu khi đã đăng nhập ----
+  nav.onAccount((a) => {
+    $('acct').classList.toggle('in', !!a.signedIn);
+    $('acct-i').textContent = a.signedIn ? a.initial : '';
+    $('acct').title = a.signedIn ? 'Tài khoản Google: ' + a.email : 'Tài khoản Google – đăng nhập để đồng bộ';
+  });
+  $('acct').onclick = () => nav.account();
   // ---- chip Ghosthand: hiện khi có kết nối, bấm để ngắt ----
   nav.onGhosthand((g) => { $('gh').classList.toggle('show', !!g.clients); $('pick').style.display = g.on ? '' : 'none'; });
   $('pick').style.display = 'none';
