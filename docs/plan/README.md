@@ -18,6 +18,7 @@ Trạng thái: ✅ xong · 🔄 đang làm · ⬜ chưa làm
 | [10](10-vong-tien-do.md) | Vòng tròn tiến độ việc nền (cập nhật, cài Flash) | – | ✅ |
 | [11](11-dong-bo-google.md) | Đăng nhập Google, đồng bộ cấu hình / dấu trang / lịch sử / phiên game qua Drive | – | 🔄 |
 | [12](12-thanh-dau-trang.md) | Thanh dấu trang như Chrome (engine web) + nhập từ Chrome | 11 | 🔄 |
+| [13](13-thong-tin-trang.md) | Thông tin trang (bấm khoá): kết nối, quyền theo trang, xoá dữ liệu trang | 05 | 🔄 |
 
 Thêm bước mới: tạo `NN-ten-ngan.md` (số tiếp theo, mẫu như các file có sẵn: tiêu đề + trạng thái, **Phụ thuộc**, **Xong khi**, danh sách việc ⬜) rồi thêm một dòng vào bảng trên. Bước dài làm xong một phần thì tick ngay trong file của bước, đổi trạng thái ở bảng.
 

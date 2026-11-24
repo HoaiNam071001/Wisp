@@ -2,6 +2,12 @@
 
 Mới nhất ở trên, nhóm `## <NN> – <tên bước> · [link](plan/<NN>-<tên>.md)`. Người dùng báo đã thử → tick `[x]` + ghi `log.md`.
 
+## 13 – Thông tin trang · [docs/plan/13-thong-tin-trang.md](plan/13-thong-tin-trang.md)
+- [ ] 13 (2026-11-24): bấm khoá (https) / "Không bảo mật" (http) trong ô địa chỉ → popover đúng host: "Kết nối an toàn" / "không an toàn"; bấm ra ngoài hoặc Esc / ✕ đóng; bấm khoá lần nữa đóng; trang wisp:// / file:// bấm không ra gì
+- [ ] 13: trang xin quyền (vd https://webcamtests.com → Cho phép) rồi mở popover → thấy dòng "camera / micro" = Cho phép; đổi sang Chặn / Hỏi lại, tải lại trang → xin lại / bị chặn đúng; "Đặt lại quyền của trang" xoá hết dòng
+- [ ] 13: "Xoá cookie và dữ liệu trang" cần bấm hai lần; xoá xong trang tải lại và bị đăng xuất; trang khác vẫn giữ đăng nhập
+- [ ] 13: popover Tài khoản (bước 11) vẫn mở / đóng đúng sau khi tách `popover.js`; đăng nhập (chờ trình duyệt ngoài) không làm popover tự đóng
+
 ## 12 – Thanh dấu trang · [docs/plan/12-thanh-dau-trang.md](plan/12-thanh-dau-trang.md)
 - [ ] 12 (2026-11-24): `wisp://bookmarks` → "Nhập…" → chọn hồ sơ Chrome → thấy "Đã nhập n dấu trang"; nhập lần hai báo "tất cả đã có"; "File HTML" nhập được file xuất từ Chrome
 - [ ] 12: thanh dấu trang hiện dưới thanh địa chỉ đúng thứ tự thanh Chrome; bấm mở tab hiện tại, Cmd/Ctrl+bấm hoặc bấm giữa mở tab mới; chuột phải: Mở / Tab mới / Xoá; kéo thả đổi thứ tự (khởi động lại vẫn giữ)

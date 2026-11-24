@@ -10,6 +10,7 @@ const { showMainMenu } = require('./menu-popup');
 const ghosthand = require('./ghosthand/server');
 const tasks = require('./progress-tasks');
 const accountWin = require('./account-window');
+const siteInfoWin = require('./site-info-window');
 const bookmarksBar = require('./bookmarks-bar');
 
 // Vòng tiến độ ở thanh công cụ + thanh tiến độ trên Dock / taskbar (fraction null = chưa biết → quay, 2 = không xác định)
@@ -35,6 +36,7 @@ ipcMain.on('nav', (_e, action, arg) => {
   else if (action === 'history') { openHistory(); }
   else if (action === 'update') { updater.promptUpdate(true); }
 });
+ipcMain.on('siteinfo:open', (e, r) => { if (fromToolbar(e)) siteInfoWin.toggleSiteInfo(r); });
 ipcMain.on('account:open', (e, r) => { if (fromToolbar(e)) accountWin.toggleAccountPopup(r); });
 ipcMain.on('menu', (e, x, y) => { if (fromToolbar(e)) showMainMenu(x, y); });
 ipcMain.on('ghosthand-disconnect', (e) => { if (fromToolbar(e)) ghosthand.disconnect(); });

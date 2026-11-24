@@ -168,6 +168,8 @@ Lưu ý: `--dry` vẫn đổi `version` trong `package.json` – bỏ bằng `gi
 
 ## 4c. Tài khoản Google (đồng bộ)
 
+**Thông tin trang**: bấm khoá (hoặc "Không bảo mật") trong ô địa chỉ → kết nối, quyền đã cấp / chặn cho trang (đổi: Cho phép / Chặn / Hỏi lại, đặt lại), xoá cookie và dữ liệu riêng của trang.
+
 **Dấu trang**: ★ trên thanh địa chỉ (Cmd/Ctrl+D) thêm / bỏ; **thanh dấu trang** dưới thanh địa chỉ (Cmd/Ctrl+Shift+B hoặc menu ⋮ để ẩn / hiện): bấm mở, Cmd/Ctrl+bấm hoặc bấm giữa mở tab mới, chuột phải để mở / xoá, kéo thả đổi thứ tự, nút `»` chứa các mục bị che. Trang `wisp://bookmarks` có nút *Nhập…* lấy dấu trang từ Chrome trên máy (chọn hồ sơ; chỉ đọc, thư mục được làm phẳng) hoặc từ file HTML xuất từ Chrome / Firefox / Edge. Thanh chỉ có ở engine web (cửa sổ Flash không có).
 
 Nút hình người cạnh ⋮ → *Đăng nhập bằng Google* (mở trình duyệt hệ thống, không nhập mật khẩu trong Wisp). Đồng bộ cấu hình (trang chủ, trang bật Flash, đổi phím), dấu trang và lịch sử qua thư mục dữ liệu riêng của Wisp trên Google Drive – Wisp chỉ có quyền `drive.appdata`, không thấy file Drive khác. Token lưu bằng Keychain / DPAPI. **Phiên game (cookie)** đồng bộ riêng, mặc định tắt: bật trong cửa sổ Tài khoản, đặt một mật khẩu đồng bộ – cookie được mã hoá bằng mật khẩu này trước khi lên Drive (Google chỉ thấy bản mã), quên mật khẩu là mất dữ liệu phiên; chỉ cookie của trang bật Flash + domain bạn thêm, không bao giờ cookie Google. *Đăng xuất* chỉ dừng đồng bộ trên máy này; *Xoá dữ liệu trên Drive* xoá bản đã đồng bộ (dữ liệu trong máy vẫn còn). Bản tự build cần `google-oauth.local.json` (`{"clientSecret": "…"}`, đã gitignore) hoặc biến `WISP_GOOGLE_SECRET`.

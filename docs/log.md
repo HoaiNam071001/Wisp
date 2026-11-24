@@ -56,3 +56,4 @@ Chỉ thêm dòng bằng `>>`: `- **YYYY-MM-DD** – <việc>. <kết quả ki�
 - **2026-11-24** – Kế hoạch (người dùng yêu cầu): bước 12 thêm việc nhập dấu trang từ Chrome (đọc file Bookmarks trên máy) + từ file HTML; chưa code.
 - **2026-11-24** – Bước 12: nhập dấu trang từ Chrome / HTML + thanh dấu trang (order, kéo thả, ẩn / hiện Cmd+Shift+B, » ), tabs.toolbarHeight động. check + test 126/126 xanh; chạy dev thấy thanh đúng (43 dấu trang nhập thử); chưa thử tay kéo thả / chuột phải / đồng bộ.
 - **2026-11-24** – Bước 12: thanh dấu trang dùng favicon thật (favicon-cache.js học khi mở trang, thử /favicon.ico, rơi về chữ cái màu); check + test xanh, chụp màn hình dev thấy icon Facebook / Figma / V-App.
+- **2026-11-24** – Bước 13: popover thông tin trang (bấm khoá): kết nối, quyền theo trang đổi / đặt lại, xoá cookie + dữ liệu trang; tách popover.js dùng chung với Tài khoản. check + test 130/130 xanh; chưa bấm thử trên app (không điều khiển chuột được).

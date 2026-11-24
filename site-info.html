@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<title>Thông tin trang</title>
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'unsafe-inline'; script-src 'unsafe-inline'">
+<style>
+  :root { --bg: #2b2c30; --hover: #36383d; --border: #40434a; --text: #e8e9eb; --muted: #9da0a8; --ok: #3fb950; --warn: #e3a008; --red: #f85149; --field: #232428; }
+  @media (prefers-color-scheme: light) {
+    :root { --bg: #fff; --hover: #f1f3f4; --border: #e0e3e7; --text: #1d1e21; --muted: #5f636b; --ok: #1a7f37; --warn: #9a6700; --red: #d92d20; --field: #f6f7f8; }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--bg); color: var(--text); font: 13px system-ui, -apple-system, sans-serif; overflow: hidden; }
+  #app { padding: 14px 16px 8px; }
+  .top { display: flex; align-items: center; gap: 8px; }
+  h1 { margin: 0; flex: 1; font-size: 15px; font-weight: 600; word-break: break-all; }
+  .x { flex: none; width: 26px; height: 26px; border: 0; border-radius: 50%; background: none; color: var(--muted); cursor: pointer; display: grid; place-items: center; }
+  .x:hover { background: var(--hover); }
+  svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+  .conn { display: flex; align-items: center; gap: 10px; margin: 12px 0 4px; padding: 8px 0; color: var(--ok); font-weight: 500; }
+  .conn.http { color: var(--warn); }
+  .conn small { display: block; color: var(--muted); font-weight: 400; margin-top: 2px; line-height: 1.4; }
+  hr { border: 0; border-top: 1px solid var(--border); margin: 8px -16px; }
+  h2 { margin: 10px 0 6px; font-size: 12px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
+  .perm { display: flex; align-items: center; gap: 8px; padding: 5px 0; }
+  .perm .n { flex: 1; min-width: 0; }
+  select { font: inherit; color: var(--text); background: var(--field); border: 1px solid var(--border); border-radius: 7px; padding: 4px 6px; }
+  .none { color: var(--muted); padding: 4px 0 6px; line-height: 1.45; }
+  .note { color: var(--muted); font-size: 12px; margin: 4px 0 2px; line-height: 1.4; }
+  .item { display: flex; align-items: center; gap: 12px; width: calc(100% + 32px); margin: 0 -16px; padding: 9px 16px; border: 0; background: none; color: var(--text); font: inherit; text-align: left; cursor: pointer; }
+  .item:hover:not(:disabled) { background: var(--hover); }
+  .item:disabled { opacity: .5; cursor: default; }
+  .item svg { color: var(--muted); }
+  .item.danger { color: var(--red); }
+  .item.danger svg { color: var(--red); }
+  .err { color: var(--red); font-size: 12px; margin: 4px 0; }
+  [hidden] { display: none !important; }
+</style>
+</head>
+<body>
+<div id="app">
+  <div class="top"><h1 id="host"></h1><button class="x" id="close" title="Đóng (Esc)"><svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg></button></div>
+  <div class="conn" id="conn"><svg viewBox="0 0 24 24" id="ic"></svg><div><span id="ct"></span><small id="cs"></small></div></div>
+  <hr>
+  <h2>Quyền của trang</h2>
+  <div id="perms"></div>
+  <div class="note" id="note" hidden>Quyền đã cấp cho trang đang mở có hiệu lực đầy đủ sau khi tải lại trang.</div>
+  <button class="item" id="reset" hidden><svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/></svg>Đặt lại quyền của trang</button>
+  <hr>
+  <button class="item danger" id="clear"><svg viewBox="0 0 24 24"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/></svg><span id="clearT">Xoá cookie và dữ liệu trang</span></button>
+  <div class="err" id="err"></div>
+</div>
+<script>
+  const $ = (id) => document.getElementById(id);
+  const LOCK = '<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>';
+  const UNLOCK = '<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 7.5-2"/>';
+  let lastH = 0;
+  const fit = () => { const h = $('app').offsetHeight; if (h && h !== lastH) { lastH = h; wsite.size(h); } };
+  new ResizeObserver(fit).observe($('app'));
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') window.close(); });
+  $('close').onclick = () => window.close();
+
+  function render(v) {
+    if (!v) return;
+    $('host').textContent = v.host;
+    const https = v.kind === 'https';
+    $('conn').className = 'conn' + (https ? '' : ' http');
+    $('ic').innerHTML = https ? LOCK : UNLOCK;
+    $('ct').textContent = https ? 'Kết nối an toàn' : 'Kết nối không an toàn';
+    $('cs').textContent = https ? 'Dữ liệu giữa bạn và trang được mã hoá.' : 'Đừng nhập mật khẩu hay thông tin nhạy cảm ở trang này.';
+    const box = $('perms'); box.textContent = '';
+    if (!v.perms.length) {
+      const d = document.createElement('div'); d.className = 'none';
+      d.textContent = 'Chưa có quyền nào được cho phép hoặc chặn. Khi trang xin quyền (camera, vị trí…) Wisp sẽ hỏi.';
+      box.appendChild(d);
+    }
+    for (const p of v.perms) {
+      const row = document.createElement('div'); row.className = 'perm';
+      const n = document.createElement('span'); n.className = 'n'; n.textContent = p.label;
+      const sel = document.createElement('select');
+      for (const [val, label] of [['allow', 'Cho phép'], ['deny', 'Chặn'], ['ask', 'Hỏi lại']]) {
+        const o = document.createElement('option'); o.value = val; o.textContent = label; if (val === p.state) o.selected = true; sel.appendChild(o);
+      }
+      sel.onchange = async () => { render(await wsite.setPermission(p.key, sel.value)); $('note').hidden = false; };
+      row.append(n, sel); box.appendChild(row);
+    }
+    $('reset').hidden = !v.perms.length;
+  }
+  $('reset').onclick = async () => { render(await wsite.reset()); $('note').hidden = false; };
+  let armed = false;
+  $('clear').onclick = async () => {
+    if (!armed) { armed = true; $('clearT').textContent = 'Bấm lần nữa để xoá (trang sẽ tải lại)'; setTimeout(() => { armed = false; $('clearT').textContent = 'Xoá cookie và dữ liệu trang'; }, 4000); return; }
+    armed = false; $('clear').disabled = true; $('err').textContent = '';
+    const r = await wsite.clear();
+    if (r && r.ok) window.close(); else { $('clear').disabled = false; $('clearT').textContent = 'Xoá cookie và dữ liệu trang'; $('err').textContent = (r && r.error) || 'Không xoá được.'; }
+  };
+  wsite.get().then((v) => { render(v); fit(); });
+</script>
+</body>
+</html>
