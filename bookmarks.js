@@ -6,6 +6,7 @@ const fs = require('fs');
 const { EventEmitter } = require('events');
 const tabs = require('./tabs');
 const store = require('./bookmarks-store');
+const favicons = require('./favicon-cache');
 const { BOOKMARKS_URL, isBookmarksUrl, normalizeUrl } = require('./app-urls');
 
 const events = new EventEmitter();
@@ -60,7 +61,7 @@ function openBookmarks() {
 function fromPage(e) { try { return isBookmarksUrl(e.sender.getURL()); } catch { return false; } }
 function fromToolbar(e) { const win = tabs.getWin(); return !!win && e.sender === win.webContents; }
 ipcMain.on('bookmark:toggle', (e) => { if (fromToolbar(e)) toggleActive(); });
-ipcMain.handle('bookmarks:list', (e) => fromPage(e) ? store.sorted(load()) : []);
+ipcMain.handle('bookmarks:list', (e) => fromPage(e) ? store.sorted(load()).map(b => ({ ...b, icon: favicons.get(b.url) })) : []);
 ipcMain.handle('bookmarks:open', (e, url, inNewTab) => {
   if (!fromPage(e) || !store.isBookmarkable(url)) return;
   const u = normalizeUrl(url);

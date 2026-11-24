@@ -256,7 +256,8 @@
       } else if (t.favicon) {
         const img = document.createElement('img');
         img.src = t.favicon;
-        img.onerror = () => { img.remove(); fav.classList.add('globe'); fav.innerHTML = ICON.globe; };
+        img.onload = () => { if (img.naturalWidth < 2) img.replaceWith(bmLetter(host)); }; // ảnh rỗng (1×1) coi như không có icon
+    img.onerror = () => { img.remove(); fav.classList.add('globe'); fav.innerHTML = ICON.globe; };
         fav.appendChild(img);
       } else { fav.classList.add('globe'); fav.innerHTML = ICON.globe; }
 

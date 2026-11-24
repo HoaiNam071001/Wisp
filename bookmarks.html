@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <title>Dấu trang</title>
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'unsafe-inline'; script-src 'unsafe-inline'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; img-src http: https: data:">
 <style>
   :root {
     --bg: #1b1c1f; --card: #232428; --hover: #2c2e33; --border: #33363c; --field: #141517;
@@ -29,6 +29,7 @@
   .list { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 6px; }
   .row { display: flex; align-items: center; gap: 12px; height: 42px; padding: 0 6px 0 10px; border-radius: 8px; }
   .row:hover { background: var(--hover); }
+  .fav { width: 22px; height: 22px; border-radius: 5px; object-fit: contain; flex: none; }
   .av { width: 22px; height: 22px; border-radius: 6px; display: grid; place-items: center; font-size: 11px; font-weight: 700; color: #fff; flex: none; }
   a { flex: 0 1 auto; min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; color: var(--text); text-decoration: none; cursor: pointer; }
   a:hover { text-decoration: underline; text-underline-offset: 3px; }
@@ -84,9 +85,21 @@
     for (const b of items) {
       const row = document.createElement('div'); row.className = 'row';
       const host = hostOf(b.url);
-      const av = document.createElement('span'); av.className = 'av';
-      av.textContent = (host[0] || '?').toUpperCase();
-      av.style.background = AV_COLORS[hash(host) % AV_COLORS.length];
+      const letter = () => {
+        const av = document.createElement('span'); av.className = 'av';
+        av.textContent = (host[0] || '?').toUpperCase();
+        av.style.background = AV_COLORS[hash(host) % AV_COLORS.length];
+        return av;
+      };
+      // Icon thật (đã học khi mở trang) → thử /favicon.ico → chữ cái màu
+      let guess = '';
+      try { guess = new URL(b.url).origin + '/favicon.ico'; } catch {}
+      let av;
+      if (b.icon || guess) {
+        av = document.createElement('img'); av.className = 'fav'; av.src = b.icon || guess;
+        av.onload = () => { if (av.naturalWidth < 2) av.replaceWith(letter()); }; // ảnh rỗng (1×1) coi như không có icon
+        av.onerror = () => { if (guess && av.src !== guess) av.src = guess; else av.replaceWith(letter()); };
+      } else av = letter();
       const a = document.createElement('a'); a.textContent = b.title || b.url; a.title = b.url;
       a.onclick = (e) => { e.preventDefault(); wispBookmarks.open(b.url, e.metaKey || e.ctrlKey); };
       a.onauxclick = (e) => { if (e.button === 1) { e.preventDefault(); wispBookmarks.open(b.url, true); } };
