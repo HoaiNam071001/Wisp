@@ -10,6 +10,7 @@ const { showMainMenu } = require('./menu-popup');
 const ghosthand = require('./ghosthand/server');
 const tasks = require('./progress-tasks');
 const accountWin = require('./account-window');
+const bookmarksBar = require('./bookmarks-bar');
 
 // Vòng tiến độ ở thanh công cụ + thanh tiến độ trên Dock / taskbar (fraction null = chưa biết → quay, 2 = không xác định)
 tasks.events.on('changed', (sum) => {
@@ -48,5 +49,5 @@ ipcMain.on('tab', (e, action, id) => {
 ipcMain.on('ready', () => {
   tabs.sendState(); tabs.sendTabs();
   const win = tabs.getWin();
-  if (win) { win.webContents.send('update', updater.state()); win.webContents.send('ghosthand', ghosthand.state()); win.webContents.send('tasks', tasks.summary()); accountWin.push(); }
+  if (win) { win.webContents.send('update', updater.state()); win.webContents.send('ghosthand', ghosthand.state()); win.webContents.send('tasks', tasks.summary()); accountWin.push(); bookmarksBar.push(); }
 });

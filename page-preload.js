@@ -31,6 +31,9 @@ if (isLauncherPage) {
     list: () => ipcRenderer.invoke('bookmarks:list'),
     open: (url, newTab) => ipcRenderer.invoke('bookmarks:open', url, !!newTab),
     remove: (id) => ipcRenderer.invoke('bookmarks:remove', id),
+    chromeProfiles: () => ipcRenderer.invoke('bookmarks:chrome-profiles'),
+    importChrome: (dir) => ipcRenderer.invoke('bookmarks:import-chrome', dir),
+    importHtml: () => ipcRenderer.invoke('bookmarks:import-html'),
     onChange: (cb) => ipcRenderer.on('bookmarks:changed', () => cb()),
   });
 } else if (isHistoryPage) {

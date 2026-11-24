@@ -7,6 +7,7 @@ const keyremap = require('./keyremap-main');
 const page = require('./page-actions');
 const { openFindBar } = require('./find-window');
 const bookmarks = require('./bookmarks');
+const bookmarksBar = require('./bookmarks-bar');
 const pick = require('./ghosthand/pick');
 const flash = require('./flash/actions');
 const { openSettings: openFlashSettings } = require('./flash/settings-window');
@@ -120,6 +121,7 @@ function pageSubmenu() {
   return [
     { label: 'Mở địa chỉ…', accelerator: 'CmdOrCtrl+L', click: tabs.focusUrlBar },
     { label: 'Thêm / bỏ dấu trang', accelerator: 'CmdOrCtrl+D', click: bookmarks.toggleActive },
+    { label: 'Hiện / ẩn thanh dấu trang', accelerator: 'Shift+CmdOrCtrl+B', click: bookmarksBar.toggle },
     { label: 'Quản lý dấu trang', accelerator: IS_MAC ? 'Alt+Cmd+B' : 'Ctrl+Shift+O', click: bookmarks.openBookmarks },
     { label: 'Chọn element (cho Ghosthand)', accelerator: 'Shift+CmdOrCtrl+E', click: pick.toggleActive },
     { label: 'Mở trang này bằng trình duyệt hệ thống', click: page.openInSystemBrowser },

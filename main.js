@@ -29,6 +29,8 @@ const updater = require('./updater');
 const tabs = require('./tabs');
 const { saveHistoryNow } = require('./history');
 const { saveNow: saveBookmarksNow } = require('./bookmarks');
+require('./bookmarks-import'); // chỉ đăng ký IPC nhập dấu trang
+const bookmarksBar = require('./bookmarks-bar');
 const { loadConfig, saveConfig, homeUrl } = require('./config');
 const { normalizeUrl } = require('./app-urls');
 const { addLog } = require('./inspect/store');
@@ -61,6 +63,7 @@ function createWindow() {
   // tạo sẵn cửa sổ menu ⋮ (ẩn) để bấm là hiện ngay
   win.webContents.once('did-finish-load', () => setTimeout(ensureMenuWin, 300));
   tabs.attachWindow(win);
+  bookmarksBar.apply(); // chiều cao vùng trang theo thanh dấu trang (bật / tắt)
 
   buildMenu();
   tabs.openStartTabs(startUrl, explicit);

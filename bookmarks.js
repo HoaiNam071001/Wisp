@@ -77,8 +77,13 @@ ipcMain.handle('bookmarks:remove', (e, id) => {
   changed();
 });
 
+// Thanh dấu trang (bookmarks-bar.js)
+function barItems() { return store.barSorted(load()).map(b => ({ id: b.id, url: b.url, title: b.title })); }
+function reorder(id, beforeId) { items = store.reorder(load(), id, beforeId, Date.now()); changed(); }
+function removeItem(id) { items = store.remove(load(), id, Date.now()); changed(); }
+
 // Đồng bộ (sync.js): đọc toàn bộ (kèm tombstone) / thay bằng bản đã gộp
 function snapshot() { return load().slice(); }
 function replaceAll(list) { items = store.prune(store.clean(list)); changed(); }
 
-module.exports = { events, toggleActive, openBookmarks, saveNow, pushStar, snapshot, replaceAll };
+module.exports = { fromPage, barItems, reorder, removeItem, events, toggleActive, openBookmarks, saveNow, pushStar, snapshot, replaceAll };

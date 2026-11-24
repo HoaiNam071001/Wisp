@@ -6,7 +6,8 @@ function clean(list) {
   if (!Array.isArray(list)) return [];
   return list.filter(b => b && typeof b.id === 'string' && typeof b.url === 'string' && typeof b.updatedAt === 'number')
     .map(b => ({ id: b.id, url: b.url, title: String(b.title || ''), addedAt: Number(b.addedAt) || b.updatedAt,
-                 updatedAt: b.updatedAt, ...(typeof b.deleted === 'number' ? { deleted: b.deleted } : {}) }));
+                 updatedAt: b.updatedAt, ...(typeof b.order === 'number' ? { order: b.order } : {}),
+                 ...(typeof b.deleted === 'number' ? { deleted: b.deleted } : {}) }));
 }
 
 function isBookmarkable(url) { return /^https?:\/\//i.test(String(url || '')); }
@@ -14,6 +15,23 @@ function isBookmarkable(url) { return /^https?:\/\//i.test(String(url || '')); }
 function live(list) { return list.filter(b => !b.deleted); }
 function find(list, url) { return live(list).find(b => b.url === url) || null; }
 function has(list, url) { return !!find(list, url); }
+
+// Thanh dấu trang: cũ → mới theo `order` (mục chưa có order dùng addedAt → thêm sau nằm cuối)
+const key = (b) => typeof b.order === 'number' ? b.order : b.addedAt;
+function barSorted(list) { return live(list).sort((a, b) => key(a) - key(b) || a.addedAt - b.addedAt); }
+
+// Chuyển mục `id` đứng trước mục `beforeId` (null = cuối). Chỉ sửa đúng một mục (order nằm giữa hai bên)
+// → gộp Drive theo từng mục (updatedAt) không đè thứ tự của mục khác.
+function reorder(list, id, beforeId, now) {
+  const bar = barSorted(list).filter(b => b.id !== id);
+  const me = live(list).find(b => b.id === id);
+  if (!me || id === beforeId) return list;
+  const at = beforeId ? bar.findIndex(b => b.id === beforeId) : bar.length;
+  if (at < 0) return list;
+  const prev = at > 0 ? key(bar[at - 1]) : null, next = at < bar.length ? key(bar[at]) : null;
+  const order = prev === null ? (next === null ? me.addedAt : next - 1) : next === null ? prev + 1 : (prev + next) / 2;
+  return list.map(b => b.id === id ? { ...b, order, updatedAt: now } : b);
+}
 
 // Mới → cũ, bỏ mục đã xoá
 function sorted(list) { return live(list).sort((a, b) => b.addedAt - a.addedAt); }
@@ -40,4 +58,4 @@ function prune(list) {
   return keep.slice(0, MAX_ITEMS);
 }
 
-module.exports = { clean, isBookmarkable, live, find, has, sorted, toggle, remove, prune, MAX_ITEMS };
+module.exports = { clean, isBookmarkable, live, find, has, sorted, barSorted, reorder, toggle, remove, prune, MAX_ITEMS };

@@ -37,6 +37,15 @@
          display: grid; place-items: center; opacity: 0; transition: opacity .1s; }
   .row:hover .del, .del:focus-visible { opacity: 1; }
   .del:hover { background: rgba(248,81,73,.16); color: var(--red); }
+  .imp { height: 34px; padding: 0 14px; border: 1px solid var(--border); border-radius: 17px; background: var(--card); color: var(--text); font: inherit; font-size: 13px; cursor: pointer; }
+  .imp:hover { background: var(--hover); }
+  .panel { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 14px; margin-bottom: 14px; }
+  .panel h2 { margin: 0 0 8px; font-size: 14px; }
+  .panel .opt { display: flex; align-items: center; gap: 8px; width: 100%; padding: 8px 10px; border: 0; border-radius: 8px; background: none; color: var(--text); font: inherit; text-align: left; cursor: pointer; }
+  .panel .opt:hover { background: var(--hover); }
+  .panel .opt small { margin-left: auto; color: var(--faint); }
+  .panel .note { color: var(--muted); font-size: 12.5px; margin: 8px 2px 0; }
+  .panel .note.err { color: var(--red); }
   .empty { text-align: center; color: var(--muted); margin-top: 80px; }
   .empty svg { width: 40px; height: 40px; color: var(--faint); display: block; margin: 0 auto 12px; }
 </style>
@@ -46,10 +55,11 @@
   <div class="head">
     <span class="logo"><svg viewBox="0 0 24 24"><path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z"/></svg></span>
     <h1>Dấu trang</h1><span class="count" id="count"></span>
+    <button class="imp" id="impBtn">Nhập…</button>
     <input id="q" type="search" placeholder="Tìm trong dấu trang" spellcheck="false" autofocus>
   </div>
 </header>
-<main id="box"></main>
+<main><div class="panel" id="imp" hidden></div><div id="box"></div></main>
 <script>
   const $ = (id) => document.getElementById(id);
   const AV_COLORS = ['#4c8dff', '#3fb950', '#a371f7', '#e3a008', '#2bb3a3', '#e05fa8', '#ff6a3d', '#7c83ff'];
@@ -90,6 +100,32 @@
     box.appendChild(list);
   }
   async function load() { all = await wispBookmarks.list(); render(); }
+  // ---- nhập từ Chrome / file HTML ----
+  function say(text, err) { const n = document.createElement('p'); n.className = 'note' + (err ? ' err' : ''); n.textContent = text; $('imp').appendChild(n); }
+  function result(r) {
+    $('imp').hidden = false; $('imp').textContent = '';
+    if (r && r.canceled) { $('imp').hidden = true; return; }
+    if (!r || !r.ok) { say((r && r.error) || 'Không nhập được.', true); return; }
+    say(r.added ? `Đã nhập ${r.added} dấu trang` + (r.skipped ? ` (bỏ ${r.skipped} trang đã có).` : '.') : 'Không có dấu trang mới – tất cả đã có.');
+  }
+  $('impBtn').onclick = async () => {
+    const p = $('imp');
+    if (!p.hidden) { p.hidden = true; return; }
+    p.hidden = false; p.textContent = '';
+    const h = document.createElement('h2'); h.textContent = 'Nhập dấu trang từ'; p.appendChild(h);
+    const profiles = await wispBookmarks.chromeProfiles();
+    for (const pr of profiles) {
+      const b = document.createElement('button'); b.className = 'opt';
+      b.append('Chrome – ' + pr.name);
+      const c = document.createElement('small'); c.textContent = pr.count + ' dấu trang'; b.appendChild(c);
+      b.onclick = async () => result(await wispBookmarks.importChrome(pr.dir));
+      p.appendChild(b);
+    }
+    const f = document.createElement('button'); f.className = 'opt'; f.textContent = 'File HTML (xuất từ Chrome, Firefox, Edge…)';
+    f.onclick = async () => result(await wispBookmarks.importHtml());
+    p.appendChild(f);
+    if (!profiles.length) say('Không thấy dấu trang Chrome trên máy này – dùng file HTML nếu có.');
+  };
   $('q').oninput = render;
   wispBookmarks.onChange(load);
   load();

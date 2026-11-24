@@ -47,6 +47,21 @@
   #newtab { flex: none; width: 28px; height: 26px; margin: 0 0 2px 4px; border-radius: 7px; display: grid; place-items: center; color: var(--muted); }
   #newtab:hover { background: var(--surface); color: var(--text); }
 
+  /* ---- thanh dấu trang (bật / tắt từ main; chiều cao khớp tabs.BOOKMARK_BAR_H) ---- */
+  body.bm { height: 112px; }
+  #bm { display: none; height: 32px; align-items: center; gap: 2px; padding: 0 8px; border-bottom: 1px solid #1b1c1f; }
+  body.bm #bm { display: flex; }
+  #bm-list { flex: 1; min-width: 0; height: 100%; display: flex; align-items: center; gap: 2px; overflow: hidden; white-space: nowrap; }
+  .bmi { flex: none; max-width: 170px; height: 26px; display: flex; align-items: center; gap: 6px; padding: 0 8px; border-radius: 7px; font-size: 12.5px; color: #d6d8db; }
+  .bmi:hover { background: var(--surface); }
+  .bmi.drop { box-shadow: inset 2px 0 0 var(--brand); }
+  .bmi .t { overflow: hidden; text-overflow: ellipsis; }
+  .bmi .av { flex: none; width: 16px; height: 16px; border-radius: 4px; display: grid; place-items: center; font-size: 9.5px; font-weight: 700; color: #fff; }
+  #bm-more { flex: none; width: 26px; height: 26px; border-radius: 7px; display: grid; place-items: center; color: var(--muted); }
+  #bm-more:hover { background: var(--surface); color: #fff; }
+  #bm-more.none { visibility: hidden; }
+  #bm-empty { color: var(--faint); font-size: 12px; padding: 0 8px; }
+
   /* ---- thanh địa chỉ ---- */
   #bar { height: 44px; display: flex; align-items: center; gap: 4px; padding: 0 8px; border-bottom: 1px solid #1b1c1f; }
   .nb { width: 32px; height: 32px; border-radius: 8px; display: grid; place-items: center; color: #c9cbcf; transition: background .12s; }
@@ -145,6 +160,7 @@
       <svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="5" r="1.2"/><circle cx="12" cy="12" r="1.2"/><circle cx="12" cy="19" r="1.2"/></svg>
     </button>
   </div>
+  <div id="bm"><div id="bm-list"></div><button id="bm-more" class="none" title="Các dấu trang khác"><svg class="i" viewBox="0 0 24 24"><path d="M7 7l5 5-5 5M13 7l5 5-5 5"/></svg></button></div>
 <script>
   const $ = (id) => document.getElementById(id);
   const ICON = {
@@ -298,6 +314,61 @@
     $('star').title = b.starred ? 'Bỏ dấu trang (Cmd+D)' : 'Thêm dấu trang (Cmd+D)';
   });
   $('star').onclick = () => nav.toggleBookmark();
+  // ---- thanh dấu trang ----
+  const AV_COLORS = ['#4c8dff', '#3fb950', '#a371f7', '#e3a008', '#2bb3a3', '#e05fa8', '#ff6a3d', '#7c83ff'];
+  let bmItems = [], bmHidden = [];
+  const hostOf = (u) => { try { return new URL(u).host.replace(/^www\./, ''); } catch { return ''; } };
+  function renderBar() {
+    const list = $('bm-list');
+    list.textContent = '';
+    if (!bmItems.length) { const e = document.createElement('span'); e.id = 'bm-empty'; e.textContent = 'Bấm ★ trên thanh địa chỉ để thêm dấu trang vào đây'; list.appendChild(e); fitBar(); return; }
+    for (const b of bmItems) {
+      const el = document.createElement('button');
+      el.className = 'bmi'; el.dataset.id = b.id; el.title = (b.title || b.url) + '\n' + b.url; el.draggable = true;
+      const host = hostOf(b.url);
+      const av = document.createElement('span'); av.className = 'av'; av.textContent = (host[0] || '?').toUpperCase();
+      let h = 0; for (const c of host) h = (h * 31 + c.charCodeAt(0)) | 0;
+      av.style.background = AV_COLORS[Math.abs(h) % AV_COLORS.length];
+      const t = document.createElement('span'); t.className = 't'; t.textContent = b.title || host || b.url;
+      el.append(av, t);
+      el.onclick = (e) => nav.barOpen(b.url, e.metaKey || e.ctrlKey);
+      el.onauxclick = (e) => { if (e.button === 1) { e.preventDefault(); nav.barOpen(b.url, true); } };
+      el.oncontextmenu = (e) => { e.preventDefault(); nav.barMenu(b.id); };
+      list.appendChild(el);
+    }
+    fitBar();
+  }
+  // Mục nào vượt chiều rộng thì ẩn và gom vào nút » (menu hệ thống)
+  function fitBar() {
+    const list = $('bm-list'), els = Array.from(list.querySelectorAll('.bmi'));
+    els.forEach(e => { e.style.display = ''; });
+    bmHidden = [];
+    const max = list.clientWidth;
+    let over = false;
+    for (const e of els) { if (over || e.offsetLeft + e.offsetWidth > max) { over = true; e.style.display = 'none'; bmHidden.push(e.dataset.id); } }
+    $('bm-more').classList.toggle('none', !bmHidden.length);
+  }
+  window.addEventListener('resize', fitBar);
+  $('bm-more').onclick = () => { const r = $('bm-more').getBoundingClientRect(); nav.barOverflow(bmHidden, r.left, r.bottom); };
+  // Kéo thả đổi thứ tự: thả lên mục nào thì đứng trước mục đó, thả vào chỗ trống thì xuống cuối
+  let dragId = null;
+  $('bm-list').addEventListener('dragstart', (e) => { const b = e.target.closest('.bmi'); if (b) { dragId = b.dataset.id; e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', dragId); } });
+  $('bm-list').addEventListener('dragover', (e) => {
+    if (!dragId) return;
+    e.preventDefault();
+    const over = e.target.closest('.bmi');
+    document.querySelectorAll('.bmi.drop').forEach(x => x.classList.remove('drop'));
+    if (over && over.dataset.id !== dragId) over.classList.add('drop');
+  });
+  $('bm-list').addEventListener('drop', (e) => {
+    if (!dragId) return;
+    e.preventDefault();
+    const over = e.target.closest('.bmi');
+    nav.barReorder(dragId, over ? over.dataset.id : null);
+  });
+  $('bm-list').addEventListener('dragend', () => { dragId = null; document.querySelectorAll('.bmi.drop').forEach(x => x.classList.remove('drop')); });
+  nav.onBar((s) => { document.body.classList.toggle('bm', !!s.on); bmItems = s.items || []; renderBar(); });
+
   // ---- nút tài khoản: chữ cái đầu khi đã đăng nhập ----
   nav.onAccount((a) => {
     $('acct').classList.toggle('in', !!a.signedIn);

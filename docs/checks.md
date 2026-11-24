@@ -2,6 +2,12 @@
 
 Mới nhất ở trên, nhóm `## <NN> – <tên bước> · [link](plan/<NN>-<tên>.md)`. Người dùng báo đã thử → tick `[x]` + ghi `log.md`.
 
+## 12 – Thanh dấu trang · [docs/plan/12-thanh-dau-trang.md](plan/12-thanh-dau-trang.md)
+- [ ] 12 (2026-11-24): `wisp://bookmarks` → "Nhập…" → chọn hồ sơ Chrome → thấy "Đã nhập n dấu trang"; nhập lần hai báo "tất cả đã có"; "File HTML" nhập được file xuất từ Chrome
+- [ ] 12: thanh dấu trang hiện dưới thanh địa chỉ đúng thứ tự thanh Chrome; bấm mở tab hiện tại, Cmd/Ctrl+bấm hoặc bấm giữa mở tab mới; chuột phải: Mở / Tab mới / Xoá; kéo thả đổi thứ tự (khởi động lại vẫn giữ)
+- [ ] 12: thu nhỏ cửa sổ → nút » hiện, bấm ra menu các dấu trang bị che; Cmd/Ctrl+Shift+B (và menu ⋮) ẩn / hiện, trang bên dưới co giãn đúng, khởi động lại nhớ trạng thái; Flash / video toàn màn hình không lòi thanh
+- [ ] 12: đồng bộ: kéo thả ở máy A, "Đồng bộ ngay", máy B thấy thứ tự mới; theme sáng không dùng (app chỉ tối) – bỏ qua
+
 ## 02 – Ghosthand dùng Wisp · [link](plan/02-ghosthand-backend-wisp.md)
 
 Cần Ghosthand bản mới (`make dev-install` ở `../autoclicker`) + Wisp đang mở, bật Cổng Ghosthand:

@@ -25,7 +25,7 @@ function place() {
   const win = tabs.getWin();
   if (!win || !alive()) return;
   const cb = win.getContentBounds();
-  bar.setBounds({ x: cb.x + cb.width - BAR_W - 16, y: cb.y + tabs.TOOLBAR_HEIGHT + 6, width: BAR_W, height: BAR_H });
+  bar.setBounds({ x: cb.x + cb.width - BAR_W - 16, y: cb.y + tabs.toolbarHeight() + 6, width: BAR_W, height: BAR_H });
 }
 
 function openFindBar() {

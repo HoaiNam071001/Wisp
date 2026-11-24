@@ -14,7 +14,9 @@ const flashRouter = require('./flash-engine/router');
 const { popupFor } = require('./popup-policy');
 const { blockedNavigation } = require('./nav-policy');
 
-const TOOLBAR_HEIGHT = 80; // thanh tab (36) + thanh địa chỉ (44)
+const TOOLBAR_BASE = 80; // thanh tab (36) + thanh địa chỉ (44)
+const BOOKMARK_BAR_H = 32; // thanh dấu trang (bật / tắt được) nằm dưới thanh địa chỉ
+let extraTop = 0;
 const CLOSED_MAX = 25;
 const events = new EventEmitter();
 let win = null;
@@ -78,6 +80,9 @@ function updateTitle() {
   if (winOk()) win.setTitle((t && t.title ? t.title + ' — ' : '') + 'Wisp');
 }
 
+function toolbarHeight() { return TOOLBAR_BASE + extraTop; }
+function setBookmarkBar(on) { extraTop = on ? BOOKMARK_BAR_H : 0; layout(); }
+
 // Mọi tab luôn gắn vào cửa sổ, tab không xem được đẩy ra ngoài vùng nhìn thấy (giữ nguyên kích thước)
 // để game / video vẫn chạy và vẽ bình thường, quay lại tab không phải dựng lại bề mặt vẽ.
 function layout() {
@@ -85,7 +90,7 @@ function layout() {
   const [width, height] = win.getContentSize();
   for (const t of tabs) {
     if (t.view.webContents.isDestroyed()) continue;
-    const top = t.htmlFull ? 0 : TOOLBAR_HEIGHT; // trình phát Flash bật toàn màn hình → ẩn thanh công cụ
+    const top = t.htmlFull ? 0 : toolbarHeight(); // trình phát Flash bật toàn màn hình → ẩn thanh công cụ
     const x = t.id === activeId ? 0 : -(width + 100);
     t.view.setBounds({ x, y: top, width, height: height - top });
   }
@@ -330,7 +335,7 @@ function openStartTabs(startUrl, explicit) {
 }
 
 module.exports = {
-  TOOLBAR_HEIGHT, events,
+  toolbarHeight, setBookmarkBar, events,
   winOk, getWin, list, getActiveId, tabOf, activeTab, wc, canReopen, toast,
   sendState, tabInfo, load, sendTabs, createTab, openNextToActive, openUrl, activateTab, closeTab,
   reopenClosedTab, cycleTab, newTab, focusUrlBar, toggleMute, tabMenu,

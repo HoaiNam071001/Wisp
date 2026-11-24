@@ -10,6 +10,7 @@ const keyremap = require('./keyremap-main');
 const flashSettings = require('./flash/settings-window');
 const page = require('./page-actions');
 const bookmarks = require('./bookmarks');
+const bookmarksBar = require('./bookmarks-bar');
 const browsingData = require('./browsing-data');
 const flash = require('./flash/actions');
 const { askForFlashPlugin } = require('./flash/install');
@@ -95,7 +96,7 @@ function menuActions(arg) {
     history: history.openHistory, clearHistory: history.clearHistoryDialog, recent: () => tabs.openUrl(String(arg || '')),
     home: () => w && tabs.load(w, homeUrl()), setHome: page.setHomeHere,
     inspector: () => openInspector(arg ? String(arg) : undefined), devtools: () => w && w.toggleDevTools(),
-    hardReload: page.hardReload, external: page.openInSystemBrowser, bookmarks: bookmarks.openBookmarks, bookmark: bookmarks.toggleActive, clearCache: page.clearCacheReload, clearData: browsingData.clearBrowsingDataDialog,
+    hardReload: page.hardReload, external: page.openInSystemBrowser, bookmarks: bookmarks.openBookmarks, bookmarksBar: bookmarksBar.toggle, bookmark: bookmarks.toggleActive, clearCache: page.clearCacheReload, clearData: browsingData.clearBrowsingDataDialog,
     checkFlash: flash.checkFlash, allowSite: flash.allowCurrentSite, plugin: askForFlashPlugin,
     flashMore: flashSettings.openSettings,
     openSwf: page.openSwfFile,
