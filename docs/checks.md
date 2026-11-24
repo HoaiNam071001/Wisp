@@ -69,3 +69,4 @@ Chạy `npm run dev` (dữ liệu `.dev-data/`), thử như bản 2.3.0:
 - 06 Chọn element: bật Ghosthand, mở trang bất kỳ, bấm nút ngắm (hoặc Cmd/Ctrl+Shift+E) → rê chuột thấy khung + nhãn; ↑ / ↓ đổi cha / con; bấm → bảng; đổi selector trong ô thì số khớp đổi; Chép dán được; Esc thoát và trang bấm lại bình thường. Thử cả trang có iframe cùng nguồn.
 - 07 Lệnh game: mở cf4vn.bar (engine Flash) rồi chạy `game` qua cổng Ghosthand: reload tải lại game, mute / unmute tắt / bật tiếng, focus đưa cửa sổ game lên trước (cả khi đang thu nhỏ).
 - 07 Cỡ cửa sổ game: gọi `game {action:"resize", width:1000, height:600}` trên tab game Flash → vùng game đúng cỡ; thu nhỏ cửa sổ rồi `frameRect` phải báo `hidden: true`.
+- ⬜ **Đăng nhập Google (bước 11):** có Client secret trong google-oauth.local.json rồi thử gọi login() – trình duyệt mở, bấm cho phép, trang 'Đăng nhập xong', token nằm ở google-token.bin (chưa có nút trên UI, thử bằng dev console).
