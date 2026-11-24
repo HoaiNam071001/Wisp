@@ -118,5 +118,5 @@ app.on('open-file', (e, file) => {
   else pendingFile = file;
 });
 
-app.on('before-quit', () => { flashRouter.stop(); ghosthand.stop(); saveHistoryNow(); saveBookmarksNow(); if (loadConfig().restoreTabs !== false) tabs.saveSession(); });
+app.on('before-quit', () => { flashRouter.stop(); ghosthand.stop(); saveHistoryNow(); saveBookmarksNow(); bookmarksBar.flushFavicons(); if (loadConfig().restoreTabs !== false) tabs.saveSession(); });
 app.on('window-all-closed', () => app.quit());

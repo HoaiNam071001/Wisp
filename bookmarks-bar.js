@@ -5,12 +5,13 @@ const tabs = require('./tabs');
 const bookmarks = require('./bookmarks');
 const { loadConfig, saveConfig } = require('./config');
 const { isBookmarkable } = require('./bookmarks-store');
+const favicons = require('./favicon-cache');
 
 const enabled = () => loadConfig().bookmarksBar !== false;
 
 function push() {
   const win = tabs.getWin();
-  if (win) win.webContents.send('bookmark:bar', { on: enabled(), items: enabled() ? bookmarks.barItems() : [] });
+  if (win) win.webContents.send('bookmark:bar', { on: enabled(), items: enabled() ? bookmarks.barItems().map(b => ({ ...b, icon: favicons.get(b.url) })) : [] });
 }
 
 function apply() { tabs.setBookmarkBar(enabled()); push(); }
@@ -48,4 +49,8 @@ ipcMain.on('bar:overflow', (e, ids, x, y) => {
 });
 
 bookmarks.events.on('changed', push);
-module.exports = { toggle, apply, push, enabled };
+// Học icon khi mở trang; trang đó đang có dấu trang thì vẽ lại thanh
+tabs.events.on('favicon', (url, icon) => {
+  if (favicons.set(url, icon) && enabled() && bookmarks.barItems().some(b => favicons.hostOf(b.url) === favicons.hostOf(url))) push();
+});
+module.exports = { toggle, apply, push, enabled, flushFavicons: favicons.flush };

@@ -5,6 +5,7 @@ Mới nhất ở trên, nhóm `## <NN> – <tên bước> · [link](plan/<NN>-<t
 ## 12 – Thanh dấu trang · [docs/plan/12-thanh-dau-trang.md](plan/12-thanh-dau-trang.md)
 - [ ] 12 (2026-11-24): `wisp://bookmarks` → "Nhập…" → chọn hồ sơ Chrome → thấy "Đã nhập n dấu trang"; nhập lần hai báo "tất cả đã có"; "File HTML" nhập được file xuất từ Chrome
 - [ ] 12: thanh dấu trang hiện dưới thanh địa chỉ đúng thứ tự thanh Chrome; bấm mở tab hiện tại, Cmd/Ctrl+bấm hoặc bấm giữa mở tab mới; chuột phải: Mở / Tab mới / Xoá; kéo thả đổi thứ tự (khởi động lại vẫn giữ)
+- [ ] 12: thanh dấu trang hiện icon thật của trang (mở trang một lần là học icon; trang chưa mở thử /favicon.ico; không có thì chữ cái màu); khởi động lại vẫn giữ icon
 - [ ] 12: thu nhỏ cửa sổ → nút » hiện, bấm ra menu các dấu trang bị che; Cmd/Ctrl+Shift+B (và menu ⋮) ẩn / hiện, trang bên dưới co giãn đúng, khởi động lại nhớ trạng thái; Flash / video toàn màn hình không lòi thanh
 - [ ] 12: đồng bộ: kéo thả ở máy A, "Đồng bộ ngay", máy B thấy thứ tự mới; theme sáng không dùng (app chỉ tối) – bỏ qua
 

@@ -56,6 +56,7 @@
   .bmi:hover { background: var(--surface); }
   .bmi.drop { box-shadow: inset 2px 0 0 var(--brand); }
   .bmi .t { overflow: hidden; text-overflow: ellipsis; }
+  .bmi .fav { flex: none; width: 16px; height: 16px; border-radius: 3px; object-fit: contain; }
   .bmi .av { flex: none; width: 16px; height: 16px; border-radius: 4px; display: grid; place-items: center; font-size: 9.5px; font-weight: 700; color: #fff; }
   #bm-more { flex: none; width: 26px; height: 26px; border-radius: 7px; display: grid; place-items: center; color: var(--muted); }
   #bm-more:hover { background: var(--surface); color: #fff; }
@@ -318,6 +319,22 @@
   const AV_COLORS = ['#4c8dff', '#3fb950', '#a371f7', '#e3a008', '#2bb3a3', '#e05fa8', '#ff6a3d', '#7c83ff'];
   let bmItems = [], bmHidden = [];
   const hostOf = (u) => { try { return new URL(u).host.replace(/^www\./, ''); } catch { return ''; } };
+  // Icon thật của trang (đã học khi mở trang, hoặc thử /favicon.ico); không tải được thì chữ cái đầu màu theo domain
+  function bmLetter(host) {
+    const av = document.createElement('span'); av.className = 'av'; av.textContent = (host[0] || '?').toUpperCase();
+    let h = 0; for (const c of host) h = (h * 31 + c.charCodeAt(0)) | 0;
+    av.style.background = AV_COLORS[Math.abs(h) % AV_COLORS.length];
+    return av;
+  }
+  function bmIcon(b, host) {
+    let guess = '';
+    try { guess = new URL(b.url).origin + '/favicon.ico'; } catch {}
+    const src = b.icon || guess;
+    if (!src) return bmLetter(host);
+    const img = document.createElement('img'); img.className = 'fav'; img.src = src; img.draggable = false;
+    img.onerror = () => { if (img.src !== guess && guess) img.src = guess; else img.replaceWith(bmLetter(host)); };
+    return img;
+  }
   function renderBar() {
     const list = $('bm-list');
     list.textContent = '';
@@ -326,9 +343,7 @@
       const el = document.createElement('button');
       el.className = 'bmi'; el.dataset.id = b.id; el.title = (b.title || b.url) + '\n' + b.url; el.draggable = true;
       const host = hostOf(b.url);
-      const av = document.createElement('span'); av.className = 'av'; av.textContent = (host[0] || '?').toUpperCase();
-      let h = 0; for (const c of host) h = (h * 31 + c.charCodeAt(0)) | 0;
-      av.style.background = AV_COLORS[Math.abs(h) % AV_COLORS.length];
+      const av = bmIcon(b, host);
       const t = document.createElement('span'); t.className = 't'; t.textContent = b.title || host || b.url;
       el.append(av, t);
       el.onclick = (e) => nav.barOpen(b.url, e.metaKey || e.ctrlKey);

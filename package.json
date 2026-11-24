@@ -88,6 +88,7 @@
       "bookmarks-store.js",
       "bookmarks-import.js",
       "bookmarks-bar.js",
+      "favicon-cache.js",
       "chrome-bookmarks.js",
       "bookmarks.html",
       "site-zoom.js",

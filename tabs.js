@@ -272,7 +272,7 @@ function wireTab(t) {
     if (isActive()) updateTitle();
     sendTabs();
   });
-  w.on('page-favicon-updated', (_e, favicons) => { t.favicon = favicons[0] || ''; sendTabs(); });
+  w.on('page-favicon-updated', (_e, favicons) => { t.favicon = favicons[0] || ''; events.emit('favicon', w.getURL(), t.favicon); sendTabs(); });
   w.on('did-fail-load', (_e, code, desc, url, isMain) => {
     if (isMain && code !== -3) console.warn('Lỗi tải trang', code, desc, url);
   });
