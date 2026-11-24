@@ -89,3 +89,9 @@ Chạy `npm run dev` (dữ liệu `.dev-data/`), thử như bản 2.3.0:
 - ⬜ **Nút tài khoản (bước 11):** nút hình người cạnh ⋮ → cửa sổ Tài khoản mở, bố cục / theme tối đẹp; đăng nhập xong nút thành chữ cái đầu; đăng xuất về hình người; thử Windows (tường lửa hỏi loopback?).
 - 11 Cookie game: ở máy A đăng nhập Google + Tài khoản → bật *Đồng bộ phiên game*, đặt mật khẩu ≥ 8 ký tự, đăng nhập một game Flash (cf4vn.bar), đóng cửa sổ game, bấm Đồng bộ ngay; máy B đăng nhập Google, bật cùng mật khẩu → mở game thấy đã đăng nhập; nhập sai mật khẩu → báo 'Sai mật khẩu đồng bộ' và không ghi đè Drive; tắt công tắc thì ngừng đồng bộ.
 - 12 Dấu trang (thanh): thêm vài dấu trang → hiện nút dưới thanh địa chỉ; bấm mở, Cmd/Ctrl+bấm / bấm giữa tab mới; kéo thả đổi thứ tự (khởi động lại vẫn giữ); chuột phải → Sửa tên… (Enter lưu, Esc đóng, tên rỗng thì hiện tên miền) / Xoá; thu nhỏ cửa sổ thấy » và dropdown; Cmd/Ctrl+Shift+B + menu ⋮ ẩn / hiện (trang co giãn đúng); theme tối; tab Flash toàn màn hình không lòi thanh; đồng bộ sang máy thứ hai (cả thứ tự, tên).
+
+## Bước 14 – tab ngủ / khôi phục lười / tab crash (2026-11-24)
+- ⬜ Mở 3 tab, đặt `sleepMinutes: 1` trong config.json, để 2 tab nền > 1 phút → thanh tab hiện mờ; bấm vào → nạp lại đúng trang, không mất tiêu đề.
+- ⬜ Tab đang phát tiếng / tab game Flash không bị ngủ.
+- ⬜ Thoát rồi mở lại app: chỉ tab đang xem nạp ngay, tab khác mờ tới khi bấm.
+- ⬜ Làm tab crash (vd `chrome://crash` gõ vào ô địa chỉ hoặc kill tiến trình tab) → hiện trang "Tab bị dừng", bấm Tải lại nạp lại được.

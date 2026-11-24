@@ -19,7 +19,7 @@ Trạng thái: ✅ xong · 🔄 đang làm · ⬜ chưa làm
 | [11](11-dong-bo-google.md) | Đăng nhập Google, đồng bộ cấu hình / dấu trang / lịch sử / phiên game qua Drive | – | 🔄 |
 | [12](12-thanh-dau-trang.md) | Thanh dấu trang như Chrome (engine web) + nhập từ Chrome | 11 | 🔄 |
 | [13](13-thong-tin-trang.md) | Thông tin trang (bấm khoá): kết nối, quyền theo trang, xoá dữ liệu trang | 05 | 🔄 |
-| [14](14-toi-uu-toc-do-ram.md) | Tối ưu tốc độ & RAM: khởi động nhanh, tab ngủ, khôi phục lười, tab crash | 05 | ⬜ |
+| [14](14-toi-uu-toc-do-ram.md) | Tối ưu tốc độ & RAM: khởi động nhanh, tab ngủ, khôi phục lười, tab crash | 05 | 🔄 |
 | [15](15-omnibox-tab-nang-cao.md) | Thanh địa chỉ gợi ý, chuột phải, ghim / kéo tab, Ctrl+K | 11, 12 | ⬜ |
 | [16](16-rieng-tu-an-toan.md) | Riêng tư & an toàn: chặn quảng cáo, ẩn danh, HTTPS-first, trang lỗi | 05, 13 | ⬜ |
 

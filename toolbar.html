@@ -42,6 +42,7 @@
   .snd { color: var(--blue); }
   .snd.muted { color: var(--red); }
   .snd:hover { background: var(--hover); }
+  .tab.sleeping:not(.active) .title, .tab.sleeping:not(.active) .fav { opacity: .55; } /* tab ngủ: mờ đi */
   .tab.narrow .title { display: none; }
   .tab.narrow:not(.active) .x { display: none; }
   #newtab { flex: none; width: 28px; height: 26px; margin: 0 0 2px 4px; border-radius: 7px; display: grid; place-items: center; color: var(--muted); }
@@ -253,7 +254,7 @@
     for (const old of box.querySelectorAll('.tab')) old.remove();
     for (const t of tabs) {
       const el = document.createElement('div');
-      el.className = 'tab' + (t.id === active ? ' active' : '');
+      el.className = 'tab' + (t.id === active ? ' active' : '') + (t.sleeping ? ' sleeping' : '');
       el.title = t.title + (t.url && t.url !== t.title ? '\n' + t.url : '');
 
       const fav = document.createElement('span');

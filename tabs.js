@@ -13,6 +13,7 @@ const { addLog } = require('./inspect/store');
 const flashRouter = require('./flash-engine/router');
 const { popupFor } = require('./popup-policy');
 const { blockedNavigation } = require('./nav-policy');
+const { isCrash, crashedPageUrl, isCrashedPage } = require('./tab-crashed');
 
 const TOOLBAR_BASE = 80; // thanh tab (36) + thanh địa chỉ (44)
 const BOOKMARK_BAR_H = 32; // thanh dấu trang (bật / tắt được) nằm dưới thanh địa chỉ
@@ -38,11 +39,20 @@ function wc() {
 function canReopen() { return closedTabs.length > 0; }
 function toast(text) { if (winOk()) win.webContents.send('toast', text); }
 
+// Địa chỉ thật của tab: tab ngủ / vừa khôi phục chưa nạp thì lấy địa chỉ đã nhớ, trang "Tab bị dừng" thì địa chỉ trang hỏng
+function rawUrl(t) {
+  const w = t.view.webContents;
+  if (t.sleeping) return t.sleepUrl || '';
+  if (w.isDestroyed()) return '';
+  return t.crashedUrl && isCrashedPage(w.getURL()) ? t.crashedUrl : w.getURL();
+}
+const tabUrl = (t) => displayUrl(rawUrl(t));
+
 function sendState() {
   if (!winOk() || !wc()) return;
   const w = wc();
   win.webContents.send('state', {
-    url: displayUrl(w.getURL()),
+    url: tabUrl(activeTab()),
     canBack: w.navigationHistory.canGoBack(),
     canForward: w.navigationHistory.canGoForward(),
     loading: w.isLoading(),
@@ -56,9 +66,9 @@ const isInternalUrl = (u) => isHistoryUrl(u) || isBookmarksUrl(u); // trang nộ
 
 function tabInfo(t) {
   const w = t.view.webContents;
-  const url = w.isDestroyed() ? '' : displayUrl(w.getURL());
-  return { id: t.id, title: t.title || url || 'Tab mới', url, favicon: t.favicon || '',
-           loading: !w.isDestroyed() && w.isLoading(), history: isInternalUrl(w.isDestroyed() ? '' : w.getURL()),
+  const url = tabUrl(t);
+  return { id: t.id, title: t.title || url || 'Tab mới', url, favicon: t.favicon || '', sleeping: !!t.sleeping,
+           loading: !w.isDestroyed() && w.isLoading(), history: isInternalUrl(rawUrl(t)),
            audible: !!t.audible, muted: !!t.muted };
 }
 
@@ -116,16 +126,18 @@ function loadInTab(t, url) {
   w.loadURL(flashRouter.wantsFlash(url) ? launcherUrlFor(url) : url).catch(() => {});
 }
 
-function createTab(url, { activate = true, index = tabs.length } = {}) {
+// lazy = { title }: tab của phiên cũ, chưa nạp trang tới khi bấm vào (tab-sleep.js)
+function createTab(url, { activate = true, index = tabs.length, lazy = null } = {}) {
   const view = new WebContentsView({ webPreferences: tabPrefs() });
-  const t = { id: ++tabSeq, view, title: '', favicon: '', htmlFull: false, hist: null, audible: false, muted: false };
+  const t = { id: ++tabSeq, view, title: '', favicon: '', htmlFull: false, hist: null, audible: false, muted: false, lastActive: Date.now() };
+  if (lazy) { t.sleeping = true; t.sleepUrl = url; t.title = lazy.title || ''; }
   tabs.splice(Math.max(0, Math.min(index, tabs.length)), 0, t);
   // Game ở tab khác vẫn chạy bình thường (không bị Chromium hãm timer khi tab ẩn)
   view.webContents.setBackgroundThrottling(false);
   wireTab(t);
   events.emit('created', t);
   if (winOk()) win.contentView.addChildView(view);
-  loadInTab(t, url);
+  if (!lazy) loadInTab(t, url);
   if (activate) activateTab(t.id); else { layout(); sendTabs(); }
   return t;
 }
@@ -151,9 +163,12 @@ function activateTab(id) {
   if (!t || !winOk()) return;
   const prev = activeTab();
   if (prev !== t) {
+    if (prev) prev.lastActive = Date.now();
     activeId = t.id;
     win.contentView.addChildView(t.view); // thêm lại = đưa lên trên cùng
   }
+  t.lastActive = Date.now();
+  events.emit('activated', t); // tab-sleep.js nạp lại tab ngủ
   layout();
   t.view.webContents.focus();
   updateTitle();
@@ -166,8 +181,8 @@ function closeTab(id) {
   if (i < 0) return;
   const t = tabs[i];
   const w = t.view.webContents;
-  if (!w.isDestroyed() && w.getURL()) {
-    closedTabs.push({ url: w.getURL(), index: i });
+  if (rawUrl(t)) {
+    closedTabs.push({ url: rawUrl(t), index: i });
     if (closedTabs.length > CLOSED_MAX) closedTabs.shift();
   }
   tabs.splice(i, 1);
@@ -217,7 +232,7 @@ function tabMenu(id) {
   const i = tabs.indexOf(t);
   Menu.buildFromTemplate([
     { label: 'Tải lại', click: () => t.view.webContents.reload() },
-    { label: 'Nhân bản tab', click: () => createTab(t.view.webContents.getURL(), { index: i + 1 }) },
+    { label: 'Nhân bản tab', click: () => createTab(rawUrl(t), { index: i + 1 }) },
     { label: t.muted ? 'Bật tiếng tab' : 'Tắt tiếng tab', click: () => toggleMute(id) },
     { type: 'separator' },
     { label: 'Đóng tab', click: () => closeTab(id) },
@@ -260,6 +275,8 @@ function wireTab(t) {
   w.on('will-navigate', toFlash);
   w.on('will-redirect', toFlash);
   w.on('did-navigate', (_e, url) => {
+    if (t.sleeping) return; // about:blank của tab ngủ
+    if (!isCrashedPage(url)) t.crashedUrl = null;
     t.favicon = '';
     events.emit('navigated', t, url); // tải trang thật (khác 'visit': không gồm chuyển trang trong cùng trang)
     events.emit('visit', t, url);
@@ -268,6 +285,7 @@ function wireTab(t) {
   });
   w.on('did-navigate-in-page', (_e, url, isMain) => { if (isMain) events.emit('visit', t, url); });
   w.on('page-title-updated', (_e, title) => {
+    if (t.sleeping) return;
     t.title = title;
     events.emit('title', t, title);
     if (isActive()) updateTitle();
@@ -276,6 +294,11 @@ function wireTab(t) {
   w.on('page-favicon-updated', (_e, favicons) => { t.favicon = favicons[0] || ''; events.emit('favicon', w.getURL(), t.favicon); sendTabs(); });
   w.on('did-fail-load', (_e, code, desc, url, isMain) => {
     if (isMain && code !== -3) console.warn('Lỗi tải trang', code, desc, url);
+  });
+  w.on('render-process-gone', (_e, d) => {
+    if (!isCrash(d.reason) || t.sleeping) return;
+    t.crashedUrl = rawUrl(t) || t.crashedUrl;
+    w.loadURL(crashedPageUrl(t.crashedUrl || '', d.reason)).catch(() => {});
   });
   logTabEvents(w);
 }
@@ -317,8 +340,8 @@ function attachWindow(w) {
 let lastSessionJson = '';
 function saveSession(force = false) {
   if (!tabs.length) return;
-  const urls = tabs.map(t => t.view.webContents.isDestroyed() ? '' : displayUrl(t.view.webContents.getURL())).filter(Boolean);
-  const data = { tabs: urls, active: Math.max(0, tabs.indexOf(activeTab())) };
+  const live = tabs.filter(t => tabUrl(t));
+  const data = { tabs: live.map(tabUrl), titles: live.map(t => t.title || ''), active: Math.max(0, tabs.indexOf(activeTab())) };
   const json = JSON.stringify(data);
   if (!force && json === lastSessionJson) return;
   lastSessionJson = json;
@@ -330,13 +353,17 @@ function openStartTabs(startUrl, explicit) {
   const cfg = loadConfig();
   const saved = cfg.session && Array.isArray(cfg.session.tabs) ? cfg.session.tabs.map(normalizeUrl).filter(Boolean) : [];
   if (!explicit && cfg.restoreTabs !== false && saved.length) {
-    saved.forEach((u) => createTab(u, { activate: false }));
-    activateTab(tabs[Math.min(cfg.session.active || 0, tabs.length - 1)].id);
+    const titles = Array.isArray(cfg.session.titles) ? cfg.session.titles : [];
+    const active = Math.min(cfg.session.active || 0, saved.length - 1);
+    // Tab không xem chỉ nạp khi bấm (http/https; trang nội bộ / Flash nạp luôn như trước)
+    const lazyOk = (u) => /^https?:/i.test(u) && !flashRouter.wantsFlash(u) && cfg.lazyRestore !== false;
+    saved.forEach((u, i) => createTab(u, { activate: false, lazy: i !== active && lazyOk(u) ? { title: titles[i] } : null }));
+    activateTab(tabs[active].id);
   } else createTab(startUrl);
 }
 
 module.exports = {
-  toolbarHeight, setBookmarkBar, events,
+  rawUrl, toolbarHeight, setBookmarkBar, events,
   winOk, getWin, list, getActiveId, tabOf, activeTab, wc, canReopen, toast,
   sendState, tabInfo, load, sendTabs, createTab, openNextToActive, openUrl, activateTab, closeTab,
   reopenClosedTab, cycleTab, newTab, focusUrlBar, toggleMute, tabMenu,

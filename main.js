@@ -38,6 +38,7 @@ const { installRequestLog } = require('./inspect/request-log');
 const { startSocketWatch } = require('./inspect/sockets');
 const { openInspector } = require('./inspect/window');
 const { startPerf, applyAppNap } = require('./perf');
+const tabSleep = require('./tab-sleep');
 const { askForFlashPlugin } = require('./flash/install');
 const { buildMenu, scheduleMenu } = require('./app-menu');
 const { ensureMenuWin } = require('./menu-popup');
@@ -68,7 +69,9 @@ function createWindow() {
   buildMenu();
   tabs.openStartTabs(startUrl, explicit);
   startPerf();
+  tabSleep.init();
   startSocketWatch();
+  addLog('info', 'perf', `Khởi động: cửa sổ dựng xong sau ${Math.round(process.uptime() * 1000)} ms`);
 
   if (!FLASH_PATH) setTimeout(askForFlashPlugin, 800);
 }
